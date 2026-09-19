@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "destination_id": "smu-fondren-library",
+  "name": "Fondren Library Center",
+  "destination_type": "library",
+  "latitude": 32.8444462,
+  "longitude": -96.7834949,
+  "access_points": [
+    {
+      "access_point_id": "smu-fondren-osm-entrance-6080676255",
+      "name": "West entrance",
+      "latitude": 32.8444723,
+      "longitude": -96.783597
+    },
+    {
+      "access_point_id": "smu-fondren-osm-entrance-11289496087",
+      "name": "East entrance",
+      "latitude": 32.8444665,
+      "longitude": -96.7833191
+    }
+  ]
+}

@@ -1,0 +1,4523 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-09-19T13:58:38Z",
+  "source_uri": "https://api.openstreetmap.org/api/0.6/map?bbox=-96.795,32.834,-96.773,32.852",
+  "license": "Open Data Commons Open Database License 1.0 (ODbL-1.0)",
+  "attribution": "\u00a9 OpenStreetMap contributors; SMU-area snapshot retrieved 2026-09-19",
+  "nodes": [
+    {
+      "node_id": "81670809",
+      "longitude": -96.7895075,
+      "latitude": 32.8407063
+    },
+    {
+      "node_id": "81670811",
+      "longitude": -96.7895054,
+      "latitude": 32.8417435
+    },
+    {
+      "node_id": "81695254",
+      "longitude": -96.7809283,
+      "latitude": 32.8455984
+    },
+    {
+      "node_id": "81695256",
+      "longitude": -96.7809333,
+      "latitude": 32.8466894
+    },
+    {
+      "node_id": "81695257",
+      "longitude": -96.7809198,
+      "latitude": 32.847872
+    },
+    {
+      "node_id": "81695258",
+      "longitude": -96.7809238,
+      "latitude": 32.8488737
+    },
+    {
+      "node_id": "81695259",
+      "longitude": -96.7809276,
+      "latitude": 32.8493911
+    },
+    {
+      "node_id": "81695262",
+      "longitude": -96.7809352,
+      "latitude": 32.849894,
+      "fixture_boundary": true
+    },
+    {
+      "node_id": "81717051",
+      "longitude": -96.7884993,
+      "latitude": 32.8407063
+    },
+    {
+      "node_id": "81734481",
+      "longitude": -96.7768748,
+      "latitude": 32.8447188
+    },
+    {
+      "node_id": "81734492",
+      "longitude": -96.7768596,
+      "latitude": 32.8456016,
+      "fixture_boundary": true
+    },
+    {
+      "node_id": "81734497",
+      "longitude": -96.7769995,
+      "latitude": 32.8466892,
+      "fixture_boundary": true
+    },
+    {
+      "node_id": "81734598",
+      "longitude": -96.7772174,
+      "latitude": 32.8420334
+    },
+    {
+      "node_id": "81734600",
+      "longitude": -96.7772633,
+      "latitude": 32.843161,
+      "fixture_boundary": true
+    },
+    {
+      "node_id": "81734602",
+      "longitude": -96.7772653,
+      "latitude": 32.8437903
+    },
+    {
+      "node_id": "81739526",
+      "longitude": -96.7857177,
+      "latitude": 32.8439224
+    },
+    {
+      "node_id": "81739533",
+      "longitude": -96.7857046,
+      "latitude": 32.8450127
+    },
+    {
+      "node_id": "81739535",
+      "longitude": -96.7856989,
+      "latitude": 32.8450908
+    },
+    {
+      "node_id": "81739537",
+      "longitude": -96.7856691,
+      "latitude": 32.845262
+    },
+    {
+      "node_id": "81766957",
+      "longitude": -96.7870841,
+      "latitude": 32.8417313
+    },
+    {
+      "node_id": "81766959",
+      "longitude": -96.7877619,
+      "latitude": 32.8417381
+    },
+    {
+      "node_id": "81827745",
+      "longitude": -96.7828548,
+      "latitude": 32.8499008
+    },
+    {
+      "node_id": "81827750",
+      "longitude": -96.782863,
+      "latitude": 32.8501797
+    },
+    {
+      "node_id": "81827752",
+      "longitude": -96.7849416,
+      "latitude": 32.8502036,
+      "fixture_boundary": true
+    },
+    {
+      "node_id": "81840585",
+      "longitude": -96.7793931,
+      "latitude": 32.8401336
+    },
+    {
+      "node_id": "81876314",
+      "longitude": -96.7793576,
+      "latitude": 32.8431937
+    },
+    {
+      "node_id": "81876316",
+      "longitude": -96.7816596,
+      "latitude": 32.8431943
+    },
+    {
+      "node_id": "81876327",
+      "longitude": -96.7870505,
+      "latitude": 32.8432711
+    },
+    {
+      "node_id": "81885340",
+      "longitude": -96.7841304,
+      "latitude": 32.8452652
+    },
+    {
+      "node_id": "81910673",
+      "longitude": -96.7870585,
+      "latitude": 32.8428596
+    },
+    {
+      "node_id": "81953543",
+      "longitude": -96.7870967,
+      "latitude": 32.8406855
+    },
+    {
+      "node_id": "81953547",
+      "longitude": -96.787037,
+      "latitude": 32.8439145
+    },
+    {
+      "node_id": "81953551",
+      "longitude": -96.7870321,
+      "latitude": 32.845263
+    },
+    {
+      "node_id": "81953553",
+      "longitude": -96.7870195,
+      "latitude": 32.8461165
+    },
+    {
+      "node_id": "81953555",
+      "longitude": -96.7870123,
+      "latitude": 32.8463763
+    },
+    {
+      "node_id": "81953557",
+      "longitude": -96.787404,
+      "latitude": 32.8467005
+    },
+    {
+      "node_id": "81953566",
+      "longitude": -96.7869873,
+      "latitude": 32.8465109
+    },
+    {
+      "node_id": "81953568",
+      "longitude": -96.7869309,
+      "latitude": 32.8467019
+    },
+    {
+      "node_id": "81953570",
+      "longitude": -96.7868852,
+      "latitude": 32.8468409
+    },
+    {
+      "node_id": "81953572",
+      "longitude": -96.7868603,
+      "latitude": 32.8470667
+    },
+    {
+      "node_id": "81953574",
+      "longitude": -96.78688,
+      "latitude": 32.847583
+    },
+    {
+      "node_id": "81953576",
+      "longitude": -96.7868932,
+      "latitude": 32.8484878
+    },
+    {
+      "node_id": "81953578",
+      "longitude": -96.7869058,
+      "latitude": 32.8493651
+    },
+    {
+      "node_id": "81976789",
+      "longitude": -96.7900068,
+      "latitude": 32.8461243,
+      "fixture_boundary": true
+    },
+    {
+      "node_id": "81992779",
+      "longitude": -96.7793857,
+      "latitude": 32.8419703
+    },
+    {
+      "node_id": "82006818",
+      "longitude": -96.7877641,
+      "latitude": 32.8466995
+    },
+    {
+      "node_id": "82006824",
+      "longitude": -96.7877701,
+      "latitude": 32.8475899
+    },
+    {
+      "node_id": "82006834",
+      "longitude": -96.7878335,
+      "latitude": 32.8493588
+    },
+    {
+      "node_id": "82006843",
+      "longitude": -96.7879389,
+      "latitude": 32.846699
+    },
+    {
+      "node_id": "82006849",
+      "longitude": -96.7879516,
+      "latitude": 32.8475964
+    },
+    {
+      "node_id": "82006859",
+      "longitude": -96.7879294,
+      "latitude": 32.8493581
+    },
+    {
+      "node_id": "82012527",
+      "longitude": -96.7891205,
+      "latitude": 32.8450692
+    },
+    {
+      "node_id": "82012528",
+      "longitude": -96.7895957,
+      "latitude": 32.8450276
+    },
+    {
+      "node_id": "82012529",
+      "longitude": -96.7900081,
+      "latitude": 32.8450193,
+      "fixture_boundary": true
+    },
+    {
+      "node_id": "82012544",
+      "longitude": -96.784123,
+      "latitude": 32.8453277
+    },
+    {
+      "node_id": "82012545",
+      "longitude": -96.7841939,
+      "latitude": 32.8454323
+    },
+    {
+      "node_id": "82012546",
+      "longitude": -96.7843949,
+      "latitude": 32.8455564
+    },
+    {
+      "node_id": "82012547",
+      "longitude": -96.7845439,
+      "latitude": 32.8455799
+    },
+    {
+      "node_id": "82012548",
+      "longitude": -96.7847147,
+      "latitude": 32.845582
+    },
+    {
+      "node_id": "82012549",
+      "longitude": -96.7850924,
+      "latitude": 32.8455836
+    },
+    {
+      "node_id": "82012550",
+      "longitude": -96.78531,
+      "latitude": 32.8455814
+    },
+    {
+      "node_id": "82012551",
+      "longitude": -96.785443,
+      "latitude": 32.84555
+    },
+    {
+      "node_id": "82012552",
+      "longitude": -96.78553,
+      "latitude": 32.845495
+    },
+    {
+      "node_id": "82012553",
+      "longitude": -96.785585,
+      "latitude": 32.84544
+    },
+    {
+      "node_id": "82012554",
+      "longitude": -96.7856452,
+      "latitude": 32.8453213
+    },
+    {
+      "node_id": "82012557",
+      "longitude": -96.7790212,
+      "latitude": 32.8456067
+    },
+    {
+      "node_id": "82012558",
+      "longitude": -96.7816733,
+      "latitude": 32.8455916
+    },
+    {
+      "node_id": "82014471",
+      "longitude": -96.7841953,
+      "latitude": 32.8439325
+    },
+    {
+      "node_id": "82021257",
+      "longitude": -96.782856,
+      "latitude": 32.8493115
+    },
+    {
+      "node_id": "82021258",
+      "longitude": -96.784931,
+      "latitude": 32.849339
+    },
+    {
+      "node_id": "82021909",
+      "longitude": -96.7828401,
+      "latitude": 32.8484498
+    },
+    {
+      "node_id": "82021911",
+      "longitude": -96.7849241,
+      "latitude": 32.8484683
+    },
+    {
+      "node_id": "82021927",
+      "longitude": -96.778961,
+      "latitude": 32.8488786,
+      "fixture_boundary": true
+    },
+    {
+      "node_id": "82021930",
+      "longitude": -96.7828536,
+      "latitude": 32.8488743
+    },
+    {
+      "node_id": "82056436",
+      "longitude": -96.7793881,
+      "latitude": 32.8409243
+    },
+    {
+      "node_id": "82056437",
+      "longitude": -96.7793947,
+      "latitude": 32.84207
+    },
+    {
+      "node_id": "82056449",
+      "longitude": -96.778972,
+      "latitude": 32.8466833
+    },
+    {
+      "node_id": "82056452",
+      "longitude": -96.7789638,
+      "latitude": 32.8478639,
+      "fixture_boundary": true
+    },
+    {
+      "node_id": "82056456",
+      "longitude": -96.7790285,
+      "latitude": 32.8437894
+    },
+    {
+      "node_id": "82056458",
+      "longitude": -96.7790174,
+      "latitude": 32.844724
+    },
+    {
+      "node_id": "82056460",
+      "longitude": -96.7790252,
+      "latitude": 32.8466829
+    },
+    {
+      "node_id": "82075357",
+      "longitude": -96.7816544,
+      "latitude": 32.843791
+    },
+    {
+      "node_id": "82075358",
+      "longitude": -96.7816549,
+      "latitude": 32.8439159
+    },
+    {
+      "node_id": "82076913",
+      "longitude": -96.7900222,
+      "latitude": 32.8438077
+    },
+    {
+      "node_id": "82076925",
+      "longitude": -96.7828486,
+      "latitude": 32.8439221
+    },
+    {
+      "node_id": "82110918",
+      "longitude": -96.7848965,
+      "latitude": 32.8467012
+    },
+    {
+      "node_id": "82110920",
+      "longitude": -96.784907,
+      "latitude": 32.847592
+    },
+    {
+      "node_id": "82126115",
+      "longitude": -96.7851217,
+      "latitude": 32.838451
+    },
+    {
+      "node_id": "82126119",
+      "longitude": -96.7851948,
+      "latitude": 32.8410852
+    },
+    {
+      "node_id": "82126125",
+      "longitude": -96.7848814,
+      "latitude": 32.8410785
+    },
+    {
+      "node_id": "82144482",
+      "longitude": -96.7817213,
+      "latitude": 32.8409841
+    },
+    {
+      "node_id": "82144486",
+      "longitude": -96.7834611,
+      "latitude": 32.8410557
+    },
+    {
+      "node_id": "82144496",
+      "longitude": -96.781654,
+      "latitude": 32.840956
+    },
+    {
+      "node_id": "82168373",
+      "longitude": -96.7891347,
+      "latitude": 32.8466867
+    },
+    {
+      "node_id": "82168375",
+      "longitude": -96.7891457,
+      "latitude": 32.8476058
+    },
+    {
+      "node_id": "82180749",
+      "longitude": -96.7828385,
+      "latitude": 32.8467005
+    },
+    {
+      "node_id": "82180751",
+      "longitude": -96.7828383,
+      "latitude": 32.8475819
+    },
+    {
+      "node_id": "82180753",
+      "longitude": -96.7828368,
+      "latitude": 32.8478759
+    },
+    {
+      "node_id": "82180768",
+      "longitude": -96.7817059,
+      "latitude": 32.845667
+    },
+    {
+      "node_id": "82180770",
+      "longitude": -96.781718,
+      "latitude": 32.845757
+    },
+    {
+      "node_id": "82180771",
+      "longitude": -96.781729,
+      "latitude": 32.845965
+    },
+    {
+      "node_id": "82180774",
+      "longitude": -96.7817417,
+      "latitude": 32.8461461
+    },
+    {
+      "node_id": "82180776",
+      "longitude": -96.7818076,
+      "latitude": 32.846351
+    },
+    {
+      "node_id": "82180778",
+      "longitude": -96.7819269,
+      "latitude": 32.8465111
+    },
+    {
+      "node_id": "82188441",
+      "longitude": -96.7899666,
+      "latitude": 32.8466877
+    },
+    {
+      "node_id": "82205942",
+      "longitude": -96.7816287,
+      "latitude": 32.8466607
+    },
+    {
+      "node_id": "82205944",
+      "longitude": -96.7817688,
+      "latitude": 32.8466062
+    },
+    {
+      "node_id": "82205947",
+      "longitude": -96.7819902,
+      "latitude": 32.8465629
+    },
+    {
+      "node_id": "82205950",
+      "longitude": -96.7821958,
+      "latitude": 32.8466584
+    },
+    {
+      "node_id": "82205953",
+      "longitude": -96.782442,
+      "latitude": 32.8466998
+    },
+    {
+      "node_id": "309228691",
+      "longitude": -96.7849528,
+      "latitude": 32.8386141
+    },
+    {
+      "node_id": "1028956453",
+      "longitude": -96.782846,
+      "latitude": 32.8452289
+    },
+    {
+      "node_id": "1520555077",
+      "longitude": -96.7877896,
+      "latitude": 32.8484115
+    },
+    {
+      "node_id": "1520555080",
+      "longitude": -96.7875742,
+      "latitude": 32.8484862
+    },
+    {
+      "node_id": "1520555082",
+      "longitude": -96.7879534,
+      "latitude": 32.8484085
+    },
+    {
+      "node_id": "1520642476",
+      "longitude": -96.787052,
+      "latitude": 32.843131
+    },
+    {
+      "node_id": "1520642565",
+      "longitude": -96.7900202,
+      "latitude": 32.8439192
+    },
+    {
+      "node_id": "1520642575",
+      "longitude": -96.7852778,
+      "latitude": 32.8386099
+    },
+    {
+      "node_id": "1653789363",
+      "longitude": -96.7826038,
+      "latitude": 32.8452528
+    },
+    {
+      "node_id": "1653789370",
+      "longitude": -96.7823541,
+      "latitude": 32.8454062
+    },
+    {
+      "node_id": "1653789374",
+      "longitude": -96.782247,
+      "latitude": 32.8455065
+    },
+    {
+      "node_id": "1653789387",
+      "longitude": -96.7821517,
+      "latitude": 32.8455617
+    },
+    {
+      "node_id": "1653789391",
+      "longitude": -96.7820055,
+      "latitude": 32.8455926
+    },
+    {
+      "node_id": "1653789401",
+      "longitude": -96.7824797,
+      "latitude": 32.8453024
+    },
+    {
+      "node_id": "1654040434",
+      "longitude": -96.7795303,
+      "latitude": 32.8431687
+    },
+    {
+      "node_id": "1654040436",
+      "longitude": -96.7794185,
+      "latitude": 32.8430709
+    },
+    {
+      "node_id": "1654040437",
+      "longitude": -96.7798121,
+      "latitude": 32.8431813
+    },
+    {
+      "node_id": "1654040438",
+      "longitude": -96.7793514,
+      "latitude": 32.8437671
+    },
+    {
+      "node_id": "1654045240",
+      "longitude": -96.7796268,
+      "latitude": 32.8431817
+    },
+    {
+      "node_id": "1654103599",
+      "longitude": -96.781883,
+      "latitude": 32.8464646
+    },
+    {
+      "node_id": "1654103739",
+      "longitude": -96.7818779,
+      "latitude": 32.8410387
+    },
+    {
+      "node_id": "1655339991",
+      "longitude": -96.7816964,
+      "latitude": 32.8410373
+    },
+    {
+      "node_id": "1655340075",
+      "longitude": -96.7823584,
+      "latitude": 32.8410575
+    },
+    {
+      "node_id": "2731627376",
+      "longitude": -96.7833686,
+      "latitude": 32.8410558
+    },
+    {
+      "node_id": "2731627379",
+      "longitude": -96.7793989,
+      "latitude": 32.8430065
+    },
+    {
+      "node_id": "3694542476",
+      "longitude": -96.7857056,
+      "latitude": 32.8449299
+    },
+    {
+      "node_id": "3694542479",
+      "longitude": -96.7841653,
+      "latitude": 32.8449046
+    },
+    {
+      "node_id": "3694542488",
+      "longitude": -96.785714,
+      "latitude": 32.8442292
+    },
+    {
+      "node_id": "3694542501",
+      "longitude": -96.784187,
+      "latitude": 32.8441968
+    },
+    {
+      "node_id": "3723793589",
+      "longitude": -96.7815796,
+      "latitude": 32.8437909
+    },
+    {
+      "node_id": "3723793591",
+      "longitude": -96.7816483,
+      "latitude": 32.8455234
+    },
+    {
+      "node_id": "3729411775",
+      "longitude": -96.7816601,
+      "latitude": 32.8431385
+    },
+    {
+      "node_id": "3729411777",
+      "longitude": -96.7816592,
+      "latitude": 32.8432479
+    },
+    {
+      "node_id": "4672432269",
+      "longitude": -96.7817769,
+      "latitude": 32.8455951
+    },
+    {
+      "node_id": "4672432271",
+      "longitude": -96.7815797,
+      "latitude": 32.8455954
+    },
+    {
+      "node_id": "4672432989",
+      "longitude": -96.7790248,
+      "latitude": 32.8442861
+    },
+    {
+      "node_id": "4998487915",
+      "longitude": -96.7846829,
+      "latitude": 32.846701
+    },
+    {
+      "node_id": "4998487916",
+      "longitude": -96.7850606,
+      "latitude": 32.8467014
+    },
+    {
+      "node_id": "4998490233",
+      "longitude": -96.7812721,
+      "latitude": 32.8455968
+    },
+    {
+      "node_id": "5269687485",
+      "longitude": -96.7843198,
+      "latitude": 32.845526
+    },
+    {
+      "node_id": "5269687513",
+      "longitude": -96.7841551,
+      "latitude": 32.8453895
+    },
+    {
+      "node_id": "5269688321",
+      "longitude": -96.7831271,
+      "latitude": 32.8452332
+    },
+    {
+      "node_id": "5269688345",
+      "longitude": -96.7856855,
+      "latitude": 32.8451805
+    },
+    {
+      "node_id": "5269688354",
+      "longitude": -96.7853687,
+      "latitude": 32.8455712
+    },
+    {
+      "node_id": "5269692077",
+      "longitude": -96.7878053,
+      "latitude": 32.8461167
+    },
+    {
+      "node_id": "5269692078",
+      "longitude": -96.7878217,
+      "latitude": 32.8452299
+    },
+    {
+      "node_id": "5292505868",
+      "longitude": -96.7778268,
+      "latitude": 32.841948
+    },
+    {
+      "node_id": "5292505869",
+      "longitude": -96.7780227,
+      "latitude": 32.8419345
+    },
+    {
+      "node_id": "5292505870",
+      "longitude": -96.7783877,
+      "latitude": 32.8419351
+    },
+    {
+      "node_id": "5292505871",
+      "longitude": -96.7786637,
+      "latitude": 32.8419831
+    },
+    {
+      "node_id": "5292505872",
+      "longitude": -96.779129,
+      "latitude": 32.8420671
+    },
+    {
+      "node_id": "5292505873",
+      "longitude": -96.778767,
+      "latitude": 32.8418928
+    },
+    {
+      "node_id": "5292505874",
+      "longitude": -96.7775276,
+      "latitude": 32.8418877
+    },
+    {
+      "node_id": "5292505875",
+      "longitude": -96.7781085,
+      "latitude": 32.8418196
+    },
+    {
+      "node_id": "5292505876",
+      "longitude": -96.7778215,
+      "latitude": 32.8418421
+    },
+    {
+      "node_id": "5292505877",
+      "longitude": -96.7784223,
+      "latitude": 32.8418263
+    },
+    {
+      "node_id": "5292505878",
+      "longitude": -96.779007,
+      "latitude": 32.8419492
+    },
+    {
+      "node_id": "5292505879",
+      "longitude": -96.7766534,
+      "latitude": 32.8420956,
+      "fixture_boundary": true
+    },
+    {
+      "node_id": "5298397666",
+      "longitude": -96.7793934,
+      "latitude": 32.8403115
+    },
+    {
+      "node_id": "5298397670",
+      "longitude": -96.779393,
+      "latitude": 32.8403559
+    },
+    {
+      "node_id": "5364793443",
+      "longitude": -96.7852804,
+      "latitude": 32.8432698
+    },
+    {
+      "node_id": "5364793444",
+      "longitude": -96.7852832,
+      "latitude": 32.8431252
+    },
+    {
+      "node_id": "5364793445",
+      "longitude": -96.7851467,
+      "latitude": 32.842913
+    },
+    {
+      "node_id": "5364793446",
+      "longitude": -96.7848142,
+      "latitude": 32.8429042
+    },
+    {
+      "node_id": "5364793448",
+      "longitude": -96.7850733,
+      "latitude": 32.8429615
+    },
+    {
+      "node_id": "5364793449",
+      "longitude": -96.7849633,
+      "latitude": 32.8429672
+    },
+    {
+      "node_id": "5364793450",
+      "longitude": -96.7848823,
+      "latitude": 32.8429499
+    },
+    {
+      "node_id": "5410023931",
+      "longitude": -96.787747,
+      "latitude": 32.8439156
+    },
+    {
+      "node_id": "5410023932",
+      "longitude": -96.787751,
+      "latitude": 32.8438025
+    },
+    {
+      "node_id": "5410023933",
+      "longitude": -96.787893,
+      "latitude": 32.8428576,
+      "fixture_boundary": true
+    },
+    {
+      "node_id": "5410023934",
+      "longitude": -96.7878898,
+      "latitude": 32.8438028
+    },
+    {
+      "node_id": "5410023935",
+      "longitude": -96.7890888,
+      "latitude": 32.8438056
+    },
+    {
+      "node_id": "5410023940",
+      "longitude": -96.787061,
+      "latitude": 32.8422969
+    },
+    {
+      "node_id": "5410023945",
+      "longitude": -96.7877617,
+      "latitude": 32.84286
+    },
+    {
+      "node_id": "5410023946",
+      "longitude": -96.7877764,
+      "latitude": 32.840705
+    },
+    {
+      "node_id": "5410023983",
+      "longitude": -96.7812467,
+      "latitude": 32.8419668
+    },
+    {
+      "node_id": "5410023984",
+      "longitude": -96.7811562,
+      "latitude": 32.8420831
+    },
+    {
+      "node_id": "5440199692",
+      "longitude": -96.7819987,
+      "latitude": 32.8410575
+    },
+    {
+      "node_id": "5440199693",
+      "longitude": -96.7816748,
+      "latitude": 32.841188
+    },
+    {
+      "node_id": "5440199694",
+      "longitude": -96.7816704,
+      "latitude": 32.841966
+    },
+    {
+      "node_id": "5440199695",
+      "longitude": -96.7816693,
+      "latitude": 32.8420869
+    },
+    {
+      "node_id": "5806339504",
+      "longitude": -96.7870919,
+      "latitude": 32.8415803
+    },
+    {
+      "node_id": "5806339510",
+      "longitude": -96.7870974,
+      "latitude": 32.8403094
+    },
+    {
+      "node_id": "5806339513",
+      "longitude": -96.7852064,
+      "latitude": 32.8405066
+    },
+    {
+      "node_id": "5806339514",
+      "longitude": -96.7848635,
+      "latitude": 32.8416728
+    },
+    {
+      "node_id": "5811547506",
+      "longitude": -96.7794079,
+      "latitude": 32.8393086,
+      "fixture_boundary": true
+    },
+    {
+      "node_id": "5813720107",
+      "longitude": -96.7828359,
+      "latitude": 32.8473815
+    },
+    {
+      "node_id": "5813720109",
+      "longitude": -96.782404,
+      "latitude": 32.8466956
+    },
+    {
+      "node_id": "5813720111",
+      "longitude": -96.780934,
+      "latitude": 32.8468374
+    },
+    {
+      "node_id": "5813720112",
+      "longitude": -96.780925,
+      "latitude": 32.8473639
+    },
+    {
+      "node_id": "5899711508",
+      "longitude": -96.7809944,
+      "latitude": 32.8455981
+    },
+    {
+      "node_id": "5941388083",
+      "longitude": -96.7794682,
+      "latitude": 32.8409242
+    },
+    {
+      "node_id": "5941388303",
+      "longitude": -96.7793985,
+      "latitude": 32.8426744
+    },
+    {
+      "node_id": "5941388306",
+      "longitude": -96.7816648,
+      "latitude": 32.8425993
+    },
+    {
+      "node_id": "5941388307",
+      "longitude": -96.7790173,
+      "latitude": 32.8451567
+    },
+    {
+      "node_id": "5941388311",
+      "longitude": -96.782926,
+      "latitude": 32.8467005
+    },
+    {
+      "node_id": "5941388312",
+      "longitude": -96.7827728,
+      "latitude": 32.8467005
+    },
+    {
+      "node_id": "5941388314",
+      "longitude": -96.7828377,
+      "latitude": 32.846758
+    },
+    {
+      "node_id": "5941388315",
+      "longitude": -96.7841562,
+      "latitude": 32.845202
+    },
+    {
+      "node_id": "5941388316",
+      "longitude": -96.7840127,
+      "latitude": 32.8452481
+    },
+    {
+      "node_id": "5941388317",
+      "longitude": -96.7844583,
+      "latitude": 32.8455721
+    },
+    {
+      "node_id": "5941388318",
+      "longitude": -96.7842266,
+      "latitude": 32.8454617
+    },
+    {
+      "node_id": "5941388319",
+      "longitude": -96.7842682,
+      "latitude": 32.8454952
+    },
+    {
+      "node_id": "5941388328",
+      "longitude": -96.7823155,
+      "latitude": 32.8466848
+    },
+    {
+      "node_id": "5941388344",
+      "longitude": -96.7790794,
+      "latitude": 32.841961
+    },
+    {
+      "node_id": "5941388345",
+      "longitude": -96.7791612,
+      "latitude": 32.8419677
+    },
+    {
+      "node_id": "5941388346",
+      "longitude": -96.7788399,
+      "latitude": 32.8420249
+    },
+    {
+      "node_id": "5941388347",
+      "longitude": -96.7792906,
+      "latitude": 32.8420697
+    },
+    {
+      "node_id": "5941388348",
+      "longitude": -96.7793049,
+      "latitude": 32.8419707
+    },
+    {
+      "node_id": "5941388349",
+      "longitude": -96.7793266,
+      "latitude": 32.8420701
+    },
+    {
+      "node_id": "5941388350",
+      "longitude": -96.7793817,
+      "latitude": 32.8419213
+    },
+    {
+      "node_id": "5941388351",
+      "longitude": -96.7794595,
+      "latitude": 32.8419703
+    },
+    {
+      "node_id": "5941388352",
+      "longitude": -96.779458,
+      "latitude": 32.8420711
+    },
+    {
+      "node_id": "5941388353",
+      "longitude": -96.7793959,
+      "latitude": 32.8421273
+    },
+    {
+      "node_id": "5941388354",
+      "longitude": -96.7794898,
+      "latitude": 32.8431446
+    },
+    {
+      "node_id": "5941388395",
+      "longitude": -96.7816845,
+      "latitude": 32.8410902
+    },
+    {
+      "node_id": "5941388396",
+      "longitude": -96.7817826,
+      "latitude": 32.8410091
+    },
+    {
+      "node_id": "5941388404",
+      "longitude": -96.7815779,
+      "latitude": 32.8409407
+    },
+    {
+      "node_id": "5941388495",
+      "longitude": -96.7814874,
+      "latitude": 32.8409342
+    },
+    {
+      "node_id": "6078127562",
+      "longitude": -96.7812516,
+      "latitude": 32.840933
+    },
+    {
+      "node_id": "6078127564",
+      "longitude": -96.7812026,
+      "latitude": 32.8409327
+    },
+    {
+      "node_id": "6078130443",
+      "longitude": -96.7832675,
+      "latitude": 32.841056
+    },
+    {
+      "node_id": "6080237222",
+      "longitude": -96.787182,
+      "latitude": 32.845262
+    },
+    {
+      "node_id": "6080237223",
+      "longitude": -96.7870302,
+      "latitude": 32.8453467
+    },
+    {
+      "node_id": "6080237224",
+      "longitude": -96.7870324,
+      "latitude": 32.8451837
+    },
+    {
+      "node_id": "6080237228",
+      "longitude": -96.7868931,
+      "latitude": 32.8452675
+    },
+    {
+      "node_id": "6080237236",
+      "longitude": -96.7857322,
+      "latitude": 32.8452623
+    },
+    {
+      "node_id": "6080237291",
+      "longitude": -96.7869147,
+      "latitude": 32.8439236
+    },
+    {
+      "node_id": "6080237292",
+      "longitude": -96.7870364,
+      "latitude": 32.8439671
+    },
+    {
+      "node_id": "6080237293",
+      "longitude": -96.7871762,
+      "latitude": 32.8438015
+    },
+    {
+      "node_id": "6080237295",
+      "longitude": -96.7870379,
+      "latitude": 32.8437826
+    },
+    {
+      "node_id": "6080237303",
+      "longitude": -96.7866992,
+      "latitude": 32.8439254
+    },
+    {
+      "node_id": "6080237304",
+      "longitude": -96.7866578,
+      "latitude": 32.8439253
+    },
+    {
+      "node_id": "6080320765",
+      "longitude": -96.7817616,
+      "latitude": 32.8439166
+    },
+    {
+      "node_id": "6080321215",
+      "longitude": -96.7816497,
+      "latitude": 32.8443459
+    },
+    {
+      "node_id": "6080321236",
+      "longitude": -96.7797084,
+      "latitude": 32.8456041
+    },
+    {
+      "node_id": "6080676246",
+      "longitude": -96.7825375,
+      "latitude": 32.8452758
+    },
+    {
+      "node_id": "6080676247",
+      "longitude": -96.7827078,
+      "latitude": 32.8452319
+    },
+    {
+      "node_id": "6080676248",
+      "longitude": -96.7823102,
+      "latitude": 32.8454555
+    },
+    {
+      "node_id": "6080683806",
+      "longitude": -96.7836601,
+      "latitude": 32.8452423
+    },
+    {
+      "node_id": "6080683819",
+      "longitude": -96.7840769,
+      "latitude": 32.8452574
+    },
+    {
+      "node_id": "6080683880",
+      "longitude": -96.7837605,
+      "latitude": 32.8439296
+    },
+    {
+      "node_id": "6080683881",
+      "longitude": -96.7841319,
+      "latitude": 32.8439321
+    },
+    {
+      "node_id": "6080783102",
+      "longitude": -96.7851691,
+      "latitude": 32.8419721
+    },
+    {
+      "node_id": "6080783175",
+      "longitude": -96.7851581,
+      "latitude": 32.8425881
+    },
+    {
+      "node_id": "6093077508",
+      "longitude": -96.7848935,
+      "latitude": 32.8399495
+    },
+    {
+      "node_id": "6093077509",
+      "longitude": -96.7852204,
+      "latitude": 32.8399565
+    },
+    {
+      "node_id": "6093077510",
+      "longitude": -96.7852328,
+      "latitude": 32.8394686
+    },
+    {
+      "node_id": "6093077511",
+      "longitude": -96.784915,
+      "latitude": 32.8394618
+    },
+    {
+      "node_id": "6093077513",
+      "longitude": -96.7852265,
+      "latitude": 32.839715
+    },
+    {
+      "node_id": "6093077570",
+      "longitude": -96.7849336,
+      "latitude": 32.8390438
+    },
+    {
+      "node_id": "6093077579",
+      "longitude": -96.7849041,
+      "latitude": 32.8397046
+    },
+    {
+      "node_id": "6730751256",
+      "longitude": -96.7878213,
+      "latitude": 32.8439157
+    },
+    {
+      "node_id": "6735452754",
+      "longitude": -96.7848979,
+      "latitude": 32.8471439
+    },
+    {
+      "node_id": "6735452758",
+      "longitude": -96.7828364,
+      "latitude": 32.8471481
+    },
+    {
+      "node_id": "6735452759",
+      "longitude": -96.780923,
+      "latitude": 32.848383
+    },
+    {
+      "node_id": "6735452763",
+      "longitude": -96.7789693,
+      "latitude": 32.8483777
+    },
+    {
+      "node_id": "6735452770",
+      "longitude": -96.7828403,
+      "latitude": 32.8483217
+    },
+    {
+      "node_id": "6738214027",
+      "longitude": -96.7793998,
+      "latitude": 32.8424872
+    },
+    {
+      "node_id": "6738214033",
+      "longitude": -96.7794009,
+      "latitude": 32.8425222
+    },
+    {
+      "node_id": "6749409858",
+      "longitude": -96.7884978,
+      "latitude": 32.8476043
+    },
+    {
+      "node_id": "6749409859",
+      "longitude": -96.7884937,
+      "latitude": 32.8466896
+    },
+    {
+      "node_id": "6749409860",
+      "longitude": -96.7879508,
+      "latitude": 32.8474476
+    },
+    {
+      "node_id": "7008293031",
+      "longitude": -96.787663,
+      "latitude": 32.8461167
+    },
+    {
+      "node_id": "7008293034",
+      "longitude": -96.7872794,
+      "latitude": 32.8461166
+    },
+    {
+      "node_id": "7008293037",
+      "longitude": -96.787637,
+      "latitude": 32.8452517
+    },
+    {
+      "node_id": "7008293039",
+      "longitude": -96.7872941,
+      "latitude": 32.8452614
+    },
+    {
+      "node_id": "7051078368",
+      "longitude": -96.7789726,
+      "latitude": 32.8468395
+    },
+    {
+      "node_id": "7051078371",
+      "longitude": -96.781441,
+      "latitude": 32.8466909
+    },
+    {
+      "node_id": "7052219874",
+      "longitude": -96.7789691,
+      "latitude": 32.8473743
+    },
+    {
+      "node_id": "7071422980",
+      "longitude": -96.7885121,
+      "latitude": 32.8476044
+    },
+    {
+      "node_id": "7071422981",
+      "longitude": -96.7868637,
+      "latitude": 32.8471566
+    },
+    {
+      "node_id": "7071422984",
+      "longitude": -96.7848983,
+      "latitude": 32.8471613
+    },
+    {
+      "node_id": "7071431887",
+      "longitude": -96.7873237,
+      "latitude": 32.8493623
+    },
+    {
+      "node_id": "7071431889",
+      "longitude": -96.7873192,
+      "latitude": 32.8484875
+    },
+    {
+      "node_id": "7071688114",
+      "longitude": -96.7887357,
+      "latitude": 32.8438048
+    },
+    {
+      "node_id": "7071688122",
+      "longitude": -96.7881889,
+      "latitude": 32.8438035
+    },
+    {
+      "node_id": "7135762395",
+      "longitude": -96.7828714,
+      "latitude": 32.8504072
+    },
+    {
+      "node_id": "7180703941",
+      "longitude": -96.7804464,
+      "latitude": 32.8437902
+    },
+    {
+      "node_id": "7405981454",
+      "longitude": -96.7849157,
+      "latitude": 32.8480335
+    },
+    {
+      "node_id": "7405981456",
+      "longitude": -96.7868868,
+      "latitude": 32.8480439
+    },
+    {
+      "node_id": "7588941557",
+      "longitude": -96.7789696,
+      "latitude": 32.8493919,
+      "fixture_boundary": true
+    },
+    {
+      "node_id": "7595925419",
+      "longitude": -96.7790199,
+      "latitude": 32.8461514
+    },
+    {
+      "node_id": "7648697508",
+      "longitude": -96.782857,
+      "latitude": 32.849398
+    },
+    {
+      "node_id": "7648697511",
+      "longitude": -96.7849275,
+      "latitude": 32.8488974
+    },
+    {
+      "node_id": "7663645833",
+      "longitude": -96.7867772,
+      "latitude": 32.8432701
+    },
+    {
+      "node_id": "7663645836",
+      "longitude": -96.7884712,
+      "latitude": 32.8439167
+    },
+    {
+      "node_id": "7675934359",
+      "longitude": -96.7828739,
+      "latitude": 32.8506252,
+      "fixture_boundary": true
+    },
+    {
+      "node_id": "7929195480",
+      "longitude": -96.7869118,
+      "latitude": 32.8497872,
+      "fixture_boundary": true
+    },
+    {
+      "node_id": "7929195481",
+      "longitude": -96.7828539,
+      "latitude": 32.8497449
+    },
+    {
+      "node_id": "7929195482",
+      "longitude": -96.784938,
+      "latitude": 32.8497665
+    },
+    {
+      "node_id": "7929195483",
+      "longitude": -96.7868993,
+      "latitude": 32.8489105
+    },
+    {
+      "node_id": "7929195484",
+      "longitude": -96.7828403,
+      "latitude": 32.8480249
+    },
+    {
+      "node_id": "7953290838",
+      "longitude": -96.7821761,
+      "latitude": 32.8478706
+    },
+    {
+      "node_id": "7953290841",
+      "longitude": -96.7825043,
+      "latitude": 32.8478705
+    },
+    {
+      "node_id": "7953378647",
+      "longitude": -96.7872269,
+      "latitude": 32.8438005
+    },
+    {
+      "node_id": "7953378649",
+      "longitude": -96.7872426,
+      "latitude": 32.8428597
+    },
+    {
+      "node_id": "8179685700",
+      "longitude": -96.7876943,
+      "latitude": 32.8452449
+    },
+    {
+      "node_id": "8179685707",
+      "longitude": -96.7870335,
+      "latitude": 32.8448479
+    },
+    {
+      "node_id": "8179685715",
+      "longitude": -96.7872233,
+      "latitude": 32.8439148
+    },
+    {
+      "node_id": "8179698225",
+      "longitude": -96.788923,
+      "latitude": 32.8439174
+    },
+    {
+      "node_id": "8179698226",
+      "longitude": -96.7881082,
+      "latitude": 32.8439161
+    },
+    {
+      "node_id": "8201623547",
+      "longitude": -96.7873066,
+      "latitude": 32.8475863
+    },
+    {
+      "node_id": "8201623548",
+      "longitude": -96.7873033,
+      "latitude": 32.8467008
+    },
+    {
+      "node_id": "8520544737",
+      "longitude": -96.7843549,
+      "latitude": 32.8475893
+    },
+    {
+      "node_id": "8666502288",
+      "longitude": -96.7872527,
+      "latitude": 32.8417333
+    },
+    {
+      "node_id": "8666502289",
+      "longitude": -96.7876196,
+      "latitude": 32.8417368
+    },
+    {
+      "node_id": "8776689173",
+      "longitude": -96.7782201,
+      "latitude": 32.8419285
+    },
+    {
+      "node_id": "8776689174",
+      "longitude": -96.7782212,
+      "latitude": 32.8418166
+    },
+    {
+      "node_id": "8776689257",
+      "longitude": -96.7816708,
+      "latitude": 32.8419205
+    },
+    {
+      "node_id": "8776689262",
+      "longitude": -96.7816688,
+      "latitude": 32.8421461
+    },
+    {
+      "node_id": "8776689294",
+      "longitude": -96.7815865,
+      "latitude": 32.8419662
+    },
+    {
+      "node_id": "8776689295",
+      "longitude": -96.7815865,
+      "latitude": 32.8420863
+    },
+    {
+      "node_id": "8793798355",
+      "longitude": -96.7809336,
+      "latitude": 32.8467426
+    },
+    {
+      "node_id": "8793798381",
+      "longitude": -96.7861114,
+      "latitude": 32.8467017
+    },
+    {
+      "node_id": "8793798384",
+      "longitude": -96.7856106,
+      "latitude": 32.8467015
+    },
+    {
+      "node_id": "8794007056",
+      "longitude": -96.786936,
+      "latitude": 32.8431293
+    },
+    {
+      "node_id": "8794007057",
+      "longitude": -96.7869358,
+      "latitude": 32.8432703
+    },
+    {
+      "node_id": "9603393099",
+      "longitude": -96.7789811,
+      "latitude": 32.8420536
+    },
+    {
+      "node_id": "9628882731",
+      "longitude": -96.7808871,
+      "latitude": 32.8420811
+    },
+    {
+      "node_id": "9628882732",
+      "longitude": -96.781385,
+      "latitude": 32.8420848
+    },
+    {
+      "node_id": "9964641481",
+      "longitude": -96.7869687,
+      "latitude": 32.8475837
+    },
+    {
+      "node_id": "9964641493",
+      "longitude": -96.7868806,
+      "latitude": 32.8476132
+    },
+    {
+      "node_id": "9964681944",
+      "longitude": -96.7876943,
+      "latitude": 32.8466997
+    },
+    {
+      "node_id": "9964681945",
+      "longitude": -96.7879398,
+      "latitude": 32.8467565
+    },
+    {
+      "node_id": "9964681946",
+      "longitude": -96.7877645,
+      "latitude": 32.8467593
+    },
+    {
+      "node_id": "9964681955",
+      "longitude": -96.7869078,
+      "latitude": 32.8467721
+    },
+    {
+      "node_id": "9964681956",
+      "longitude": -96.7869519,
+      "latitude": 32.8466309
+    },
+    {
+      "node_id": "9964681957",
+      "longitude": -96.7870482,
+      "latitude": 32.8467016
+    },
+    {
+      "node_id": "9964681958",
+      "longitude": -96.7868109,
+      "latitude": 32.8467019
+    },
+    {
+      "node_id": "9964681973",
+      "longitude": -96.785966,
+      "latitude": 32.8467016
+    },
+    {
+      "node_id": "9964682009",
+      "longitude": -96.7876883,
+      "latitude": 32.8475893
+    },
+    {
+      "node_id": "9964682010",
+      "longitude": -96.7880406,
+      "latitude": 32.8475955
+    },
+    {
+      "node_id": "9964682011",
+      "longitude": -96.7879533,
+      "latitude": 32.847685
+    },
+    {
+      "node_id": "9964682012",
+      "longitude": -96.7879519,
+      "latitude": 32.8475146
+    },
+    {
+      "node_id": "9964682013",
+      "longitude": -96.7877724,
+      "latitude": 32.8476861
+    },
+    {
+      "node_id": "9964682014",
+      "longitude": -96.7877696,
+      "latitude": 32.8475157
+    },
+    {
+      "node_id": "9964682055",
+      "longitude": -96.7868932,
+      "latitude": 32.8484265
+    },
+    {
+      "node_id": "9964682056",
+      "longitude": -96.7868939,
+      "latitude": 32.8485294
+    },
+    {
+      "node_id": "9964682057",
+      "longitude": -96.7869903,
+      "latitude": 32.8484877
+    },
+    {
+      "node_id": "9964682058",
+      "longitude": -96.7868072,
+      "latitude": 32.8484869
+    },
+    {
+      "node_id": "9964682063",
+      "longitude": -96.7879534,
+      "latitude": 32.8483768
+    },
+    {
+      "node_id": "9964682064",
+      "longitude": -96.7877888,
+      "latitude": 32.8483786
+    },
+    {
+      "node_id": "10656156044",
+      "longitude": -96.7847778,
+      "latitude": 32.8410768
+    },
+    {
+      "node_id": "10656156076",
+      "longitude": -96.7848273,
+      "latitude": 32.8425769
+    },
+    {
+      "node_id": "10656244677",
+      "longitude": -96.7793892,
+      "latitude": 32.8432342
+    },
+    {
+      "node_id": "10656244678",
+      "longitude": -96.7793054,
+      "latitude": 32.8431734
+    },
+    {
+      "node_id": "10656272778",
+      "longitude": -96.7870959,
+      "latitude": 32.8409153
+    },
+    {
+      "node_id": "10656272785",
+      "longitude": -96.7870928,
+      "latitude": 32.8415334
+    },
+    {
+      "node_id": "10656272806",
+      "longitude": -96.7873213,
+      "latitude": 32.8438009
+    },
+    {
+      "node_id": "10656272807",
+      "longitude": -96.7873199,
+      "latitude": 32.8439149
+    },
+    {
+      "node_id": "10656272811",
+      "longitude": -96.7873393,
+      "latitude": 32.8428598
+    },
+    {
+      "node_id": "10656272824",
+      "longitude": -96.787168,
+      "latitude": 32.8461166
+    },
+    {
+      "node_id": "10656272838",
+      "longitude": -96.7871765,
+      "latitude": 32.8428597
+    },
+    {
+      "node_id": "10656272839",
+      "longitude": -96.7870601,
+      "latitude": 32.8427976
+    },
+    {
+      "node_id": "10656272840",
+      "longitude": -96.7870738,
+      "latitude": 32.8418142
+    },
+    {
+      "node_id": "10656272845",
+      "longitude": -96.7870899,
+      "latitude": 32.841689
+    },
+    {
+      "node_id": "10656272846",
+      "longitude": -96.787216,
+      "latitude": 32.841733
+    },
+    {
+      "node_id": "10656272852",
+      "longitude": -96.7870937,
+      "latitude": 32.8414849
+    },
+    {
+      "node_id": "10656272857",
+      "longitude": -96.7870965,
+      "latitude": 32.8407564
+    },
+    {
+      "node_id": "10656272858",
+      "longitude": -96.7872347,
+      "latitude": 32.840704
+    },
+    {
+      "node_id": "10656272859",
+      "longitude": -96.7870968,
+      "latitude": 32.8406155
+    },
+    {
+      "node_id": "10949138462",
+      "longitude": -96.7849383,
+      "latitude": 32.8389358
+    },
+    {
+      "node_id": "10949138463",
+      "longitude": -96.7852601,
+      "latitude": 32.838937
+    },
+    {
+      "node_id": "10949138490",
+      "longitude": -96.7816514,
+      "latitude": 32.8442263
+    },
+    {
+      "node_id": "10949144634",
+      "longitude": -96.7816472,
+      "latitude": 32.845273
+    },
+    {
+      "node_id": "10949144637",
+      "longitude": -96.7790209,
+      "latitude": 32.8456658
+    },
+    {
+      "node_id": "10949144640",
+      "longitude": -96.7790157,
+      "latitude": 32.8455522
+    },
+    {
+      "node_id": "10949144657",
+      "longitude": -96.7816737,
+      "latitude": 32.8415627
+    },
+    {
+      "node_id": "10949144659",
+      "longitude": -96.7848967,
+      "latitude": 32.8467631
+    },
+    {
+      "node_id": "10949144661",
+      "longitude": -96.7858833,
+      "latitude": 32.8467016
+    },
+    {
+      "node_id": "10949144664",
+      "longitude": -96.7816945,
+      "latitude": 32.8466351
+    },
+    {
+      "node_id": "10949144665",
+      "longitude": -96.7815015,
+      "latitude": 32.8466854
+    },
+    {
+      "node_id": "10949144666",
+      "longitude": -96.7818829,
+      "latitude": 32.8465414
+    },
+    {
+      "node_id": "10949144701",
+      "longitude": -96.7834139,
+      "latitude": 32.8467007
+    },
+    {
+      "node_id": "10949144702",
+      "longitude": -96.7870265,
+      "latitude": 32.8456427
+    },
+    {
+      "node_id": "10949144703",
+      "longitude": -96.7870679,
+      "latitude": 32.8420336
+    },
+    {
+      "node_id": "10949144704",
+      "longitude": -96.7865561,
+      "latitude": 32.8467018
+    },
+    {
+      "node_id": "11093348941",
+      "longitude": -96.7804213,
+      "latitude": 32.8456008
+    },
+    {
+      "node_id": "11093348948",
+      "longitude": -96.7796186,
+      "latitude": 32.8437888
+    },
+    {
+      "node_id": "11137319851",
+      "longitude": -96.7880441,
+      "latitude": 32.8493584,
+      "fixture_boundary": true
+    },
+    {
+      "node_id": "11137319852",
+      "longitude": -96.7877428,
+      "latitude": 32.8493594
+    },
+    {
+      "node_id": "11137319864",
+      "longitude": -96.7890827,
+      "latitude": 32.8476057
+    },
+    {
+      "node_id": "11137319886",
+      "longitude": -96.7867874,
+      "latitude": 32.8476122
+    },
+    {
+      "node_id": "11137319887",
+      "longitude": -96.7868812,
+      "latitude": 32.8476571
+    },
+    {
+      "node_id": "11137328533",
+      "longitude": -96.7869012,
+      "latitude": 32.8490434
+    },
+    {
+      "node_id": "11137328541",
+      "longitude": -96.7872542,
+      "latitude": 32.8493628
+    },
+    {
+      "node_id": "11137328565",
+      "longitude": -96.7869954,
+      "latitude": 32.8493645
+    },
+    {
+      "node_id": "11384046852",
+      "longitude": -96.7820965,
+      "latitude": 32.8466211
+    },
+    {
+      "node_id": "11770524266",
+      "longitude": -96.7868698,
+      "latitude": 32.8473157
+    },
+    {
+      "node_id": "11770580982",
+      "longitude": -96.7872398,
+      "latitude": 32.847586
+    },
+    {
+      "node_id": "12711022722",
+      "longitude": -96.7869051,
+      "latitude": 32.8493134
+    },
+    {
+      "node_id": "12711022725",
+      "longitude": -96.7868242,
+      "latitude": 32.849364
+    },
+    {
+      "node_id": "12806905880",
+      "longitude": -96.7785926,
+      "latitude": 32.841852
+    },
+    {
+      "node_id": "12806905881",
+      "longitude": -96.7785398,
+      "latitude": 32.8419542
+    },
+    {
+      "node_id": "12967505352",
+      "longitude": -96.7868784,
+      "latitude": 32.8475405
+    },
+    {
+      "node_id": "13035970299",
+      "longitude": -96.7793808,
+      "latitude": 32.8418917
+    },
+    {
+      "node_id": "13035970300",
+      "longitude": -96.7793964,
+      "latitude": 32.8421778
+    },
+    {
+      "node_id": "13036007601",
+      "longitude": -96.7795265,
+      "latitude": 32.8419697
+    },
+    {
+      "node_id": "13036007606",
+      "longitude": -96.7769904,
+      "latitude": 32.8420676
+    },
+    {
+      "node_id": "13036007608",
+      "longitude": -96.7768219,
+      "latitude": 32.842085
+    },
+    {
+      "node_id": "13042324678",
+      "longitude": -96.7793925,
+      "latitude": 32.8437076
+    },
+    {
+      "node_id": "13042324679",
+      "longitude": -96.7792963,
+      "latitude": 32.843786
+    },
+    {
+      "node_id": "13042324684",
+      "longitude": -96.7793764,
+      "latitude": 32.8437422
+    },
+    {
+      "node_id": "13042324688",
+      "longitude": -96.7790279,
+      "latitude": 32.8438641
+    },
+    {
+      "node_id": "13045840485",
+      "longitude": -96.7811878,
+      "latitude": 32.8437907
+    },
+    {
+      "node_id": "13099710688",
+      "longitude": -96.7817643,
+      "latitude": 32.846237
+    },
+    {
+      "node_id": "13302812924",
+      "longitude": -96.776986,
+      "latitude": 32.8447197
+    },
+    {
+      "node_id": "13302812925",
+      "longitude": -96.776782,
+      "latitude": 32.8447179,
+      "fixture_boundary": true
+    }
+  ],
+  "ways": [
+    {
+      "way_id": "9952277#0",
+      "node_refs": [
+        "81695256",
+        "8793798355",
+        "5813720111",
+        "5813720112",
+        "81695257",
+        "6735452759",
+        "81695258",
+        "81695259",
+        "81695262"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Durham Street",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Durham",
+        "tiger:name_type": "St",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "9957775#0",
+      "node_refs": [
+        "81739526",
+        "3694542488",
+        "3694542476",
+        "81739533",
+        "81739535",
+        "5269688345",
+        "81739537"
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "maxspeed": "10 mph",
+        "name": "Boaz Street",
+        "oneway": "yes",
+        "sidewalk:left": "separate",
+        "sidewalk:right": "no",
+        "tiger:zip_left": "75275",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "9971085#0",
+      "node_refs": [
+        "81734600",
+        "10656244678",
+        "81876314"
+      ],
+      "tags": {
+        "highway": "residential",
+        "lanes": "2",
+        "lanes:backward": "1",
+        "lanes:forward": "1",
+        "name": "Dyer Street",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Dyer",
+        "tiger:name_type": "St",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75275",
+        "tiger:zip_right": "75275"
+      }
+    },
+    {
+      "way_id": "9971939#0",
+      "node_refs": [
+        "82014471",
+        "3694542501",
+        "3694542479",
+        "5941388315",
+        "81885340"
+      ],
+      "tags": {
+        "access": "yes",
+        "bicycle": "yes",
+        "cycleway": "no",
+        "foot": "yes",
+        "highway": "residential",
+        "lanes": "1",
+        "maxspeed": "10 mph",
+        "name": "Robert S Hyer Lane",
+        "old_name": "Hilltop Lane",
+        "oneway": "yes",
+        "surface": "paved"
+      }
+    },
+    {
+      "way_id": "9974114#0",
+      "node_refs": [
+        "10656272838",
+        "7953378649",
+        "10656272811",
+        "5410023945",
+        "5410023933"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Asbury Avenue",
+        "name_1": "Asbury Street",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Asbury",
+        "tiger:name_base_1": "Asbury",
+        "tiger:name_type": "Ave",
+        "tiger:name_type_1": "St",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "9980889#0",
+      "node_refs": [
+        "81953553",
+        "10656272824",
+        "7008293034"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Haynie Avenue",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Haynie",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "9982869#0",
+      "node_refs": [
+        "81992779",
+        "5941388348",
+        "5941388345",
+        "5941388344",
+        "5292505878",
+        "5292505873",
+        "12806905880",
+        "5292505877",
+        "8776689174",
+        "5292505875",
+        "5292505876",
+        "5292505874"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "2",
+        "name": "SMU Boulevard",
+        "oneway": "yes",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Smu",
+        "tiger:name_type": "Blvd",
+        "tiger:reviewed": "no"
+      }
+    },
+    {
+      "way_id": "9984361#0",
+      "node_refs": [
+        "82006818",
+        "9964681946",
+        "9964682014",
+        "82006824",
+        "9964682013",
+        "9964682064",
+        "1520555077"
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "lanes": "1",
+        "name": "Snider Plaza",
+        "oneway": "yes",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Snider",
+        "tiger:name_type": "Plz",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "9984362#0",
+      "node_refs": [
+        "1520555082",
+        "9964682063",
+        "9964682011",
+        "82006849",
+        "9964682012",
+        "6749409860",
+        "9964681945",
+        "82006843"
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "lanes": "1",
+        "name": "Snider Plaza",
+        "oneway": "yes",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Snider",
+        "tiger:name_type": "Plz",
+        "tiger:reviewed": "no"
+      }
+    },
+    {
+      "way_id": "9984838#0",
+      "node_refs": [
+        "81953551",
+        "6080237228",
+        "6080237236",
+        "81739537"
+      ],
+      "tags": {
+        "hgv": "no",
+        "highway": "unclassified",
+        "name": "University Boulevard",
+        "oneway": "yes",
+        "sidewalk:both": "separate",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "University",
+        "tiger:name_type": "Blvd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "9984840#0",
+      "node_refs": [
+        "81739537",
+        "82012554",
+        "82012553",
+        "82012552",
+        "82012551",
+        "5269688354",
+        "82012550",
+        "82012549",
+        "82012548",
+        "82012547",
+        "5941388317",
+        "82012546",
+        "5269687485",
+        "5941388319",
+        "5941388318",
+        "82012545",
+        "5269687513",
+        "82012544",
+        "81885340"
+      ],
+      "tags": {
+        "hgv": "no",
+        "highway": "unclassified",
+        "lanes": "1",
+        "maxspeed": "10 mph",
+        "name": "University Boulevard",
+        "oneway": "yes"
+      }
+    },
+    {
+      "way_id": "9984841#0",
+      "node_refs": [
+        "1028956453",
+        "6080676247",
+        "1653789363",
+        "6080676246",
+        "1653789401",
+        "1653789370",
+        "6080676248",
+        "1653789374",
+        "1653789387",
+        "1653789391",
+        "4672432269",
+        "82012558"
+      ],
+      "tags": {
+        "hgv": "no",
+        "highway": "unclassified",
+        "lanes": "2",
+        "name": "University Boulevard",
+        "oneway": "yes",
+        "sidewalk:both": "separate",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "University",
+        "tiger:name_type": "Blvd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205",
+        "turn:lanes": "left|through;right"
+      }
+    },
+    {
+      "way_id": "9985883#0",
+      "node_refs": [
+        "82021257",
+        "82021258",
+        "12711022725",
+        "81953578",
+        "11137328565",
+        "11137328541",
+        "7071431887",
+        "11137319852",
+        "82006834",
+        "82006859",
+        "11137319851"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Rankin Avenue",
+        "name_1": "Rankin Street",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Rankin",
+        "tiger:name_base_1": "Rankin",
+        "tiger:name_type": "Ave",
+        "tiger:name_type_1": "St",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "9985971#0",
+      "node_refs": [
+        "82021909",
+        "82021911",
+        "9964682058",
+        "81953576",
+        "9964682057",
+        "7071431889",
+        "1520555080"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Milton Avenue",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Milton",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "9985976#0",
+      "node_refs": [
+        "82021927",
+        "81695258",
+        "82021930"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Milton Avenue",
+        "surface": "asphalt",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Milton",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "9990630#0",
+      "node_refs": [
+        "82056449",
+        "7051078368",
+        "7052219874",
+        "82056452",
+        "6735452763",
+        "82021927",
+        "7588941557"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Dublin Street",
+        "surface": "asphalt",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Dublin",
+        "tiger:name_type": "St",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "9990631#0",
+      "node_refs": [
+        "5941388307",
+        "10949144640",
+        "82012557",
+        "10949144637",
+        "7595925419",
+        "82056460"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Dublin Street",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Dublin",
+        "tiger:name_type": "St",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "9993479#0",
+      "node_refs": [
+        "82075357",
+        "82075358",
+        "10949138490"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "3",
+        "lanes:backward": "2",
+        "lanes:forward": "1",
+        "name": "Airline Road",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Airline Extended",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205",
+        "turn:lanes:backward": "left|"
+      }
+    },
+    {
+      "way_id": "9993693#0",
+      "node_refs": [
+        "82075358",
+        "6080320765",
+        "82076925",
+        "6080683880",
+        "6080683881",
+        "82014471"
+      ],
+      "tags": {
+        "highway": "residential",
+        "lanes": "1",
+        "maxspeed": "10 mph",
+        "name": "McFarlin Boulevard",
+        "oneway": "yes"
+      }
+    },
+    {
+      "way_id": "9998931#0",
+      "node_refs": [
+        "82110918",
+        "10949144659",
+        "6735452754",
+        "7071422984",
+        "82110920",
+        "7405981454",
+        "82021911",
+        "7648697511",
+        "82021258",
+        "7929195482",
+        "81827752"
+      ],
+      "tags": {
+        "highway": "residential",
+        "lanes": "2",
+        "lanes:backward": "1",
+        "lanes:forward": "1",
+        "name": "Athens Avenue",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Athens",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "10001200#0",
+      "node_refs": [
+        "82126115",
+        "309228691",
+        "10949138462",
+        "6093077570",
+        "6093077511",
+        "6093077579",
+        "6093077508",
+        "82126125"
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "maxspeed": "20 mph",
+        "name": "Bishop Boulevard",
+        "oneway": "yes",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Bishop",
+        "tiger:name_type": "Blvd",
+        "tiger:reviewed": "no"
+      }
+    },
+    {
+      "way_id": "10004143#0",
+      "node_refs": [
+        "81953543",
+        "10656272858",
+        "5410023946",
+        "81717051",
+        "81670809"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Binkley Avenue",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Binkley",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "10006365#0",
+      "node_refs": [
+        "13302812925",
+        "81734481",
+        "13302812924",
+        "82056458"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Fondren Drive",
+        "surface": "asphalt",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Fondren",
+        "tiger:name_type": "Dr",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "10007768#0",
+      "node_refs": [
+        "82012558",
+        "82180768",
+        "82180770",
+        "82180771",
+        "82180774",
+        "13099710688",
+        "82180776",
+        "1654103599",
+        "82180778"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "name": "Airline Road",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Airline",
+        "tiger:name_type": "Rd",
+        "tiger:reviewed": "no"
+      }
+    },
+    {
+      "way_id": "10008067#0",
+      "node_refs": [
+        "82006849",
+        "9964682010",
+        "6749409858",
+        "7071422980",
+        "11137319864",
+        "82168375"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Rosedale Avenue",
+        "oneway": "yes",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Rosedale",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_left_1": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "10008068#0",
+      "node_refs": [
+        "9964641493",
+        "11137319886",
+        "82110920",
+        "8520544737",
+        "82180751"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Rosedale Avenue",
+        "oneway": "yes",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Rosedale",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "10008070#0",
+      "node_refs": [
+        "82056452",
+        "81695257",
+        "7953290838",
+        "7953290841",
+        "82180753"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Rosedale Avenue",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Rosedale",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_left_1": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "10010265#0",
+      "node_refs": [
+        "81734497",
+        "82056449",
+        "82056460",
+        "81695256",
+        "7051078371",
+        "10949144665",
+        "82205942",
+        "10949144664"
+      ],
+      "tags": {
+        "highway": "residential",
+        "lanes": "2",
+        "lanes:backward": "1",
+        "lanes:forward": "1",
+        "name": "Daniel Avenue",
+        "oneway": "no",
+        "surface": "asphalt",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Daniel",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "10010267#0",
+      "node_refs": [
+        "82180778",
+        "82205947",
+        "11384046852",
+        "82205950",
+        "5941388328",
+        "5813720109",
+        "82205953",
+        "5941388312",
+        "82180749"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "name": "Daniel Avenue",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Daniel",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75275",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "28672497#0",
+      "node_refs": [
+        "81734492",
+        "82012557",
+        "6080321236",
+        "11093348941",
+        "81695254",
+        "5899711508",
+        "4998490233",
+        "4672432271",
+        "82012558"
+      ],
+      "tags": {
+        "hgv": "no",
+        "highway": "tertiary",
+        "lanes": "2",
+        "lanes:backward": "1",
+        "lanes:forward": "1",
+        "name": "University Boulevard",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "University",
+        "tiger:name_type": "Blvd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "138673032#0",
+      "node_refs": [
+        "81953547",
+        "8179685715",
+        "10656272807",
+        "5410023931",
+        "6730751256"
+      ],
+      "tags": {
+        "highway": "residential",
+        "lanes": "1",
+        "name": "McFarlin Boulevard",
+        "oneway": "yes",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Mc Farlin",
+        "tiger:name_type": "Blvd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "138673040#0",
+      "node_refs": [
+        "8794007056",
+        "5364793444"
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "lanes": "1",
+        "maxspeed": "10 mph",
+        "name": "Dyer Street",
+        "oneway": "yes",
+        "surface": "asphalt",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Dyer",
+        "tiger:name_type": "St",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75275",
+        "tiger:zip_right": "75275"
+      }
+    },
+    {
+      "way_id": "152596770#0",
+      "node_refs": [
+        "81953551",
+        "6080237222",
+        "7008293039",
+        "7008293037",
+        "8179685700",
+        "5269692078",
+        "82012527",
+        "82012528",
+        "82012529"
+      ],
+      "tags": {
+        "hgv": "no",
+        "highway": "tertiary",
+        "name": "University Boulevard",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "University",
+        "tiger:name_type": "Blvd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "152750485#0",
+      "node_refs": [
+        "5440199694",
+        "5440199695",
+        "8776689262",
+        "5941388306",
+        "3729411775",
+        "81876316",
+        "3729411777",
+        "82075357"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "2",
+        "lanes:backward": "1",
+        "lanes:forward": "1",
+        "name": "Airline Road",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Airline",
+        "tiger:name_type": "Rd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "192717401#0",
+      "node_refs": [
+        "82076913",
+        "5410023935",
+        "7071688114",
+        "7071688122",
+        "5410023934",
+        "5410023932"
+      ],
+      "tags": {
+        "highway": "residential",
+        "lanes": "1",
+        "name": "McFarlin Boulevard",
+        "oneway": "yes",
+        "parking:right": "lane",
+        "parking:right:orientation": "parallel",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Mc Farlin",
+        "tiger:name_type": "Blvd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "197635316#0",
+      "node_refs": [
+        "5292505879",
+        "13036007608",
+        "13036007606",
+        "81734598",
+        "5292505868",
+        "5292505869",
+        "8776689173",
+        "5292505870",
+        "12806905881",
+        "5292505871",
+        "5941388346",
+        "9603393099"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "2",
+        "name": "SMU Boulevard",
+        "oneway": "yes",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "SMU",
+        "tiger:name_base_1": "SMU",
+        "tiger:name_type": "Blvd",
+        "tiger:name_type_1": "Blvd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "207053850#0",
+      "node_refs": [
+        "81876314",
+        "10656244677",
+        "13042324678",
+        "13042324684",
+        "1654040438"
+      ],
+      "tags": {
+        "highway": "residential",
+        "lanes": "2",
+        "lanes:backward": "1",
+        "lanes:forward": "1",
+        "name": "Dublin Street",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Dyer",
+        "tiger:name_type": "St",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75275",
+        "tiger:zip_right": "75275"
+      }
+    },
+    {
+      "way_id": "267745747#0",
+      "node_refs": [
+        "1654040437",
+        "1654045240"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Bush Avenue",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "College; Dublin",
+        "tiger:name_type": "Plz; St",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "267745750#0",
+      "node_refs": [
+        "82056436",
+        "5298397670",
+        "5298397666",
+        "81840585",
+        "5811547506"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "2",
+        "lanes:backward": "1",
+        "lanes:forward": "1",
+        "name": "Bush Avenue",
+        "oneway": "no",
+        "surface": "concrete",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "College;Dublin",
+        "tiger:name_type": "Plz;St",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "443634731#0",
+      "node_refs": [
+        "1655340075",
+        "6078130443",
+        "2731627376",
+        "82144486",
+        "10656156044",
+        "82126125"
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "lanes": "2",
+        "lanes:backward": "1",
+        "lanes:forward": "1",
+        "maxspeed": "20 mph",
+        "name": "Binkley Avenue",
+        "oneway": "no"
+      }
+    },
+    {
+      "way_id": "556133470#0",
+      "node_refs": [
+        "5364793448",
+        "5364793445",
+        "6080783175",
+        "6080783102",
+        "82126119"
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "maxspeed": "20 mph",
+        "name": "Bishop Boulevard",
+        "oneway": "yes",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Bishop",
+        "tiger:name_type": "Blvd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205"
+      }
+    },
+    {
+      "way_id": "556133471#0",
+      "node_refs": [
+        "5364793444",
+        "5364793443",
+        "7663645833",
+        "8794007057"
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "lanes": "1",
+        "maxspeed": "10 mph",
+        "name": "Dyer Street",
+        "oneway": "yes",
+        "surface": "asphalt",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Dyer",
+        "tiger:name_type": "St",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75275",
+        "tiger:zip_right": "75275"
+      }
+    },
+    {
+      "way_id": "563000193#0",
+      "node_refs": [
+        "1654045240",
+        "1654040434",
+        "5941388354",
+        "1654040436",
+        "2731627379",
+        "5941388303",
+        "6738214033",
+        "6738214027",
+        "13035970300",
+        "5941388353",
+        "82056437"
+      ],
+      "tags": {
+        "highway": "residential",
+        "lanes": "2",
+        "lanes:backward": "1",
+        "lanes:forward": "1",
+        "name": "Bush Avenue",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "College;Dublin",
+        "tiger:name_type": "Plz;St",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "569338395#0",
+      "node_refs": [
+        "81766957",
+        "10656272846",
+        "8666502288"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Granada Avenue",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Granada",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "569338397#0",
+      "node_refs": [
+        "10949144703",
+        "5410023940",
+        "10656272839",
+        "81910673",
+        "1520642476",
+        "81876327",
+        "6080237295",
+        "81953547",
+        "6080237292",
+        "8179685707",
+        "6080237224",
+        "81953551"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "5",
+        "lanes:backward": "2",
+        "lanes:both_ways": "1",
+        "lanes:forward": "2",
+        "name": "Hillcrest Avenue",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Hillcrest",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75230",
+        "tiger:zip_right": "75230",
+        "turn:lanes:both_ways": "left"
+      }
+    },
+    {
+      "way_id": "589767093#0",
+      "node_refs": [
+        "82006824",
+        "9964682009",
+        "8201623547",
+        "11770580982",
+        "9964641481",
+        "81953574"
+      ],
+      "tags": {
+        "highway": "residential",
+        "lanes": "1",
+        "name": "Rosedale Avenue",
+        "oneway": "yes",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Rosedale",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "601191543#0",
+      "node_refs": [
+        "5440199694",
+        "8776689294",
+        "5410023983",
+        "13036007601",
+        "5941388351",
+        "81992779"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "2",
+        "name": "SMU Boulevard",
+        "oneway": "yes",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Smu",
+        "tiger:name_type": "Blvd",
+        "tiger:reviewed": "no"
+      }
+    },
+    {
+      "way_id": "601191546#0",
+      "node_refs": [
+        "82056437",
+        "5941388352",
+        "9628882731"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "2",
+        "name": "SMU Boulevard",
+        "oneway": "yes",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "SMU",
+        "tiger:name_base_1": "SMU",
+        "tiger:name_type": "Blvd",
+        "tiger:name_type_1": "Blvd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "601191551#0",
+      "node_refs": [
+        "82056437",
+        "81992779"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "2",
+        "lanes:backward": "1",
+        "lanes:forward": "1",
+        "name": "Bush Avenue",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "College;Dublin",
+        "tiger:name_type": "Plz;St",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "601405769#0",
+      "node_refs": [
+        "82126119",
+        "5806339513",
+        "6093077509",
+        "6093077513",
+        "6093077510",
+        "10949138463",
+        "1520642575",
+        "82126115"
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "maxspeed": "20 mph",
+        "name": "Bishop Boulevard",
+        "oneway": "yes",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Bishop",
+        "tiger:name_type": "Blvd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205"
+      }
+    },
+    {
+      "way_id": "601405780#0",
+      "node_refs": [
+        "10656156076",
+        "5364793446",
+        "5364793450",
+        "5364793449",
+        "5364793448"
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "maxspeed": "20 mph",
+        "name": "Bishop Boulevard",
+        "oneway": "yes",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Bishop",
+        "tiger:name_type": "Blvd",
+        "tiger:reviewed": "no"
+      }
+    },
+    {
+      "way_id": "601405781#0",
+      "node_refs": [
+        "82126119",
+        "82126125"
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "lanes": "2",
+        "lanes:backward": "1",
+        "lanes:forward": "1",
+        "maxspeed": "20 mph",
+        "name": "Binkley Avenue",
+        "oneway": "no"
+      }
+    },
+    {
+      "way_id": "601405783#0",
+      "node_refs": [
+        "81992779",
+        "5941388350",
+        "13035970299",
+        "82056436"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "2",
+        "lanes:backward": "1",
+        "lanes:forward": "1",
+        "name": "Bush Avenue",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "College;Dublin",
+        "tiger:name_type": "Plz;St",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "611203551#0",
+      "node_refs": [
+        "81766959",
+        "81670811"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Granada Avenue",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Granada",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "647439709#0",
+      "node_refs": [
+        "6080237303",
+        "6080237304",
+        "81739526"
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "lanes": "1",
+        "maxspeed": "10 mph",
+        "name": "McFarlin Boulevard",
+        "oneway": "yes",
+        "tiger:zip_left": "75275",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "820913880#0",
+      "node_refs": [
+        "7663645836",
+        "8179698225",
+        "1520642565"
+      ],
+      "tags": {
+        "highway": "residential",
+        "lanes": "1",
+        "name": "McFarlin Boulevard",
+        "oneway": "yes",
+        "parking:right": "lane",
+        "parking:right:orientation": "parallel",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Mc Farlin",
+        "tiger:name_type": "Blvd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "980888915#0",
+      "node_refs": [
+        "81953553",
+        "81953555"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "4",
+        "lanes:backward": "2",
+        "lanes:forward": "2",
+        "name": "Hillcrest Avenue",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Hillcrest",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75230",
+        "tiger:zip_right": "75230"
+      }
+    },
+    {
+      "way_id": "980888916#0",
+      "node_refs": [
+        "81953568",
+        "9964681955",
+        "81953570",
+        "81953572",
+        "7071422981",
+        "11770524266",
+        "12967505352",
+        "81953574",
+        "9964641493",
+        "11137319887",
+        "7405981456",
+        "9964682055",
+        "81953576",
+        "9964682056",
+        "7929195483",
+        "11137328533",
+        "12711022722",
+        "81953578",
+        "7929195480"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "4",
+        "lanes:backward": "2",
+        "lanes:forward": "2",
+        "name": "Hillcrest Avenue",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Hillcrest",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75230",
+        "tiger:zip_right": "75230"
+      }
+    },
+    {
+      "way_id": "980888917#0",
+      "node_refs": [
+        "7008293034",
+        "7008293031",
+        "5269692077",
+        "81976789"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Haynie Avenue",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Haynie",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "1043459900#0",
+      "node_refs": [
+        "9603393099",
+        "5292505872",
+        "5941388347",
+        "5941388349",
+        "82056437"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "3",
+        "name": "SMU Boulevard",
+        "oneway": "yes",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "SMU",
+        "tiger:name_base_1": "SMU",
+        "tiger:name_type": "Blvd",
+        "tiger:name_type_1": "Blvd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205",
+        "turn:lanes": "left||"
+      }
+    },
+    {
+      "way_id": "1047124998#0",
+      "node_refs": [
+        "9628882732",
+        "8776689295",
+        "5440199695"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "2",
+        "name": "SMU Boulevard",
+        "oneway": "yes",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "SMU",
+        "tiger:name_base_1": "SMU",
+        "tiger:name_type": "Blvd",
+        "tiger:name_type_1": "Blvd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205",
+        "turn:lanes": "left|right"
+      }
+    },
+    {
+      "way_id": "1047124999#0",
+      "node_refs": [
+        "9628882731",
+        "5410023984"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "3",
+        "name": "SMU Boulevard",
+        "oneway": "yes",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "SMU",
+        "tiger:name_base_1": "SMU",
+        "tiger:name_type": "Blvd",
+        "tiger:name_type_1": "Blvd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205",
+        "turn:lanes": "left||"
+      }
+    },
+    {
+      "way_id": "1047125000#0",
+      "node_refs": [
+        "5410023984",
+        "9628882732"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "2",
+        "name": "SMU Boulevard",
+        "oneway": "yes",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "SMU",
+        "tiger:name_base_1": "SMU",
+        "tiger:name_type": "Blvd",
+        "tiger:name_type_1": "Blvd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "1078510587#0",
+      "node_refs": [
+        "81885340",
+        "6080683819",
+        "5941388316",
+        "6080683806",
+        "5269688321",
+        "1028956453"
+      ],
+      "tags": {
+        "hgv": "no",
+        "highway": "unclassified",
+        "lanes": "1",
+        "name": "University Boulevard",
+        "oneway": "yes",
+        "sidewalk:left": "no",
+        "sidewalk:right": "separate",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "University",
+        "tiger:name_type": "Blvd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "1105507624#0",
+      "node_refs": [
+        "81953547",
+        "6080237291",
+        "6080237303"
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "lanes": "1",
+        "maxspeed": "10 mph",
+        "name": "McFarlin Boulevard",
+        "tiger:zip_left": "75275",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "1144939507#0",
+      "node_refs": [
+        "82126125",
+        "5806339514",
+        "10656156076"
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "maxspeed": "20 mph",
+        "name": "Bishop Boulevard",
+        "oneway": "yes",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Bishop",
+        "tiger:name_type": "Blvd",
+        "tiger:reviewed": "no"
+      }
+    },
+    {
+      "way_id": "1144953553#0",
+      "node_refs": [
+        "82144482",
+        "1655339991",
+        "5941388395",
+        "5440199693",
+        "10949144657",
+        "8776689257",
+        "5440199694"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "2",
+        "lanes:backward": "1",
+        "lanes:forward": "1",
+        "name": "Airline Road",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Airline",
+        "tiger:name_type": "Rd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "1144953554#0",
+      "node_refs": [
+        "81953557",
+        "9964681944",
+        "82006818",
+        "82006843",
+        "6749409859",
+        "82168373",
+        "82188441"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "2",
+        "lanes:backward": "1",
+        "lanes:forward": "1",
+        "name": "Daniel Avenue",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Daniel",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75275",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "1144953555#0",
+      "node_refs": [
+        "81953555",
+        "81953566",
+        "9964681956",
+        "81953568"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "5",
+        "lanes:backward": "2",
+        "lanes:forward": "3",
+        "name": "Hillcrest Avenue",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Hillcrest",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75230",
+        "tiger:zip_right": "75230",
+        "turn:lanes:forward": "left||"
+      }
+    },
+    {
+      "way_id": "1144953563#0",
+      "node_refs": [
+        "10656272852",
+        "10656272785"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "5",
+        "lanes:backward": "2",
+        "lanes:forward": "3",
+        "name": "Hillcrest Avenue",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Hillcrest",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75230",
+        "tiger:zip_right": "75230",
+        "turn:lanes:forward": "left||"
+      }
+    },
+    {
+      "way_id": "1173031823#0",
+      "node_refs": [
+        "82056456",
+        "13042324688",
+        "4672432989"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Dublin Street",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Dublin",
+        "tiger:name_type": "St",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "1173031824#0",
+      "node_refs": [
+        "82056458",
+        "5941388307"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Dublin Street",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Dublin",
+        "tiger:name_type": "St",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "1173031825#0",
+      "node_refs": [
+        "4672432989",
+        "82056458"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Dublin Street",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Dublin",
+        "tiger:name_type": "St",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "1178598472#0",
+      "node_refs": [
+        "81953568",
+        "9964681957",
+        "8201623548",
+        "81953557"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "3",
+        "lanes:backward": "2",
+        "lanes:forward": "1",
+        "name": "Daniel Avenue",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Daniel",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75275",
+        "tiger:zip_right": "75205",
+        "turn:lanes:backward": "left|"
+      }
+    },
+    {
+      "way_id": "1178598476#0",
+      "node_refs": [
+        "6730751256",
+        "8179698226",
+        "7663645836"
+      ],
+      "tags": {
+        "highway": "residential",
+        "lanes": "1",
+        "name": "McFarlin Boulevard",
+        "oneway": "yes",
+        "parking:right": "lane",
+        "parking:right:orientation": "parallel",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Mc Farlin",
+        "tiger:name_type": "Blvd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "1178598478#0",
+      "node_refs": [
+        "5410023932",
+        "10656272806",
+        "7953378647",
+        "6080237293",
+        "81953547"
+      ],
+      "tags": {
+        "highway": "residential",
+        "lanes": "1",
+        "name": "McFarlin Boulevard",
+        "oneway": "yes",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Mc Farlin",
+        "tiger:name_type": "Blvd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "1178598480#0",
+      "node_refs": [
+        "10949138490",
+        "6080321215",
+        "10949144634"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "2",
+        "lanes:backward": "1",
+        "lanes:forward": "1",
+        "name": "Airline Road",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Airline Extended",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "1178598486#0",
+      "node_refs": [
+        "5806339510",
+        "10656272859",
+        "81953543"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "5",
+        "lanes:backward": "2",
+        "lanes:forward": "3",
+        "name": "Hillcrest Avenue",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Hillcrest",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75230",
+        "tiger:zip_right": "75230",
+        "turn:lanes:forward": "left||"
+      }
+    },
+    {
+      "way_id": "1178598487#0",
+      "node_refs": [
+        "81953543",
+        "10656272857",
+        "10656272778",
+        "10656272852"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "5",
+        "lanes:backward": "2",
+        "lanes:both_ways": "1",
+        "lanes:forward": "2",
+        "name": "Hillcrest Avenue",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Hillcrest",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75230",
+        "tiger:zip_right": "75230",
+        "turn:lanes:both_ways": "left"
+      }
+    },
+    {
+      "way_id": "1178598494#0",
+      "node_refs": [
+        "10949144634",
+        "3723793591",
+        "82012558"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "3",
+        "lanes:backward": "1",
+        "lanes:forward": "2",
+        "name": "Airline Road",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Airline Extended",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205",
+        "turn:lanes:forward": "through|right"
+      }
+    },
+    {
+      "way_id": "1178598510#0",
+      "node_refs": [
+        "5440199692",
+        "1655340075"
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "lanes": "3",
+        "lanes:backward": "1",
+        "lanes:both_ways": "1",
+        "lanes:forward": "1",
+        "maxspeed": "20 mph",
+        "name": "Binkley Avenue",
+        "oneway": "no",
+        "turn:lanes:both_ways": "left"
+      }
+    },
+    {
+      "way_id": "1178598511#0",
+      "node_refs": [
+        "82144482",
+        "5941388396",
+        "1654103739",
+        "5440199692"
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "lanes": "3",
+        "lanes:backward": "2",
+        "lanes:forward": "1",
+        "maxspeed": "20 mph",
+        "name": "Binkley Avenue",
+        "oneway": "no",
+        "turn:lanes:backward": "left|through"
+      }
+    },
+    {
+      "way_id": "1178598515#0",
+      "node_refs": [
+        "10949144664",
+        "82205944",
+        "10949144666",
+        "82180778"
+      ],
+      "tags": {
+        "highway": "residential",
+        "lanes": "3",
+        "lanes:backward": "1",
+        "lanes:forward": "2",
+        "name": "Daniel Avenue",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Daniel",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205",
+        "turn:lanes:forward": "left|right"
+      }
+    },
+    {
+      "way_id": "1178598522#0",
+      "node_refs": [
+        "82180749",
+        "5941388311",
+        "10949144701"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "3",
+        "lanes:backward": "2",
+        "lanes:forward": "1",
+        "name": "Daniel Avenue",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Daniel",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75275",
+        "tiger:zip_right": "75205",
+        "turn:lanes:backward": "left|"
+      }
+    },
+    {
+      "way_id": "1178598523#0",
+      "node_refs": [
+        "10949144701",
+        "4998487915",
+        "82110918",
+        "4998487916",
+        "8793798384",
+        "10949144661",
+        "9964681973"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "2",
+        "lanes:backward": "1",
+        "lanes:forward": "1",
+        "name": "Daniel Avenue",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Daniel",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75275",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "1178598524#0",
+      "node_refs": [
+        "10949144702",
+        "81953553"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "5",
+        "lanes:backward": "2",
+        "lanes:both_ways": "1",
+        "lanes:forward": "2",
+        "name": "Hillcrest Avenue",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Hillcrest",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75230",
+        "tiger:zip_right": "75230",
+        "turn:lanes:both_ways": "left"
+      }
+    },
+    {
+      "way_id": "1178598525#0",
+      "node_refs": [
+        "81953551",
+        "6080237223",
+        "10949144702"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "6",
+        "lanes:backward": "2",
+        "lanes:both_ways": "1",
+        "lanes:forward": "3",
+        "name": "Hillcrest Avenue",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Hillcrest",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75230",
+        "tiger:zip_right": "75230",
+        "turn:lanes:backward": "||right",
+        "turn:lanes:both_ways": "left"
+      }
+    },
+    {
+      "way_id": "1178598526#0",
+      "node_refs": [
+        "81766957",
+        "10656272840",
+        "10949144703"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "4",
+        "lanes:backward": "2",
+        "lanes:forward": "2",
+        "name": "Hillcrest Avenue",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Hillcrest",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75230",
+        "tiger:zip_right": "75230"
+      }
+    },
+    {
+      "way_id": "1178598527#0",
+      "node_refs": [
+        "10949144704",
+        "9964681958",
+        "81953568"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "3",
+        "lanes:backward": "1",
+        "lanes:forward": "2",
+        "name": "Daniel Avenue",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Daniel",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75275",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "1178598528#0",
+      "node_refs": [
+        "9964681973",
+        "8793798381",
+        "10949144704"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "3",
+        "lanes:backward": "1",
+        "lanes:both_ways": "1",
+        "lanes:forward": "1",
+        "name": "Daniel Avenue",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Daniel",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75275",
+        "tiger:zip_right": "75205",
+        "turn:lanes:both_ways": "left"
+      }
+    },
+    {
+      "way_id": "1178598531#0",
+      "node_refs": [
+        "82056436",
+        "5941388083",
+        "6078127564",
+        "6078127562",
+        "5941388495",
+        "5941388404",
+        "82144496"
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "lanes": "2",
+        "lanes:backward": "1",
+        "lanes:forward": "1",
+        "maxspeed": "20 mph",
+        "name": "Binkley Avenue",
+        "oneway": "no"
+      }
+    },
+    {
+      "way_id": "1216701942#0",
+      "node_refs": [
+        "82075357",
+        "3723793589",
+        "13045840485",
+        "7180703941",
+        "11093348948"
+      ],
+      "tags": {
+        "highway": "residential",
+        "lanes": "2",
+        "lanes:backward": "1",
+        "lanes:forward": "1",
+        "name": "McFarlin Boulevard",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Mc Farlin",
+        "tiger:name_type": "Blvd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "1327541931#0",
+      "node_refs": [
+        "82006849",
+        "82006824"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Rosedale Avenue",
+        "oneway": "yes"
+      }
+    },
+    {
+      "way_id": "1364941007#0",
+      "node_refs": [
+        "5806339504",
+        "10656272845",
+        "81766957"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "5",
+        "lanes:backward": "2",
+        "lanes:forward": "3",
+        "name": "Hillcrest Avenue",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Hillcrest",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75230",
+        "tiger:zip_right": "75230",
+        "turn:lanes:forward": "left||"
+      }
+    },
+    {
+      "way_id": "1364941008#0",
+      "node_refs": [
+        "10656272785",
+        "5806339504"
+      ],
+      "tags": {
+        "highway": "tertiary",
+        "lanes": "5",
+        "lanes:backward": "2",
+        "lanes:forward": "3",
+        "name": "Hillcrest Avenue",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Hillcrest",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75230",
+        "tiger:zip_right": "75230",
+        "turn:lanes:forward": "left||"
+      }
+    },
+    {
+      "way_id": "1364941009#0",
+      "node_refs": [
+        "8666502288",
+        "8666502289",
+        "81766959"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Granada Avenue",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Granada",
+        "tiger:name_type": "Ave",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "1418556860#0",
+      "node_refs": [
+        "82144496",
+        "82144482"
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "lanes": "2",
+        "lanes:backward": "1",
+        "lanes:forward": "1",
+        "maxspeed": "20 mph",
+        "name": "Binkley Avenue",
+        "oneway": "no"
+      }
+    },
+    {
+      "way_id": "1419155160#0",
+      "node_refs": [
+        "1654040438",
+        "13042324679",
+        "82056456",
+        "81734602"
+      ],
+      "tags": {
+        "highway": "residential",
+        "lanes": "2",
+        "lanes:backward": "1",
+        "lanes:forward": "1",
+        "name": "McFarlin Boulevard",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Mc Farlin",
+        "tiger:name_type": "Blvd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "1420864042#0",
+      "node_refs": [
+        "81910673",
+        "10656272838"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Asbury Avenue",
+        "name_1": "Asbury Street",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Asbury",
+        "tiger:name_base_1": "Asbury",
+        "tiger:name_type": "Ave",
+        "tiger:name_type_1": "St",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    },
+    {
+      "way_id": "1420864045#0",
+      "node_refs": [
+        "8794007057",
+        "81876327"
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "lanes": "1",
+        "maxspeed": "10 mph",
+        "name": "Dyer Street",
+        "oneway": "yes",
+        "surface": "asphalt",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Dyer",
+        "tiger:name_type": "St",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75275",
+        "tiger:zip_right": "75275"
+      }
+    },
+    {
+      "way_id": "1420864047#0",
+      "node_refs": [
+        "1520642476",
+        "8794007056"
+      ],
+      "tags": {
+        "highway": "unclassified",
+        "lanes": "1",
+        "maxspeed": "10 mph",
+        "name": "Dyer Street",
+        "oneway": "yes",
+        "surface": "asphalt",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Dyer",
+        "tiger:name_type": "St",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75275",
+        "tiger:zip_right": "75275"
+      }
+    },
+    {
+      "way_id": "1465286100#0",
+      "node_refs": [
+        "82180749",
+        "5941388314",
+        "6735452758",
+        "5813720107",
+        "82180751",
+        "82180753",
+        "7929195484",
+        "6735452770",
+        "82021909",
+        "82021930",
+        "82021257",
+        "7648697508",
+        "7929195481",
+        "81827745",
+        "81827750",
+        "7135762395",
+        "7675934359"
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Airline Road",
+        "oneway": "no",
+        "tiger:cfcc": "A41",
+        "tiger:county": "Dallas, TX",
+        "tiger:name_base": "Airline",
+        "tiger:name_type": "Rd",
+        "tiger:reviewed": "no",
+        "tiger:zip_left": "75205",
+        "tiger:zip_right": "75205"
+      }
+    }
+  ]
+}
