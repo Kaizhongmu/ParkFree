@@ -1,4 +1,4 @@
-# Phase 0 Through Phase 2 Assumptions
+# Phase 0 Through Phase 3 Assumptions
 
 1. PostgreSQL 16 and PostGIS 3.4 are the development baseline supplied by Docker Compose.
 2. Persisted geographic coordinates use WGS84 (`SRID 4326`). Domain coordinates use GeoJSON
@@ -17,8 +17,8 @@
 8. Integration tests require a dedicated PostgreSQL/PostGIS database supplied through
    `TEST_DATABASE_URL`; unit tests remain database-independent.
 9. Regulation evaluation, availability prediction, candidate generation, and route planning are
-   typed Protocol contracts. Phase 2 implements only candidate generation; regulation,
-   availability, and route planning remain unimplemented.
+   typed Protocol contracts. Phase 2 implements candidate generation and Phase 3 implements
+   regulation evaluation; availability prediction and route planning remain unimplemented.
 10. Phase 2 approximates walking reach as straight-line distance from the nearest configured
     destination access point at 80 meters per minute. A pedestrian-network adapter is deferred.
 11. Candidate road classes are `living_street`, `residential`, `secondary`, `tertiary`, and
@@ -48,3 +48,34 @@
     than official entrance names.
 19. OSM road class supports candidate generation but does not establish physical curb
     feasibility. All roads in the Phase 2 fixture therefore default to `physical_state=UNKNOWN`.
+20. Phase 3 evaluates local regulation schedules in `America/Chicago`. Arrival values may use any
+    aware timezone and are converted to that configured local timezone. Requested durations are
+    elapsed minutes on the UTC timeline so DST changes do not add or remove real parking time.
+21. Requested stays and rule windows are half-open intervals: the start is included and the end
+    is excluded. An overnight rule belongs to its start day, including effective-date checks.
+    Empty weekday lists mean every day.
+22. If requested duration is omitted, the engine can still establish an active prohibition or an
+    active payment requirement at arrival. It cannot establish positive `LEGAL` or `FREE` status
+    for an unknown-length stay.
+23. A `PAID` rule is treated as an affirmative designated-parking rule when it covers the entire
+    requested stay. It therefore may establish `LEGAL` while independently establishing `PAID`,
+    `FREE`, or `UNKNOWN` payment state from its explicit payment field.
+24. Explicit `payment_required=False` evidence is required for `FREE`. The end of a paid window,
+    the absence of a paid rule, or the absence of any rule never implies free parking.
+25. Evidence precedence is applied independently to legality and payment within each atomic time
+    slice of the requested stay. Same-tier direct contradictions return `UNKNOWN`; active
+    prohibitions compose with permissions and exclude a stay. Extraction confidence is reported
+    deterministically and is not a legality probability.
+26. A valid exception to `NO_PARKING` removes that prohibition but does not alone prove general
+    legality. Permit and vehicle exceptions must use supported structured exception types and
+    exact case-insensitive values; unknown exception formats are ignored.
+27. Regulation evaluation is a pure, read-only operation over injected validated rule and
+    evidence snapshots. Phase 3 does not persist contextual evaluations or overwrite the
+    GIS-owned or future availability-owned fields on `street_segments`.
+28. Phase 3 uses source-specific default evidence maximum ages: official code has no automatic
+    age expiry because rule effective dates govern it; official GIS and university evidence use
+    365 days; verified signs and OSM use 180 days; web and imagery evidence use 90 days; community
+    evidence uses 30 days. `observed_at` is preferred over `retrieved_at`, and freshness must hold
+    through the requested departure. Caller overrides merge into these defaults; an explicit
+    positive limit or `None` changes one source for another jurisdiction. Evidence timestamped
+    after the requested arrival is unavailable for that evaluation and fails closed.

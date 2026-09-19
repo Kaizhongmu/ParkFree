@@ -19,6 +19,7 @@ from parking_ai.domain.enums import (
     LegalState,
     ParkingRuleType,
     PhysicalState,
+    RegulationReasonCode,
     SearchSessionStatus,
     SegmentSide,
 )
@@ -122,6 +123,15 @@ class ParkingRule(DomainModel):
             and self.effective_start_date > self.effective_end_date
         ):
             raise ValueError("effective start date cannot be after effective end date")
+        if (self.start_time is None) != (self.end_time is None):
+            raise ValueError("start time and end time must both be set or both be omitted")
+        if self.start_time is not None and self.end_time is not None:
+            if self.start_time.tzinfo is not None or self.end_time.tzinfo is not None:
+                raise ValueError("rule wall times must not include timezone information")
+            if self.start_time == self.end_time:
+                raise ValueError("equal start and end times are ambiguous; omit both for all-day")
+        if len(self.days) != len(set(self.days)):
+            raise ValueError("rule days must not contain duplicates")
         return self
 
 
@@ -153,8 +163,8 @@ class LegalityEvaluation(DomainModel):
     free_state: FreeState
     max_duration_min: int | None = Field(default=None, gt=0)
     confidence: Probability
-    evidence_refs: list[str] = Field(min_length=1)
-    reason_codes: list[str] = Field(min_length=1)
+    evidence_refs: list[str] = Field(default_factory=list)
+    reason_codes: list[RegulationReasonCode] = Field(min_length=1)
     evaluated_at: AwareDateTime
     rule_engine_version: str = Field(min_length=1, max_length=128)
 

@@ -1,9 +1,10 @@
 # Parking Intelligence System
 
-Phase 0 through Phase 2 foundation for a provider-independent parking intelligence backend.
+Phase 0 through Phase 3 foundation for a provider-independent parking intelligence backend.
 The repository includes infrastructure, domain schemas, persistence models, stable service
-contracts, and a deterministic SMU candidate-segment GIS slice. Phase 3 and all later
-regulation, availability, routing, search API, AI, and frontend behavior are not implemented.
+contracts, a deterministic SMU candidate-segment GIS slice, and a deterministic parking
+regulation engine. Phase 4 and all later availability, routing, search API, AI, and frontend
+behavior are not implemented.
 
 ## Requirements
 
@@ -116,7 +117,9 @@ pytest
 
 The PostgreSQL/PostGIS tests are skipped unless `TEST_DATABASE_URL` is set. See
 [`docs/PHASE_2_GIS.md`](docs/PHASE_2_GIS.md) for the Phase 2 fixture, generation, persistence,
-and verification details.
+and verification details. See
+[`docs/PHASE_3_REGULATION_ENGINE.md`](docs/PHASE_3_REGULATION_ENGINE.md) for the Phase 3 rule
+semantics and truth-table coverage.
 
 ## Project structure
 
@@ -127,13 +130,16 @@ src/parking_ai/api/      HTTP routes
 src/parking_ai/database/ SQLAlchemy models and session setup
 src/parking_ai/domain/   provider-independent schemas, enums, and interfaces
 src/parking_ai/gis/      local fixture adapter, deterministic generator, and persistence
+src/parking_ai/regulations/ deterministic rule evaluation
 tests/unit/              schema and HTTP tests
 tests/integration/       PostGIS persistence and migration tests
 ```
 
 ## Implemented phase
 
-The current implementation is complete through Phase 2. It provides the health API,
+The current implementation is complete through Phase 3. It provides the health API,
 configuration and logging foundation, typed domain contracts, PostgreSQL/PostGIS persistence,
-Alembic migrations, and an offline, deterministic SMU candidate-segment generator. Candidate
-segments retain `UNKNOWN` legal/free states; Phase 3 regulation evaluation is not implemented.
+Alembic migrations, an offline deterministic SMU candidate-segment generator, and an
+evidence-ranked deterministic regulation engine. The engine evaluates a requested stay without
+mutating the persisted GIS-owned segment state. Availability prediction begins in Phase 4 and is
+not implemented.

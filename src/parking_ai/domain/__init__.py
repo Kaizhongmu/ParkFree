@@ -7,6 +7,7 @@ from parking_ai.domain.enums import (
     LegalState,
     ParkingRuleType,
     PhysicalState,
+    RegulationReasonCode,
     SearchSessionStatus,
     SegmentSide,
 )
@@ -49,6 +50,7 @@ __all__ = [
     "ParkingRuleType",
     "ParkingSegment",
     "PhysicalState",
+    "RegulationReasonCode",
     "RouteMatrix",
     "SearchConstraints",
     "SearchRoute",
