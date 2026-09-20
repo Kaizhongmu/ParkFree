@@ -258,6 +258,28 @@ class SearchSessionModel(Base):
     __table_args__ = (
         CheckConstraint("max_walk_minutes > 0", name="max_walk_minutes_positive"),
         CheckConstraint("max_candidates > 0", name="max_candidates_positive"),
+        CheckConstraint(
+            "NOT replayable OR ("
+            "request_hash IS NOT NULL AND "
+            "snapshot_schema_version IS NOT NULL AND "
+            "request_snapshot IS NOT NULL AND "
+            "candidate_decisions_snapshot IS NOT NULL AND "
+            "route_matrix_snapshot IS NOT NULL AND "
+            "optimizer_snapshot IS NOT NULL AND "
+            "route_id IS NOT NULL AND "
+            "route_snapshot IS NOT NULL AND "
+            "response_snapshot IS NOT NULL AND "
+            "artifact_hash IS NOT NULL AND "
+            "rule_engine_version IS NOT NULL AND "
+            "availability_model_version IS NOT NULL AND "
+            "route_matrix_version IS NOT NULL AND "
+            "route_matrix_provider_version IS NOT NULL AND "
+            "optimizer_version IS NOT NULL"
+            ")",
+            name="replayable_snapshot_complete",
+        ),
+        UniqueConstraint("idempotency_key_hash", name="uq_search_sessions_idempotency_key_hash"),
+        UniqueConstraint("route_id", name="uq_search_sessions_route_id"),
     )
 
     session_id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid_str)
@@ -283,6 +305,21 @@ class SearchSessionModel(Base):
     availability_model_version: Mapped[str | None] = mapped_column(String(128))
     route_matrix_version: Mapped[str | None] = mapped_column(String(128))
     optimizer_version: Mapped[str | None] = mapped_column(String(128))
+    idempotency_key_hash: Mapped[str | None] = mapped_column(String(64))
+    request_hash: Mapped[str | None] = mapped_column(String(64))
+    replayable: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    snapshot_schema_version: Mapped[str | None] = mapped_column(String(128))
+    request_snapshot: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    candidate_decisions_snapshot: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB)
+    route_matrix_snapshot: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    optimizer_snapshot: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    route_id: Mapped[str | None] = mapped_column(String(64))
+    route_snapshot: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    response_snapshot: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    artifact_hash: Mapped[str | None] = mapped_column(String(64))
+    route_matrix_provider_version: Mapped[str | None] = mapped_column(String(128))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_utc_now
     )
@@ -318,6 +355,10 @@ class SearchRouteStepModel(Base):
         ),
         CheckConstraint("drive_eta_min >= 0", name="drive_eta_nonnegative"),
         CheckConstraint("walk_min >= 0", name="walk_nonnegative"),
+        CheckConstraint(
+            "availability_target_window_seconds IS NULL OR availability_target_window_seconds > 0",
+            name="availability_target_window_positive",
+        ),
     )
 
     route_step_id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid_str)
@@ -341,6 +382,9 @@ class SearchRouteStepModel(Base):
     evidence_refs: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
     rule_engine_version: Mapped[str] = mapped_column(String(128), nullable=False)
     availability_model_version: Mapped[str | None] = mapped_column(String(128))
+    legality_evaluation_id: Mapped[str | None] = mapped_column(String(64))
+    availability_prediction_id: Mapped[str | None] = mapped_column(String(64))
+    availability_target_window_seconds: Mapped[int | None] = mapped_column(Integer)
 
     session: Mapped[SearchSessionModel] = relationship(back_populates="route_steps")
     segment: Mapped[ParkingSegmentModel] = relationship(back_populates="route_steps")

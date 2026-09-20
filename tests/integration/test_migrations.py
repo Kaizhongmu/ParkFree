@@ -38,3 +38,30 @@ def test_migration_creates_foreign_keys(engine: Engine) -> None:
 
     assert rule_targets == {"parking_sources", "street_segments"}
     assert step_targets == {"search_sessions", "street_segments"}
+
+
+def test_phase6_migration_adds_replay_columns_and_constraints(engine: Engine) -> None:
+    inspector = inspect(engine)
+    session_columns = {
+        column["name"]: column for column in inspector.get_columns("search_sessions")
+    }
+    step_columns = {
+        column["name"]: column for column in inspector.get_columns("search_route_steps")
+    }
+
+    assert session_columns["replayable"]["nullable"] is False
+    assert session_columns["request_snapshot"]["nullable"] is True
+    assert session_columns["response_snapshot"]["nullable"] is True
+    assert step_columns["legality_evaluation_id"]["nullable"] is True
+    assert step_columns["availability_prediction_id"]["nullable"] is True
+    assert step_columns["availability_target_window_seconds"]["nullable"] is True
+
+    unique_constraints = {
+        constraint["name"] for constraint in inspector.get_unique_constraints("search_sessions")
+    }
+    check_constraints = {
+        constraint["name"] for constraint in inspector.get_check_constraints("search_sessions")
+    }
+    assert "uq_search_sessions_idempotency_key_hash" in unique_constraints
+    assert "uq_search_sessions_route_id" in unique_constraints
+    assert "ck_search_sessions_replayable_snapshot_complete" in check_constraints

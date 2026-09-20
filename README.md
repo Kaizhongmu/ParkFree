@@ -1,11 +1,12 @@
 # Parking Intelligence System
 
-Phase 0 through Phase 5 foundation for a provider-independent parking intelligence backend.
+Phase 0 through Phase 6 foundation for a provider-independent parking intelligence backend.
 The repository includes infrastructure, domain schemas, persistence models, stable service
 contracts, a deterministic SMU candidate-segment GIS slice, and a deterministic parking
 regulation engine. It also includes a deterministic, versioned availability baseline and an
-offline evaluation harness, provider-independent route matrix, and deterministic contingent-search
-optimizer. Phase 6 and all later search API, AI, and frontend behavior are not implemented.
+offline evaluation harness, provider-independent route matrix, deterministic contingent-search
+optimizer, and a replayable end-to-end parking-search API. Phase 7 and later frontend and AI
+behavior are not implemented.
 
 ## Requirements
 
@@ -55,6 +56,31 @@ curl http://localhost:8000/health
 ```
 
 The response is `{"status":"ok"}`.
+
+Phase 6 search also requires an explicitly configured fallback location. The sample fallback
+values are commented out in `.env.example` because a deployment must verify that the location
+actually guarantees parking. Once configured and after the SMU fixture plus regulation evidence
+have been ingested, submit a search with:
+
+```bash
+curl -X POST http://localhost:8000/v1/parking/search \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: example-search-001' \
+  -d '{
+    "origin": {"lat": 32.842, "lon": -96.784},
+    "destination": {"destination_id": "smu-fondren-library"},
+    "arrival_time": "2026-09-20T15:00:00-05:00",
+    "parking_duration_minutes": 60,
+    "free_only": true,
+    "max_walk_minutes": 8.0,
+    "vehicle_profile": {"type": "passenger", "permit_types": []},
+    "max_candidates": 20
+  }'
+```
+
+The bundled Phase 2 fixture intentionally contains no authoritative parking rules. Without
+separately ingested, valid regulation evidence, candidates remain explicitly `UNKNOWN` and the
+route uses the configured fallback; the API never treats missing evidence as legal or free.
 
 Stop the services without deleting database data:
 
@@ -125,6 +151,8 @@ semantics and truth-table coverage. See
 event definition, heuristic coefficients, uncertainty method, and evaluation metrics. See
 [`docs/PHASE_5_ROUTE_OPTIMIZER.md`](docs/PHASE_5_ROUTE_OPTIMIZER.md) for the directed matrix,
 expected-time objective, fallback semantics, and greedy/beam strategies.
+See [`docs/PHASE_6_SEARCH_API.md`](docs/PHASE_6_SEARCH_API.md) for the end-to-end request,
+filtering, local matrix, persistence, idempotency, and replay contracts.
 
 ## Project structure
 
@@ -138,13 +166,14 @@ src/parking_ai/gis/      local fixture adapter, deterministic generator, and per
 src/parking_ai/regulations/ deterministic rule evaluation
 src/parking_ai/availability/ deterministic baseline prediction and evaluation
 src/parking_ai/routing/  synthetic matrix, expected-cost evaluation, greedy and beam planning
+src/parking_ai/orchestrator/ end-to-end Phase 6 composition and replay persistence
 tests/unit/              schema and HTTP tests
 tests/integration/       PostGIS persistence and migration tests
 ```
 
 ## Implemented phase
 
-The current implementation is complete through Phase 5. It provides the health API,
+The current implementation is complete through Phase 6. It provides the health and search APIs,
 configuration and logging foundation, typed domain contracts, PostgreSQL/PostGIS persistence,
 Alembic migrations, an offline deterministic SMU candidate-segment generator, and an
 evidence-ranked deterministic regulation engine. The engine evaluates a requested stay without
@@ -152,5 +181,8 @@ mutating the persisted GIS-owned segment state. The availability service returns
 fully snapshotted V0 heuristic with an explicit uncertainty band and typed reason codes, without
 deciding legality or mutating persisted state. The route planner consumes pre-evaluated candidates
 and directed matrix costs to produce a versioned contingent route with expected time, success
-probability, and guaranteed-fallback accounting. End-to-end API orchestration begins in Phase 6
-and is not implemented.
+probability, and guaranteed-fallback accounting. Phase 6 composes those services, explicitly
+filters unknown/illegal/payment-incompatible candidates, persists complete replay snapshots, and
+supports hashed idempotency keys. The default offline route matrix is a documented straight-line
+approximation. A real, deployment-verified fallback and authoritative regulation ingestion remain
+operator responsibilities; Phase 7 UI and Phase 8 AI evidence services are not implemented.

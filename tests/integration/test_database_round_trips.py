@@ -147,6 +147,8 @@ def test_phase_one_entities_and_relationships_round_trip(engine: Engine) -> None
         assert loaded_session.destination.access_points[0].access_point_id == "access-test"
         assert loaded_session.route_steps[0].segment.street_name == "Test Street"
         assert loaded_session.outcomes[0].success is True
+        assert loaded_session.replayable is False
+        assert loaded_session.response_snapshot is None
         assert loaded_session.requested_arrival_time.utcoffset() is not None
         assert loaded_rule is not None
         assert loaded_rule.source_evidence.segments[0].segment_id == "segment-test"

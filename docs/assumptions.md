@@ -1,4 +1,4 @@
-# Phase 0 Through Phase 5 Assumptions
+# Phase 0 Through Phase 6 Assumptions
 
 1. PostgreSQL 16 and PostGIS 3.4 are the development baseline supplied by Docker Compose.
 2. Persisted geographic coordinates use WGS84 (`SRID 4326`). Domain coordinates use GeoJSON
@@ -131,3 +131,31 @@
     contextual output and are not persisted, so no Alembic migration is required. Phase 6 must
     persist/log the matrix binding, optimizer configuration, decision snapshots, and route summary
     before claiming full search-session replayability.
+43. Phase 6 requires an explicit positive parking duration. The HTTP boundary accepts either an
+    aware timestamp or the literal `now`; `now` is resolved once per request and the resolved time
+    is persisted. For idempotency comparison, the logical `now` token is hashed rather than the
+    wall-clock resolution so a retry can replay the original result.
+44. A candidate reaches availability prediction and route optimization only when legality is
+    `LEGAL` and payment is known. `free_only=true` additionally requires `FREE`; `free_only=false`
+    permits `FREE` or `PAID`. `UNKNOWN` is returned in candidate decisions and never promoted into
+    a recommendation.
+45. The default Phase 6 matrix provider is an offline deterministic approximation: great-circle
+    distance between representative points divided by a configured fixed speed. It is explicitly
+    versioned and warned in every response; live network routing remains a later adapter concern.
+46. A guaranteed fallback is mandatory for search. Its ID, description, and coordinates are
+    operator configuration, not inferred from the SMU fixture. Search fails closed with HTTP 503
+    when it is absent; the placeholders remain commented out in `.env.example`.
+47. The Phase 2 OSM fixture describes roads, not authoritative parking regulations. A database
+    containing only that fixture produces explicit `UNKNOWN` decisions and a fallback-only route.
+    Tests add synthetic, clearly labeled regulation evidence rather than asserting real SMU curb
+    legality.
+48. Phase 6 stores only a SHA-256 digest of an idempotency key. A matching key and normalized
+    request replays the original response; reuse with a different request is a conflict. Search
+    request, candidate decisions, route matrix binding/costs, optimizer configuration, route, and
+    response are persisted as versioned JSONB snapshots plus normalized route-step rows.
+49. Replay validation rehydrates every stored schema and recomputes the request hash, route-matrix
+    content ID, and complete artifact hash. It also cross-checks database metadata and route-step
+    rows. Corrupt or incompatible snapshots fail closed rather than silently replaying.
+50. Contextual legality and availability values are request-scoped. PostGIS candidate hydration
+    deliberately ignores legacy flattened legal/free/confidence/availability columns, and Phase 6
+    persistence never updates those GIS-owned segment rows.
