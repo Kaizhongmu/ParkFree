@@ -4,6 +4,8 @@ import pytest
 from pydantic import ValidationError
 
 from parking_ai.domain import (
+    AvailabilityEvaluationRecord,
+    AvailabilityObservationSummary,
     AvailabilityPrediction,
     Evidence,
     EvidenceReliabilityTier,
@@ -74,6 +76,45 @@ def test_invalid_uncertainty_interval(probability: float, interval: tuple[float,
             interval=interval,
             model_version="test-v0",
             predicted_at=NOW,
+        )
+
+
+def test_availability_prediction_remains_backward_compatible() -> None:
+    prediction = AvailabilityPrediction(
+        segment_id="segment-1",
+        probability=0.4,
+        model_version="legacy-compatible-v0",
+        predicted_at=NOW,
+    )
+
+    assert prediction.feature_snapshot is None
+    assert prediction.uncertainty_method is None
+    assert prediction.reason_codes == []
+
+
+def test_observation_successes_cannot_exceed_trials() -> None:
+    with pytest.raises(ValidationError, match="cannot exceed"):
+        AvailabilityObservationSummary(
+            segment_id="segment-1",
+            time_bucket="WEEKDAY_PEAK",
+            successes=3,
+            trials=2,
+            as_of=NOW,
+        )
+
+
+def test_evaluation_record_interval_must_contain_probability() -> None:
+    with pytest.raises(ValidationError, match="must fall within"):
+        AvailabilityEvaluationRecord(
+            outcome_id="outcome-1",
+            prediction_id="prediction-1",
+            segment_id="segment-1",
+            model_version="availability-v1",
+            feature_schema_version="features-v1",
+            target_window_seconds=90,
+            probability=0.8,
+            outcome=True,
+            interval=(0.2, 0.7),
         )
 
 

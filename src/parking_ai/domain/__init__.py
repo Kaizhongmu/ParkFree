@@ -1,4 +1,8 @@
 from parking_ai.domain.enums import (
+    AvailabilityCapacitySource,
+    AvailabilityObservationScope,
+    AvailabilityReasonCode,
+    AvailabilityTimeBucket,
     DayOfWeek,
     EvidenceReliabilityTier,
     EvidenceSourceType,
@@ -13,7 +17,12 @@ from parking_ai.domain.enums import (
 )
 from parking_ai.domain.geometry import GeoPoint, LineStringGeometry
 from parking_ai.domain.schemas import (
+    AvailabilityCalibrationBin,
     AvailabilityContext,
+    AvailabilityEvaluationRecord,
+    AvailabilityEvaluationReport,
+    AvailabilityFeatureSnapshot,
+    AvailabilityObservationSummary,
     AvailabilityPrediction,
     Destination,
     DestinationAccessPoint,
@@ -31,8 +40,17 @@ from parking_ai.domain.schemas import (
 )
 
 __all__ = [
+    "AvailabilityCalibrationBin",
+    "AvailabilityCapacitySource",
     "AvailabilityContext",
+    "AvailabilityEvaluationRecord",
+    "AvailabilityEvaluationReport",
+    "AvailabilityFeatureSnapshot",
+    "AvailabilityObservationScope",
+    "AvailabilityObservationSummary",
     "AvailabilityPrediction",
+    "AvailabilityReasonCode",
+    "AvailabilityTimeBucket",
     "DayOfWeek",
     "Destination",
     "DestinationAccessPoint",

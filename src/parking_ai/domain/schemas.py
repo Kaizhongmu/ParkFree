@@ -11,6 +11,10 @@ from pydantic import (
 )
 
 from parking_ai.domain.enums import (
+    AvailabilityCapacitySource,
+    AvailabilityObservationScope,
+    AvailabilityReasonCode,
+    AvailabilityTimeBucket,
     DayOfWeek,
     EvidenceReliabilityTier,
     EvidenceSourceType,
@@ -169,6 +173,47 @@ class LegalityEvaluation(DomainModel):
     rule_engine_version: str = Field(min_length=1, max_length=128)
 
 
+class AvailabilityObservationSummary(DomainModel):
+    segment_id: str = Field(min_length=1, max_length=64)
+    scope: AvailabilityObservationScope = AvailabilityObservationScope.SEGMENT_TIME_BUCKET
+    time_bucket: AvailabilityTimeBucket
+    aggregation_version: str = Field(default="segment-time-bucket-v1", min_length=1, max_length=128)
+    successes: int = Field(ge=0)
+    trials: int = Field(ge=0)
+    target_window_seconds: int = Field(default=90, gt=0)
+    as_of: AwareDateTime
+
+    @model_validator(mode="after")
+    def validate_counts(self) -> "AvailabilityObservationSummary":
+        if self.successes > self.trials:
+            raise ValueError("availability successes cannot exceed trials")
+        return self
+
+
+class AvailabilityFeatureSnapshot(DomainModel):
+    feature_schema_version: str = Field(min_length=1, max_length=128)
+    arrival_time_utc: AwareDateTime
+    local_timezone: str = Field(min_length=1, max_length=128)
+    local_weekday: DayOfWeek
+    local_hour: int = Field(ge=0, le=23)
+    local_utc_offset_minutes: int
+    local_fold: int = Field(ge=0, le=1)
+    time_bucket: AvailabilityTimeBucket
+    search_window_seconds: int = Field(gt=0)
+    segment_length_m: float = Field(gt=0)
+    effective_capacity: float = Field(ge=0)
+    capacity_source: AvailabilityCapacitySource
+    road_type_bucket: str = Field(min_length=1, max_length=64)
+    physical_state: PhysicalState
+    observation_successes: int = Field(ge=0)
+    observation_trials: int = Field(ge=0)
+    observation_as_of: AwareDateTime | None = None
+    observation_scope: AvailabilityObservationScope | None = None
+    observation_aggregation_version: str | None = Field(default=None, min_length=1, max_length=128)
+    prior_90_probability: Probability
+    prior_strength: float = Field(gt=0)
+
+
 class AvailabilityPrediction(DomainModel):
     prediction_id: str = Field(default_factory=_new_id, min_length=1, max_length=64)
     segment_id: str = Field(min_length=1, max_length=64)
@@ -176,6 +221,9 @@ class AvailabilityPrediction(DomainModel):
     interval: tuple[Probability, Probability] | None = None
     model_version: str = Field(min_length=1, max_length=128)
     predicted_at: AwareDateTime
+    feature_snapshot: AvailabilityFeatureSnapshot | None = None
+    uncertainty_method: str | None = Field(default=None, min_length=1, max_length=128)
+    reason_codes: list[AvailabilityReasonCode] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_interval(self) -> "AvailabilityPrediction":
@@ -231,6 +279,53 @@ class AvailabilityContext(DomainModel):
     arrival_time: AwareDateTime
     search_window_seconds: int = Field(default=90, gt=0)
     features: dict[str, bool | int | float | str | None] = Field(default_factory=dict)
+    observation_summary: AvailabilityObservationSummary | None = None
+
+
+class AvailabilityEvaluationRecord(DomainModel):
+    outcome_id: str = Field(min_length=1, max_length=64)
+    prediction_id: str = Field(min_length=1, max_length=64)
+    segment_id: str = Field(min_length=1, max_length=64)
+    model_version: str = Field(min_length=1, max_length=128)
+    feature_schema_version: str = Field(min_length=1, max_length=128)
+    target_window_seconds: int = Field(gt=0)
+    probability: Probability
+    outcome: bool
+    interval: tuple[Probability, Probability] | None = None
+
+    @model_validator(mode="after")
+    def validate_evaluation_interval(self) -> "AvailabilityEvaluationRecord":
+        if self.interval is None:
+            return self
+        lower, upper = self.interval
+        if lower > upper:
+            raise ValueError("evaluation interval lower bound cannot exceed upper bound")
+        if not lower <= self.probability <= upper:
+            raise ValueError("evaluation probability must fall within its interval")
+        return self
+
+
+class AvailabilityCalibrationBin(DomainModel):
+    bin_index: int = Field(ge=0)
+    lower_bound: Probability
+    upper_bound: Probability
+    count: int = Field(ge=0)
+    mean_probability: Probability | None = None
+    observed_rate: Probability | None = None
+
+
+class AvailabilityEvaluationReport(DomainModel):
+    sample_count: int = Field(ge=0)
+    model_version: str | None = Field(default=None, min_length=1, max_length=128)
+    feature_schema_version: str | None = Field(default=None, min_length=1, max_length=128)
+    target_window_seconds: int | None = Field(default=None, gt=0)
+    brier_score: Probability | None = None
+    log_loss: NonNegativeFloat | None = None
+    expected_calibration_error: Probability | None = None
+    mean_probability: Probability | None = None
+    observed_rate: Probability | None = None
+    mean_interval_width: Probability | None = None
+    calibration_bins: list[AvailabilityCalibrationBin] = Field(default_factory=list)
 
 
 class RouteMatrix(DomainModel):

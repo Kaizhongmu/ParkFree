@@ -1,4 +1,4 @@
-# Phase 0 Through Phase 3 Assumptions
+# Phase 0 Through Phase 4 Assumptions
 
 1. PostgreSQL 16 and PostGIS 3.4 are the development baseline supplied by Docker Compose.
 2. Persisted geographic coordinates use WGS84 (`SRID 4326`). Domain coordinates use GeoJSON
@@ -9,16 +9,17 @@
    implementation specification's database naming.
 5. Evidence-to-segment provenance is many-to-many because one source may cover several segments
    and a segment may cite several sources.
-6. Availability predictions are validated domain outputs but are not persisted in Phase 1.
-   There is no predictor or generated prediction lifecycle yet; route steps retain the prediction
-   values and model version actually used by a future search session.
+6. Availability predictions are validated domain outputs but are not persisted through Phase 4.
+   Route steps retain the prediction values and model version actually used by a future search
+   session; the prediction persistence lifecycle remains deferred.
 7. The initial migration enables PostGIS but does not remove the extension on downgrade because
    an extension may be shared by other schemas in the same database.
 8. Integration tests require a dedicated PostgreSQL/PostGIS database supplied through
    `TEST_DATABASE_URL`; unit tests remain database-independent.
 9. Regulation evaluation, availability prediction, candidate generation, and route planning are
-   typed Protocol contracts. Phase 2 implements candidate generation and Phase 3 implements
-   regulation evaluation; availability prediction and route planning remain unimplemented.
+   typed Protocol contracts. Phase 2 implements candidate generation, Phase 3 implements
+   regulation evaluation, and Phase 4 implements availability prediction. Route planning remains
+   unimplemented.
 10. Phase 2 approximates walking reach as straight-line distance from the nearest configured
     destination access point at 80 meters per minute. A pedestrian-network adapter is deferred.
 11. Candidate road classes are `living_street`, `residential`, `secondary`, `tertiary`, and
@@ -79,3 +80,26 @@
     through the requested departure. Caller overrides merge into these defaults; an explicit
     positive limit or `None` changes one source for another jurisdiction. Evidence timestamped
     after the requested arrival is unavailable for that evaluation and fails closed.
+29. Phase 4 availability is conditional on the caller separately establishing that a parking
+    opportunity is legal for the requested stay. The predictor does not inspect or change legal or
+    payment state and cannot turn an unknown/illegal segment into a recommendation.
+30. V0 predicts at least one physical opportunity in a 90-second base window. Per-space priors are
+    0.08 weekday peak, 0.14 weekday shoulder, 0.22 weekday night, 0.16 weekend day, and 0.24 weekend
+    night. Road multipliers are 1.00 local, 0.85 unclassified, 0.70 tertiary, 0.60 secondary, and
+    0.80 other/missing. These are transparent assumptions, not fitted SMU estimates.
+31. Explicit capacity is preferred. Missing capacity uses segment length divided by 28 metres,
+    clamped to one through four effective opportunities. `NOT_PARKABLE` and explicit zero capacity
+    return zero; unknown physical state remains nonzero but explicit and weakens the prior.
+32. Optional historical input is a typed 90-second success/trial aggregate bound to the same
+    segment, local time bucket, and versioned `SEGMENT_TIME_BUCKET` scope. V0 uses Beta shrinkage
+    with prior strength 6 when capacity and parkability are known, 3 when one is known, and 2 when
+    neither is known. Population mismatches, future-dated aggregates, and open-ended feature
+    dictionaries are rejected.
+33. The `beta-normal-95-v1` band is deterministic heuristic uncertainty, not a validated confidence
+    interval. Non-90-second windows use `1 - (1 - p90) ** (seconds / 90)`, which assumes independent
+    constant opportunities over time.
+34. Phase 4 predictions contain a normalized feature snapshot, reason codes, feature/model/
+    uncertainty versions, and a content-derived ID that includes the uncertainty-method version.
+    The wall-clock prediction timestamp is excluded from the ID. Evaluation batches must have one
+    model version, feature schema, and target window and unique outcome IDs. Phase 4 adds no
+    database migration and does not update `street_segments`.
