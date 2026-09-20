@@ -115,6 +115,11 @@ class AvailabilityReasonCode(DomainEnum):
     SEARCH_WINDOW_ADJUSTED = "SEARCH_WINDOW_ADJUSTED"
 
 
+class RouteOptimizationStrategy(DomainEnum):
+    GREEDY = "GREEDY"
+    BEAM = "BEAM"
+
+
 class DayOfWeek(DomainEnum):
     MON = "MON"
     TUE = "TUE"

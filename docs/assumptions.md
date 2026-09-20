@@ -1,4 +1,4 @@
-# Phase 0 Through Phase 4 Assumptions
+# Phase 0 Through Phase 5 Assumptions
 
 1. PostgreSQL 16 and PostGIS 3.4 are the development baseline supplied by Docker Compose.
 2. Persisted geographic coordinates use WGS84 (`SRID 4326`). Domain coordinates use GeoJSON
@@ -18,8 +18,8 @@
    `TEST_DATABASE_URL`; unit tests remain database-independent.
 9. Regulation evaluation, availability prediction, candidate generation, and route planning are
    typed Protocol contracts. Phase 2 implements candidate generation, Phase 3 implements
-   regulation evaluation, and Phase 4 implements availability prediction. Route planning remains
-   unimplemented.
+   regulation evaluation, Phase 4 implements availability prediction, and Phase 5 implements
+   deterministic route planning.
 10. Phase 2 approximates walking reach as straight-line distance from the nearest configured
     destination access point at 80 meters per minute. A pedestrian-network adapter is deferred.
 11. Candidate road classes are `living_street`, `residential`, `secondary`, `tertiary`, and
@@ -103,3 +103,31 @@
     The wall-clock prediction timestamp is excluded from the ID. Evaluation batches must have one
     model version, feature schema, and target window and unique outcome IDs. Phase 4 adds no
     database migration and does not update `street_segments`.
+35. Phase 5 matrices are directed sparse driving-time graphs in finite nonnegative seconds.
+    `origin` and `fallback` are reserved node IDs; stable segment IDs name all candidate nodes.
+    Missing edges mean unreachable and do not default to zero.
+36. The fallback node represents guaranteed parking. STOP from a node costs its directed fallback
+    edge plus a default five-minute terminal service allowance. Every completed route must end at
+    a candidate with a fallback edge; beam search may traverse an intermediate candidate without
+    one when a later reachable candidate restores the fallback path.
+37. Phase 5 assumes independent candidate success events. Each successful or failed segment
+    attempt consumes the full common availability target window, 90 seconds by default, because
+    no conditional time-to-success distribution exists yet.
+38. Walking time uses deterministic straight-line point-to-LineString distance to the nearest
+    destination access point at 80 metres per minute, or the destination centroid when access
+    points are absent. Pedestrian-network routing remains deferred.
+39. The planner validates but does not create legality, payment, or availability state. It requires
+    `LEGAL`, a known payment state compatible with the request-scoped free-only setting, and a
+    non-null availability probability. Zero-probability segments are not routing waypoints.
+40. The stable four-argument planner method is preserved. Session ID, rule/model versions,
+    availability target window, free-only behavior, and per-candidate regulation/availability
+    decision snapshots are injected through an immutable request-scoped context; strategy and
+    cost behavior use immutable versioned configuration.
+41. Greedy and bounded beam strategies minimize the same expected-time objective. Exact Decimal
+    comparisons and stable-ID tie-breaking make results independent of list/map order and Python
+    hash randomization. `drive_eta_min` is an incremental leg, not cumulative time.
+42. Matrices are request-bound and content-addressed separately from their provider version. Route
+    and step IDs are also content-derived. Phase 5 route diagnostics and decision snapshots are
+    contextual output and are not persisted, so no Alembic migration is required. Phase 6 must
+    persist/log the matrix binding, optimizer configuration, decision snapshots, and route summary
+    before claiming full search-session replayability.

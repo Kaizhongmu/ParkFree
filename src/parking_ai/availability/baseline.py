@@ -239,6 +239,7 @@ class DeterministicAvailabilityBaseline:
             interval=rounded_interval,
             model_version=self._model_version,
             predicted_at=predicted_at,
+            target_window_seconds=context.search_window_seconds,
             feature_snapshot=snapshot,
             uncertainty_method=self._uncertainty_method,
             reason_codes=reason_codes,

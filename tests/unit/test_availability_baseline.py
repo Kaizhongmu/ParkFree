@@ -95,6 +95,7 @@ def test_missing_data_prior_is_deterministic_and_fully_snapshotted() -> None:
     assert first.feature_snapshot.effective_capacity == pytest.approx(2.0)
     assert first.feature_snapshot.time_bucket is AvailabilityTimeBucket.WEEKDAY_PEAK
     assert first.feature_snapshot.arrival_time_utc == ARRIVAL.astimezone(UTC)
+    assert first.target_window_seconds == 90
     assert first.reason_codes == [
         AvailabilityReasonCode.HEURISTIC_PRIOR_ONLY,
         AvailabilityReasonCode.MISSING_CAPACITY,

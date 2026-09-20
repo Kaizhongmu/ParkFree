@@ -164,7 +164,9 @@ def _projected_point_segment_distance_m(
     return math.hypot(start_x + ratio * delta_x, start_y + ratio * delta_y)
 
 
-def _point_geometry_distance_m(point: GeoPoint, geometry: Sequence[tuple[float, float]]) -> float:
+def point_geometry_distance_m(point: GeoPoint, geometry: Sequence[tuple[float, float]]) -> float:
+    """Return the deterministic local-projection distance from a point to a LineString."""
+
     return min(
         _projected_point_segment_distance_m(point, start, end) for start, end in pairwise(geometry)
     )
@@ -260,7 +262,7 @@ class DeterministicCandidateSegmentService:
         ranked: list[_RankedSegment] = []
         for segment in self._generate_all():
             distance_m = min(
-                _point_geometry_distance_m(point, segment.geometry.coordinates)
+                point_geometry_distance_m(point, segment.geometry.coordinates)
                 for point in access_points
             )
             if distance_m <= maximum_distance_m:

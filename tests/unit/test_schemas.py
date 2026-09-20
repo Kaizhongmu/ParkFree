@@ -12,10 +12,17 @@ from parking_ai.domain import (
     EvidenceSourceType,
     EvidenceStoragePolicy,
     FreeState,
+    LegalityEvaluation,
     LegalState,
     LineStringGeometry,
     ParkingSegment,
     PhysicalState,
+    RegulationReasonCode,
+    RouteCandidateSnapshot,
+    RouteOptimizationStrategy,
+    RouteOptimizerSnapshot,
+    SearchRoute,
+    SearchRouteStep,
     SegmentSide,
 )
 
@@ -92,6 +99,37 @@ def test_availability_prediction_remains_backward_compatible() -> None:
     assert prediction.reason_codes == []
 
 
+def test_availability_prediction_window_must_match_feature_snapshot() -> None:
+    with pytest.raises(ValidationError, match="target window must match"):
+        AvailabilityPrediction(
+            segment_id="segment-1",
+            probability=0.4,
+            model_version="availability-v1",
+            predicted_at=NOW,
+            target_window_seconds=90,
+            feature_snapshot={
+                "feature_schema_version": "features-v1",
+                "arrival_time_utc": NOW,
+                "local_timezone": "America/Chicago",
+                "local_weekday": "SAT",
+                "local_hour": 7,
+                "local_utc_offset_minutes": -300,
+                "local_fold": 0,
+                "time_bucket": "WEEKEND_DAY",
+                "search_window_seconds": 60,
+                "segment_length_m": 42.5,
+                "effective_capacity": 1.0,
+                "capacity_source": "EXPLICIT",
+                "road_type_bucket": "local",
+                "physical_state": "PARKABLE",
+                "observation_successes": 0,
+                "observation_trials": 0,
+                "prior_90_probability": 0.2,
+                "prior_strength": 6.0,
+            },
+        )
+
+
 def test_observation_successes_cannot_exceed_trials() -> None:
     with pytest.raises(ValidationError, match="cannot exceed"):
         AvailabilityObservationSummary(
@@ -153,3 +191,180 @@ def test_evidence_tier_and_storage_policy_validation() -> None:
     with pytest.raises(ValidationError) as exc_info:
         Evidence.model_validate(invalid_data)
     assert exc_info.value.error_count() == 2
+
+
+def route_step(**updates: object) -> SearchRouteStep:
+    data: dict[str, object] = {
+        "route_step_id": "step-1",
+        "session_id": "session-1",
+        "segment_id": "segment-1",
+        "step_order": 0,
+        "legal_state": LegalState.LEGAL,
+        "free_state": FreeState.FREE,
+        "legal_confidence": 0.9,
+        "availability_probability": 0.5,
+        "drive_eta_min": 1.0,
+        "walk_min": 2.0,
+        "rule_engine_version": "rules-v1",
+    }
+    data.update(updates)
+    return SearchRouteStep.model_validate(data)
+
+
+def test_search_route_remains_backward_compatible_without_phase_five_diagnostics() -> None:
+    route = SearchRoute(
+        route_id="route-1",
+        session_id="session-1",
+        steps=[route_step()],
+        expected_time_to_park_min=5.0,
+        success_probability=0.5,
+        optimizer_version="optimizer-v0",
+    )
+
+    assert route.failure_probability is None
+    assert route.route_matrix_version is None
+    assert route.optimizer_snapshot is None
+
+
+@pytest.mark.parametrize(
+    "steps",
+    [
+        [route_step(step_order=1)],
+        [route_step(session_id="other-session")],
+        [route_step(), route_step(route_step_id="step-2", step_order=1)],
+    ],
+)
+def test_search_route_rejects_inconsistent_steps(steps: list[SearchRouteStep]) -> None:
+    with pytest.raises(ValidationError):
+        SearchRoute(
+            route_id="route-1",
+            session_id="session-1",
+            steps=steps,
+            expected_time_to_park_min=5.0,
+            success_probability=0.5,
+            optimizer_version="optimizer-v1",
+        )
+
+
+def test_search_route_probabilities_must_be_complements() -> None:
+    with pytest.raises(ValidationError, match="sum to one"):
+        SearchRoute(
+            route_id="route-1",
+            session_id="session-1",
+            steps=[],
+            expected_time_to_park_min=5.0,
+            success_probability=0.5,
+            failure_probability=0.4,
+            optimizer_version="optimizer-v1",
+        )
+
+
+def test_route_candidate_snapshot_is_derived_from_versioned_results() -> None:
+    legality = LegalityEvaluation(
+        evaluation_id="legality-1",
+        segment_id="segment-1",
+        legal_state=LegalState.LEGAL,
+        free_state=FreeState.FREE,
+        confidence=0.9,
+        evidence_refs=["evidence-1"],
+        reason_codes=[RegulationReasonCode.TIME_LIMIT_APPLIES],
+        evaluated_at=NOW,
+        rule_engine_version="rules-v1",
+    )
+    availability = AvailabilityPrediction(
+        prediction_id="prediction-1",
+        segment_id="segment-1",
+        probability=0.6,
+        model_version="availability-v1",
+        predicted_at=NOW,
+        target_window_seconds=90,
+    )
+
+    snapshot = RouteCandidateSnapshot.from_results(legality, availability)
+
+    assert snapshot.legality_evaluation_id == "legality-1"
+    assert snapshot.availability_prediction_id == "prediction-1"
+    assert snapshot.availability_target_window_seconds == 90
+
+
+def phase_five_route() -> SearchRoute:
+    step = route_step(
+        evidence_refs=["evidence-1"],
+        availability_model_version="availability-v1",
+    )
+    candidate_snapshot = RouteCandidateSnapshot(
+        segment_id="segment-1",
+        legality_evaluation_id="legality-1",
+        legal_state=LegalState.LEGAL,
+        free_state=FreeState.FREE,
+        legal_confidence=0.9,
+        evidence_refs=["evidence-1"],
+        rule_engine_version="rules-v1",
+        availability_prediction_id="prediction-1",
+        availability_probability=0.5,
+        availability_model_version="availability-v1",
+        availability_target_window_seconds=90,
+    )
+    optimizer_snapshot = RouteOptimizerSnapshot(
+        optimization_strategy=RouteOptimizationStrategy.GREEDY,
+        optimizer_version="optimizer-v1",
+        cost_model_version="cost-v1",
+        rule_engine_version="rules-v1",
+        availability_model_version="availability-v1",
+        availability_target_window_seconds=90,
+        require_free=True,
+        local_search_seconds=90.0,
+        fallback_service_seconds=300.0,
+        walking_speed_m_per_min=80.0,
+        beam_width=8,
+        candidate_limit=20,
+    )
+    return SearchRoute(
+        route_id="route-phase-five",
+        session_id="session-1",
+        steps=[step],
+        expected_time_to_park_min=5.0,
+        success_probability=0.5,
+        failure_probability=0.5,
+        optimizer_version="optimizer-v1",
+        cost_model_version="cost-v1",
+        optimization_strategy=RouteOptimizationStrategy.GREEDY,
+        optimizer_snapshot=optimizer_snapshot,
+        selected_candidate_snapshots=[candidate_snapshot],
+    )
+
+
+def test_phase_five_route_accepts_consistent_provenance_snapshots() -> None:
+    route = phase_five_route()
+
+    assert route.steps[0].segment_id == route.selected_candidate_snapshots[0].segment_id
+
+
+@pytest.mark.parametrize(
+    ("path", "value", "message"),
+    [
+        (("selected_candidate_snapshots", 0, "segment_id"), "other", "order"),
+        (
+            ("selected_candidate_snapshots", 0, "availability_probability"),
+            0.4,
+            "decision values",
+        ),
+        (("optimizer_snapshot", "optimizer_version"), "other", "top-level"),
+        (
+            ("selected_candidate_snapshots", 0, "availability_target_window_seconds"),
+            60,
+            "rule, model, and window",
+        ),
+    ],
+)
+def test_phase_five_route_rejects_contradictory_provenance(
+    path: tuple[str | int, ...], value: object, message: str
+) -> None:
+    data = phase_five_route().model_dump()
+    target: object = data
+    for key in path[:-1]:
+        target = target[key]  # type: ignore[index]
+    target[path[-1]] = value  # type: ignore[index]
+
+    with pytest.raises(ValidationError, match=message):
+        SearchRoute.model_validate(data)

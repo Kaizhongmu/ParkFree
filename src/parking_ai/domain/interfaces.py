@@ -40,6 +40,15 @@ class AvailabilityService(Protocol):
     ) -> AvailabilityPrediction: ...
 
 
+class RouteMatrixProvider(Protocol):
+    def build_route_matrix(
+        self,
+        origin: GeoPoint,
+        candidates: list[ParkingSegment],
+        destination: Destination,
+    ) -> RouteMatrix: ...
+
+
 class SearchRoutePlanner(Protocol):
     def plan_search_route(
         self,
