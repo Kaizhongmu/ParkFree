@@ -1,12 +1,12 @@
 # Parking Intelligence System
 
-Phase 0 through Phase 6 foundation for a provider-independent parking intelligence backend.
+Phase 0 through Phase 7 foundation for a provider-independent parking intelligence system.
 The repository includes infrastructure, domain schemas, persistence models, stable service
 contracts, a deterministic SMU candidate-segment GIS slice, and a deterministic parking
 regulation engine. It also includes a deterministic, versioned availability baseline and an
 offline evaluation harness, provider-independent route matrix, deterministic contingent-search
-optimizer, and a replayable end-to-end parking-search API. Phase 7 and later frontend and AI
-behavior are not implemented.
+optimizer, a replayable end-to-end parking-search API, and a dependency-free local map UI. Phase
+8 AI behavior is not implemented.
 
 ## Requirements
 
@@ -56,6 +56,9 @@ curl http://localhost:8000/health
 ```
 
 The response is `{"status":"ok"}`.
+
+Open the Phase 7 interface at [`http://localhost:8000/`](http://localhost:8000/). The page is
+served by FastAPI and needs no separate frontend build or package manager.
 
 Phase 6 search also requires an explicitly configured fallback location. The sample fallback
 values are commented out in `.env.example` because a deployment must verify that the location
@@ -153,6 +156,8 @@ event definition, heuristic coefficients, uncertainty method, and evaluation met
 expected-time objective, fallback semantics, and greedy/beam strategies.
 See [`docs/PHASE_6_SEARCH_API.md`](docs/PHASE_6_SEARCH_API.md) for the end-to-end request,
 filtering, local matrix, persistence, idempotency, and replay contracts.
+See [`docs/PHASE_7_MAP_UI.md`](docs/PHASE_7_MAP_UI.md) for the local SVG map, accessibility,
+privacy, security, provenance display, and browser-verification policy.
 
 ## Project structure
 
@@ -167,13 +172,14 @@ src/parking_ai/regulations/ deterministic rule evaluation
 src/parking_ai/availability/ deterministic baseline prediction and evaluation
 src/parking_ai/routing/  synthetic matrix, expected-cost evaluation, greedy and beam planning
 src/parking_ai/orchestrator/ end-to-end Phase 6 composition and replay persistence
+src/parking_ai/web/      dependency-free Phase 7 map UI assets
 tests/unit/              schema and HTTP tests
 tests/integration/       PostGIS persistence and migration tests
 ```
 
 ## Implemented phase
 
-The current implementation is complete through Phase 6. It provides the health and search APIs,
+The current implementation is complete through Phase 7. It provides the health and search APIs,
 configuration and logging foundation, typed domain contracts, PostgreSQL/PostGIS persistence,
 Alembic migrations, an offline deterministic SMU candidate-segment generator, and an
 evidence-ranked deterministic regulation engine. The engine evaluates a requested stay without
@@ -183,6 +189,9 @@ deciding legality or mutating persisted state. The route planner consumes pre-ev
 and directed matrix costs to produce a versioned contingent route with expected time, success
 probability, and guaranteed-fallback accounting. Phase 6 composes those services, explicitly
 filters unknown/illegal/payment-incompatible candidates, persists complete replay snapshots, and
-supports hashed idempotency keys. The default offline route matrix is a documented straight-line
-approximation. A real, deployment-verified fallback and authoritative regulation ingestion remain
-operator responsibilities; Phase 7 UI and Phase 8 AI evidence services are not implemented.
+supports hashed idempotency keys. The Phase 7 UI renders those results as a responsive schematic
+SVG map plus an equivalent semantic route/candidate list. It uses no CDN, live map tiles, external
+fonts, or separate build chain and keeps unknown legality prominent. The default offline route
+matrix remains a documented straight-line approximation. A real, deployment-verified fallback and
+authoritative regulation ingestion remain operator responsibilities; Phase 8 AI evidence services
+are not implemented.

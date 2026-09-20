@@ -1,4 +1,4 @@
-# Phase 0 Through Phase 6 Assumptions
+# Phase 0 Through Phase 7 Assumptions
 
 1. PostgreSQL 16 and PostGIS 3.4 are the development baseline supplied by Docker Compose.
 2. Persisted geographic coordinates use WGS84 (`SRID 4326`). Domain coordinates use GeoJSON
@@ -159,3 +159,27 @@
 50. Contextual legality and availability values are request-scoped. PostGIS candidate hydration
     deliberately ignores legacy flattened legal/free/confidence/availability columns, and Phase 6
     persistence never updates those GIS-owned segment rows.
+51. Phase 7 is served from the existing FastAPI process as package-local HTML, CSS, JavaScript,
+    SVG, and favicon assets. It introduces no Node runtime, frontend build pipeline, CDN, external
+    font, live tile service, analytics, cookie, or local-storage dependency.
+52. The map is a deterministic schematic geographic plot of response LineStrings, destination,
+    and route order. It is not a road basemap or turn-by-turn navigation. A possibly remote
+    fallback is excluded from automatic map bounds and remains visible in the semantic fallback
+    card with coordinates when supplied.
+53. UI state comes from `candidate_decisions[].legality` and `.availability`; the intentionally
+    stale/unknown flattened contextual fields on `candidate_decisions[].segment` are never used to
+    color or recommend a curb.
+54. Phase 7 provenance means the safe traceability already present in the Phase 6 replay response:
+    evidence reference IDs, regulation reason codes, evaluation time, confidence, and version
+    metadata. Publisher names, source URLs, reliability tiers, and evidence observation timestamps
+    are not exposed by the stable Phase 6 response and are not invented or fetched by the UI.
+55. Color never carries curb meaning by itself. Text state labels, line style, availability
+    percentages, route numbers, an SVG description, and a complete keyboard-readable candidate
+    and route list provide equivalent semantics without the map.
+56. Browser geolocation is requested only after the user activates “Use my location.” Coordinates
+    remain in page memory and the same-origin request; the UI does not place them in URLs,
+    localStorage, analytics, or console logs. Operator transport security remains a deployment
+    responsibility.
+57. One idempotency key is reused only while retrying an uncompleted identical request. A completed
+    request clears that retry identity so a later `now` search creates a fresh session. Starting a
+    new request clears the previous result and failures remain fail-closed with no stale plan shown.

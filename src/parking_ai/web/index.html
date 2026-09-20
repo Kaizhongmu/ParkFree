@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#14281f">
+    <title>ParkFree · SMU parking intelligence</title>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/assets/app.css">
+    <script src="/assets/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#search-form">Skip to parking search</a>
+
+    <header class="site-header">
+      <div class="brand-lockup" aria-label="ParkFree">
+        <span class="brand-mark" aria-hidden="true">P</span>
+        <div>
+          <p class="eyebrow">SMU parking intelligence</p>
+          <h1>ParkFree</h1>
+        </div>
+      </div>
+      <p class="header-note">A decision aid, not a legal guarantee. Always verify posted signs.</p>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div>
+          <p class="eyebrow">Curb-level search planning</p>
+          <h2 id="hero-title">Find a smarter sequence of streets to check.</h2>
+          <p class="hero-copy">
+            Compare regulation evidence, estimated availability, walking time, and a guaranteed
+            fallback in one transparent search plan.
+          </p>
+        </div>
+        <div class="safety-card">
+          <span class="safety-icon" aria-hidden="true">!</span>
+          <p><strong>Check the curb.</strong> Conditions and signs can change after the data was collected.</p>
+        </div>
+      </section>
+
+      <div class="workspace">
+        <aside class="search-panel" aria-labelledby="search-title">
+          <div class="section-heading">
+            <p class="step-label">Search setup</p>
+            <h2 id="search-title">Plan your parking approach</h2>
+          </div>
+
+          <form id="search-form">
+            <fieldset>
+              <legend>Starting point</legend>
+              <div class="field-grid">
+                <label>
+                  Latitude
+                  <input id="origin-lat" name="origin-lat" type="number" value="32.842" min="-90" max="90" step="any" required>
+                </label>
+                <label>
+                  Longitude
+                  <input id="origin-lon" name="origin-lon" type="number" value="-96.784" min="-180" max="180" step="any" required>
+                </label>
+              </div>
+              <button class="text-button" id="locate-button" type="button">Use my location</button>
+              <p class="field-help" id="location-help">Location stays in this browser and is sent only with this search.</p>
+            </fieldset>
+
+            <fieldset>
+              <legend>Destination and stay</legend>
+              <label>
+                Destination
+                <input id="destination" name="destination" type="text" value="Fondren Library" maxlength="255" autocomplete="off" required>
+              </label>
+              <label class="check-row">
+                <input id="arrival-now" name="arrival-now" type="checkbox" checked>
+                <span>Arrive now</span>
+              </label>
+              <label id="arrival-time-field" hidden>
+                Arrival time
+                <input id="arrival-time" name="arrival-time" type="datetime-local">
+              </label>
+              <div class="field-grid">
+                <label>
+                  Stay (minutes)
+                  <input id="duration" name="duration" type="number" value="60" min="1" max="1440" step="1" required>
+                </label>
+                <label>
+                  Max walk (minutes)
+                  <input id="max-walk" name="max-walk" type="number" value="8" min="0.1" max="30" step="0.1" required>
+                </label>
+              </div>
+            </fieldset>
+
+            <details>
+              <summary>Vehicle and search options</summary>
+              <div class="details-body">
+                <label>
+                  Vehicle type
+                  <input id="vehicle-type" name="vehicle-type" type="text" value="passenger" maxlength="64" required>
+                </label>
+                <label>
+                  Permit types <span class="optional">optional, comma-separated</span>
+                  <input id="permits" name="permits" type="text" placeholder="SMU-A, visitor">
+                </label>
+                <label>
+                  Candidate limit
+                  <input id="max-candidates" name="max-candidates" type="number" value="20" min="1" max="20" step="1" required>
+                </label>
+                <label class="check-row">
+                  <input id="free-only" name="free-only" type="checkbox" checked>
+                  <span>Show only free recommendations</span>
+                </label>
+              </div>
+            </details>
+
+            <button class="primary-button" id="submit-button" type="submit">
+              <span>Build parking plan</span>
+              <span aria-hidden="true">→</span>
+            </button>
+          </form>
+
+          <div id="request-status" class="request-status" role="status" aria-live="polite"></div>
+        </aside>
+
+        <section class="results-panel" aria-labelledby="results-title">
+          <div class="results-header">
+            <div>
+              <p class="step-label">Search result</p>
+              <h2 id="results-title">Local curb overview</h2>
+            </div>
+            <span id="result-time" class="result-time">No plan yet</span>
+          </div>
+
+          <div class="map-shell">
+            <svg id="parking-map" viewBox="0 0 900 580" role="img" aria-labelledby="map-title map-description">
+              <title id="map-title">Parking candidate map</title>
+              <desc id="map-description">Submit a search to show parking curb candidates and route order.</desc>
+              <defs>
+                <pattern id="map-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#d9ddd5" stroke-width="1" opacity="0.55"></path>
+                </pattern>
+              </defs>
+              <rect width="900" height="580" fill="url(#map-grid)"></rect>
+              <g id="map-content"></g>
+              <text id="map-empty" x="450" y="278" text-anchor="middle">Your candidate map will appear here</text>
+              <text id="map-empty-note" x="450" y="307" text-anchor="middle">No map tiles or live location service required</text>
+            </svg>
+            <div class="map-caption">
+              <span>Dashed route connectors are schematic · not turn-by-turn navigation</span>
+              <span>© OpenStreetMap contributors · ODbL fixture geometry</span>
+            </div>
+          </div>
+
+          <ul class="legend" aria-label="Map legend">
+            <li><span class="legend-line legal" aria-hidden="true"></span>Legal + free</li>
+            <li><span class="legend-line paid" aria-hidden="true"></span>Legal + paid</li>
+            <li><span class="legend-line illegal" aria-hidden="true"></span>Illegal</li>
+            <li><span class="legend-line unknown" aria-hidden="true"></span>Unknown · verify signs</li>
+            <li><span class="legend-dot route" aria-hidden="true"></span>Route order</li>
+          </ul>
+
+          <div id="summary-cards" class="summary-cards" hidden></div>
+
+          <section id="route-section" class="result-section" hidden aria-labelledby="route-title">
+            <div class="section-heading inline">
+              <div>
+                <p class="step-label">Contingent route</p>
+                <h3 id="route-title">Try in this order</h3>
+              </div>
+              <p id="route-model" class="model-note"></p>
+            </div>
+            <ol id="route-list" class="route-list"></ol>
+            <div id="fallback-card" class="fallback-card"></div>
+          </section>
+
+          <section id="candidate-section" class="result-section" hidden aria-labelledby="candidate-title">
+            <div class="section-heading inline">
+              <div>
+                <p class="step-label">All evaluated curbs</p>
+                <h3 id="candidate-title">Candidate details</h3>
+              </div>
+              <span id="candidate-count" class="count-pill"></span>
+            </div>
+            <div id="candidate-list" class="candidate-list"></div>
+          </section>
+
+          <section id="warning-section" class="result-section warnings" hidden aria-labelledby="warning-title">
+            <h3 id="warning-title">Important notes</h3>
+            <ul id="warning-list"></ul>
+          </section>
+        </section>
+      </div>
+    </main>
+
+    <footer>
+      <p>Rules determine legality. Statistics estimates availability. You make the final curbside decision.</p>
+    </footer>
+  </body>
+</html>
