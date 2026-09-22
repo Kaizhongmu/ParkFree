@@ -1,4 +1,4 @@
-# Phase 0 Through Phase 7 Assumptions
+# Phase 0 Through Phase 8 Assumptions
 
 1. PostgreSQL 16 and PostGIS 3.4 are the development baseline supplied by Docker Compose.
 2. Persisted geographic coordinates use WGS84 (`SRID 4326`). Domain coordinates use GeoJSON
@@ -183,3 +183,21 @@
 57. One idempotency key is reused only while retrying an uncompleted identical request. A completed
     request clears that retry identity so a later `now` search creates a fresh session. Starting a
     new request clears the previous result and failures remain fail-closed with no stale plan shown.
+58. Phase 8 is a provider-independent extraction and review boundary, not a live provider rollout.
+    No model, community, web, or image service is called by default or during parking search.
+59. Source type, publisher, timestamps, segment binding, storage policy, and resulting reliability
+    tier are trusted caller metadata. An extractor response cannot select or elevate them.
+60. Every valid AI extraction requires explicit human review. Only regulation extraction can be
+    approved for rule publication; community and imagery results remain evidence-only, and vision
+    cannot self-promote an inference to `VERIFIED_SIGN`.
+61. Phase 8 source text/image content exists only in the in-memory adapter request. The repository
+    persists its SHA-256 hash, normalized reviewed evidence, provenance, and policy marker—not the
+    raw content. Raw `PERSIST` policy is forbidden for web, community, and imagery sources.
+62. Evidence, proposal, approval, and approved-rule IDs are content-derived from canonical sorted
+    inputs. Material source metadata, timestamp, claim, extractor, reviewer, or review-time changes
+    create a different identity; input ordering does not.
+63. The existing Phase 1 evidence and rule tables are sufficient for approved normalized output.
+    Phase 8 adds no migration and no durable quarantine/review queue. Such an operational queue
+    requires a later access-control, retention, and reviewer-identity design.
+64. Approved evidence ingestion is append-only and idempotent by stable identity. It never updates
+    GIS-owned segment data or contextual legality, payment, availability, and routing results.
