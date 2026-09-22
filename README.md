@@ -7,6 +7,8 @@ regulation engine. It also includes a deterministic, versioned availability base
 offline evaluation harness, provider-independent route matrix, deterministic contingent-search
 optimizer, a replayable end-to-end parking-search API, a dependency-free local map UI, and bounded
 AI evidence-service contracts with explicit human review before persistence.
+The post-Phase 8 V1A hardening slice adds a durable least-privilege review queue and append-only
+audit trail for trusted backend operators; it intentionally exposes no public review endpoint.
 
 ## Requirements
 
@@ -160,6 +162,8 @@ See [`docs/PHASE_7_MAP_UI.md`](docs/PHASE_7_MAP_UI.md) for the local SVG map, ac
 privacy, security, provenance display, and browser-verification policy.
 See [`docs/PHASE_8_AI_EVIDENCE.md`](docs/PHASE_8_AI_EVIDENCE.md) for the strict extractor schemas,
 source/storage policy, quarantine behavior, human-review boundary, and approved persistence flow.
+See [`docs/V1A_DURABLE_REVIEW_QUEUE.md`](docs/V1A_DURABLE_REVIEW_QUEUE.md) for roles, leases,
+state transitions, transaction ownership, audit integrity, retention, and verification commands.
 
 ## Project structure
 
@@ -183,7 +187,8 @@ tests/integration/       PostGIS persistence and migration tests
 
 ## Implemented phase
 
-The current implementation is complete through Phase 8. It provides the health and search APIs,
+The current implementation is complete through Phase 8 plus the V1A durable-review hardening
+slice. It provides the health and search APIs,
 configuration and logging foundation, typed domain contracts, PostgreSQL/PostGIS persistence,
 Alembic migrations, an offline deterministic SMU candidate-segment generator, and an
 evidence-ranked deterministic regulation engine. The engine evaluates a requested stay without
@@ -201,3 +206,7 @@ authoritative regulation ingestion remain operator responsibilities. Phase 8 val
 provider-independent regulation, community, and vision extraction output, quarantines invalid
 responses, and requires explicit human approval before normalized evidence or rules can be
 persisted. It configures no live/paid model provider and never invokes AI during a parking search.
+V1A durably stores normalized review proposals and an append-only audit chain, enforces
+least-privilege reviewer roles and claim leases, and atomically publishes approved evidence/rules.
+It adds no authenticated review API; deployments must supply and verify trusted operator identity
+before exposing any management surface.

@@ -24,6 +24,7 @@ from parking_ai.agents.evidence_services import (
     VisionPhysicalClaim,
     VisionPhysicalClaimType,
     approve_extraction,
+    validate_extraction_result_integrity,
 )
 
 __all__ = [
@@ -50,4 +51,5 @@ __all__ = [
     "VisionPhysicalClaim",
     "VisionPhysicalClaimType",
     "approve_extraction",
+    "validate_extraction_result_integrity",
 ]

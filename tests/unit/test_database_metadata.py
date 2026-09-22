@@ -1,4 +1,5 @@
 from geoalchemy2 import Geometry
+from sqlalchemy import Enum
 
 from parking_ai.database import models  # noqa: F401
 from parking_ai.database.base import Base
@@ -6,6 +7,8 @@ from parking_ai.database.base import Base
 EXPECTED_TABLES = {
     "destination_access_points",
     "destinations",
+    "evidence_review_events",
+    "evidence_review_queue",
     "parking_outcomes",
     "parking_rules",
     "parking_source_segments",
@@ -42,6 +45,11 @@ def test_required_foreign_keys_match_domain_relationships() -> None:
         "parking_rules": {"parking_sources.evidence_id", "street_segments.segment_id"},
         "search_route_steps": {"search_sessions.session_id", "street_segments.segment_id"},
         "parking_outcomes": {"search_sessions.session_id", "street_segments.segment_id"},
+        "evidence_review_queue": {"parking_sources.evidence_id"},
+        "evidence_review_events": {
+            "evidence_review_queue.review_item_id",
+            "parking_sources.evidence_id",
+        },
     }
 
     for table_name, targets in expected_targets.items():
@@ -50,3 +58,38 @@ def test_required_foreign_keys_match_domain_relationships() -> None:
             for foreign_key in Base.metadata.tables[table_name].foreign_keys
         }
         assert actual_targets == targets
+
+
+def test_review_queue_metadata_uses_check_constrained_strings_and_audit_keys() -> None:
+    queue = Base.metadata.tables["evidence_review_queue"]
+    events = Base.metadata.tables["evidence_review_events"]
+
+    assert not isinstance(queue.c.status.type, Enum)
+    assert not isinstance(queue.c.service_kind.type, Enum)
+    assert queue.c.extraction_result_id.unique is None
+    assert queue.c.result_snapshot.nullable is False
+    assert queue.c.result_snapshot_hash.nullable is False
+    assert queue.c.revision.nullable is False
+    assert queue.c.approval_scope.nullable is True
+    assert queue.c.approved_evidence_id.nullable is True
+    assert events.c.reason_code.nullable is False
+
+    queue_constraints = {constraint.name for constraint in queue.constraints}
+    event_constraints = {constraint.name for constraint in events.constraints}
+    assert "ck_evidence_review_queue_approval_complete" in queue_constraints
+    assert "ck_evidence_review_queue_result_snapshot_safe_object" in queue_constraints
+    assert "uq_evidence_review_queue_extraction_result_id" in queue_constraints
+    assert "ck_evidence_review_events_action_status_transition" in event_constraints
+    assert "ck_evidence_review_events_lease_matches_action" in event_constraints
+    assert "ck_evidence_review_events_audit_hashes_sha256" in event_constraints
+    assert "uq_evidence_review_events_item_revision" in event_constraints
+    assert "uq_evidence_review_events_action_idempotency_key_hash" in event_constraints
+
+    transition_constraint = next(
+        constraint
+        for constraint in events.constraints
+        if constraint.name == "ck_evidence_review_events_action_status_transition"
+    )
+    transition_sql = str(transition_constraint.sqltext)
+    assert "previous_status = 'IN_REVIEW'" in transition_sql
+    assert "reason_code = 'LEASE_EXPIRED_RECLAIM'" in transition_sql

@@ -1,4 +1,4 @@
-# Phase 0 Through Phase 8 Assumptions
+# Phase 0 Through Phase 8 and V1A Assumptions
 
 1. PostgreSQL 16 and PostGIS 3.4 are the development baseline supplied by Docker Compose.
 2. Persisted geographic coordinates use WGS84 (`SRID 4326`). Domain coordinates use GeoJSON
@@ -201,3 +201,16 @@
     requires a later access-control, retention, and reviewer-identity design.
 64. Approved evidence ingestion is append-only and idempotent by stable identity. It never updates
     GIS-owned segment data or contextual legality, payment, availability, and routing results.
+65. V1A is an operational hardening slice after Phase 8, not a new numbered product phase. It adds
+    durable review workflow only and does not add a provider, public review API, or search-path AI.
+66. Reviewer identity and roles are trusted backend inputs established outside this repository.
+    Because no identity provider is configured, accepting reviewer identity from HTTP is forbidden.
+67. Review roles are fixed to submitter, evidence reviewer, and regulation publisher. There is no
+    administrator bypass, and submitter/reviewer separation is mandatory.
+68. Claims use a 15-minute server-clock lease by default. Expired work may be reclaimed with an
+    explicit audited reason; approval and rejection require the current unexpired claim.
+69. Normalized queue snapshots and append-only audit events are retained indefinitely. Raw source
+    content, prompts, provider responses, secrets, exception text, and free-text notes are not
+    stored. A future retention/deletion policy requires explicit operator approval and migration.
+70. The caller owns the SQLAlchemy transaction. Approval publication, queue state, and its audit
+    event are committed or rolled back together; the repository adapter never commits implicitly.

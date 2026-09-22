@@ -78,10 +78,10 @@ quarantined output do not satisfy its type contract. It inserts reviewed evidenc
 associations, and approved rules with conflict-safe stable IDs, never commits the caller's
 transaction, and never updates `street_segments`.
 
-The Phase 1 schema already contains every required normalized evidence/rule field, so Phase 8 adds
-no Alembic migration. Quarantine/review work queues and raw-source archives are intentionally not
-persisted in this phase; a future operator workflow needs a separate access-control and retention
-design.
+The Phase 1 schema already contains every required normalized evidence/rule field, so Phase 8
+itself added no Alembic migration. The later V1A hardening slice adds a durable least-privilege
+review queue without changing the Phase 8 extractor contracts; see
+[`V1A_DURABLE_REVIEW_QUEUE.md`](V1A_DURABLE_REVIEW_QUEUE.md). Raw-source archives remain absent.
 
 ## Verification
 
@@ -97,4 +97,3 @@ The integration test starts from a freshly migrated database, proves that an unr
 does not affect the rule engine, publishes an explicitly reviewed regulation bundle twice, checks
 idempotent evidence/rule/association counts, confirms segment decision fields remain untouched,
 and verifies that the deterministic engine can then read the approved rule.
-

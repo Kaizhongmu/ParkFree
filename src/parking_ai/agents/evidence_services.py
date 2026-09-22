@@ -695,6 +695,7 @@ def approve_extraction(
     result to ``VERIFIED_SIGN`` requires a separately sourced trusted evidence record.
     """
 
+    validate_extraction_result_integrity(result)
     reviewer_id = reviewer_id.strip()
     if not reviewer_id or len(reviewer_id) > 128:
         raise ValueError("reviewer_id must be nonblank and at most 128 characters")
@@ -770,6 +771,120 @@ def approve_extraction(
         evidence=approved_evidence,
         rules=sorted(approved_rules, key=lambda rule: rule.rule_id),
     )
+
+
+def validate_extraction_result_integrity(result: EvidenceExtractionResult) -> None:
+    """Fail closed when a validated extraction snapshot has been altered.
+
+    The raw provider payload is intentionally unavailable at this boundary.  Integrity is
+    therefore checked against the normalized claims, source metadata, content digest, proposed
+    rules, and the content-derived identifiers produced by this module.
+    """
+
+    if result.disposition is ExtractionDisposition.QUARANTINED:
+        return
+    evidence = result.evidence
+    if evidence is None:
+        raise ValueError("validated extraction result is missing evidence")
+    if evidence.extractor_version != result.extractor_version:
+        raise ValueError("extraction and evidence versions do not match")
+    allowed_sources: dict[EvidenceServiceKind, frozenset[EvidenceSourceType]] = {
+        EvidenceServiceKind.REGULATION: _REGULATION_SOURCE_TYPES,
+        EvidenceServiceKind.COMMUNITY: frozenset({EvidenceSourceType.COMMUNITY}),
+        EvidenceServiceKind.VISION: frozenset({EvidenceSourceType.IMAGERY_INFERENCE}),
+    }
+    if evidence.source_type not in allowed_sources[result.service_kind]:
+        raise ValueError("evidence source type is incompatible with its extraction service")
+    if (
+        evidence.raw_storage_policy is EvidenceStoragePolicy.PERSIST
+        and evidence.source_type not in _PERSISTABLE_RAW_SOURCE_TYPES
+    ):
+        raise ValueError("evidence raw-storage policy is incompatible with its source type")
+    if evidence.segment_ids != sorted(set(evidence.segment_ids)) or not evidence.segment_ids:
+        raise ValueError("evidence segment IDs must be nonempty, unique, and sorted")
+    if (
+        evidence.content_hash is None
+        or len(evidence.content_hash) != 64
+        or any(character not in "0123456789abcdef" for character in evidence.content_hash)
+    ):
+        raise ValueError("validated extraction evidence requires a SHA-256 content hash")
+    expected_tier = _RELIABILITY_BY_SOURCE.get(evidence.source_type)
+    if evidence.reliability_tier is not expected_tier:
+        raise ValueError("evidence reliability tier does not match its source type")
+
+    claim_payloads: list[dict[str, object]] = []
+    rule_claims: list[ExtractedRegulationClaim] = []
+    for claim in evidence.normalized_claims:
+        attributes = dict(claim.attributes)
+        if "rule_type" in attributes:
+            if result.service_kind not in {
+                EvidenceServiceKind.REGULATION,
+                EvidenceServiceKind.VISION,
+            }:
+                raise ValueError("extraction service cannot emit regulation claims")
+            if attributes["rule_type"] != claim.claim_type:
+                raise ValueError("normalized rule claim type does not match rule_type")
+            payload = attributes
+            rule_claims.append(ExtractedRegulationClaim.model_validate(payload))
+        else:
+            payload = {"claim_type": claim.claim_type, **attributes}
+            if result.service_kind is EvidenceServiceKind.REGULATION:
+                raise ValueError("regulation extraction contains a non-regulation claim")
+            if result.service_kind is EvidenceServiceKind.COMMUNITY:
+                CommunityClaim.model_validate(payload)
+            else:
+                VisionPhysicalClaim.model_validate(payload)
+        claim_payloads.append(payload)
+    sorted_claim_payloads = sorted(claim_payloads, key=_canonical_json)
+    expected_normalized_claims = [
+        NormalizedClaim(
+            claim_type=_claim_type(result.service_kind, payload),
+            attributes={key: value for key, value in payload.items() if key != "claim_type"},
+        )
+        for payload in sorted_claim_payloads
+    ]
+    if evidence.normalized_claims != expected_normalized_claims:
+        raise ValueError("normalized extraction claims are not in canonical order")
+
+    identity_payload = {
+        "schema_version": "phase8-evidence-identity-v1",
+        "kind": result.service_kind.value,
+        "source_type": evidence.source_type.value,
+        "source_identifier": evidence.source_uri_or_identifier,
+        "publisher": evidence.publisher,
+        "published_at": (
+            evidence.published_at.isoformat() if evidence.published_at is not None else None
+        ),
+        "observed_at": (
+            evidence.observed_at.isoformat() if evidence.observed_at is not None else None
+        ),
+        "retrieved_at": evidence.retrieved_at.isoformat(),
+        "raw_storage_policy": evidence.raw_storage_policy.value,
+        "segment_ids": evidence.segment_ids,
+        "content_hash": evidence.content_hash,
+        "extractor_version": result.extractor_version,
+        "claims": sorted_claim_payloads,
+    }
+    expected_evidence_id = _stable_id("evidence_ai_", identity_payload)
+    if evidence.evidence_id != expected_evidence_id:
+        raise ValueError("evidence_id does not match normalized extraction content")
+
+    expected_rules = _build_rule_proposals(
+        rule_claims,
+        evidence.segment_ids,
+        evidence.evidence_id,
+    )
+    if result.proposed_rules != expected_rules:
+        raise ValueError("proposed rules do not match normalized extraction claims")
+
+    result_payload = {
+        "evidence_id": evidence.evidence_id,
+        "disposition": result.disposition.value,
+        "rule_ids": [rule.rule_id for rule in expected_rules],
+        "review_reasons": sorted(reason.value for reason in result.review_reasons),
+    }
+    if result.result_id != _stable_id("extract_", result_payload):
+        raise ValueError("result_id does not match normalized extraction content")
 
 
 def _claim_type(kind: EvidenceServiceKind, payload: dict[str, object]) -> str:

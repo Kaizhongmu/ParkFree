@@ -43,3 +43,5 @@ decision fields.
 - A future operational review queue requires explicit authorization, access control, retention,
   and reviewer-identity policy before adding durable workflow tables or endpoints.
 
+ADR 0008 records the later V1A decision that satisfies those prerequisites for a trusted backend
+workflow. It deliberately adds no public endpoint because no identity provider is configured.
