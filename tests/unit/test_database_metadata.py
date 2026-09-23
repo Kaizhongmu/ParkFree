@@ -1,5 +1,5 @@
 from geoalchemy2 import Geometry
-from sqlalchemy import Enum
+from sqlalchemy import Enum, ForeignKeyConstraint
 
 from parking_ai.database import models  # noqa: F401
 from parking_ai.database.base import Base
@@ -42,7 +42,12 @@ def test_spatial_columns_use_postgis_types_and_wgs84() -> None:
 def test_required_foreign_keys_match_domain_relationships() -> None:
     expected_targets = {
         "destination_access_points": {"destinations.destination_id"},
-        "parking_rules": {"parking_sources.evidence_id", "street_segments.segment_id"},
+        "parking_rules": {
+            "parking_source_segments.evidence_id",
+            "parking_source_segments.segment_id",
+            "parking_sources.evidence_id",
+            "street_segments.segment_id",
+        },
         "search_route_steps": {"search_sessions.session_id", "street_segments.segment_id"},
         "parking_outcomes": {"search_sessions.session_id", "street_segments.segment_id"},
         "evidence_review_queue": {"parking_sources.evidence_id"},
@@ -58,6 +63,31 @@ def test_required_foreign_keys_match_domain_relationships() -> None:
             for foreign_key in Base.metadata.tables[table_name].foreign_keys
         }
         assert actual_targets == targets
+
+
+def test_parking_rule_provenance_binding_is_composite_and_deferred() -> None:
+    rules = Base.metadata.tables["parking_rules"]
+    constraints = {
+        constraint.name: constraint
+        for constraint in rules.constraints
+        if isinstance(constraint, ForeignKeyConstraint)
+    }
+
+    provenance = constraints["fk_parking_rules_evidence_segment_binding"]
+    assert [element.parent.name for element in provenance.elements] == [
+        "source_evidence_id",
+        "segment_id",
+    ]
+    assert [element.target_fullname for element in provenance.elements] == [
+        "parking_source_segments.evidence_id",
+        "parking_source_segments.segment_id",
+    ]
+    assert provenance.deferrable is True
+    assert provenance.initially == "DEFERRED"
+
+    # Preserve the original independent evidence and segment references as well.
+    assert "fk_parking_rules_source_evidence_id_parking_sources" in constraints
+    assert "fk_parking_rules_segment_id_street_segments" in constraints
 
 
 def test_review_queue_metadata_uses_check_constrained_strings_and_audit_keys() -> None:

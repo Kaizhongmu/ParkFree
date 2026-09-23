@@ -136,6 +136,16 @@ class DeterministicRegulationEngine:
         )
         if missing_evidence:
             raise ValueError(f"rules reference missing evidence: {', '.join(missing_evidence)}")
+        unbound_provenance = sorted(
+            f"{item.rule_id}:{item.source_evidence_id}->{item.segment_id}"
+            for item in rule_copies
+            if item.segment_id not in evidence_by_id[item.source_evidence_id].segment_ids
+        )
+        if unbound_provenance:
+            raise ValueError(
+                "rules reference evidence not bound to their segment: "
+                + ", ".join(unbound_provenance)
+            )
 
         self._rules = rule_copies
         self._evidence_by_id = MappingProxyType(evidence_by_id)

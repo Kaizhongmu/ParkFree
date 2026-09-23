@@ -69,16 +69,28 @@ reported confidence is the minimum extraction confidence among the evidence sele
 axes. It is `0.0` for unresolved conflicts or when neither axis is known; it is evidence metadata,
 not a probability of legal correctness.
 
-The engine copies rules/evidence at construction, validates unique identifiers and complete
-provenance links, and derives a stable evaluation ID from the query and normalized output. It has
-no hidden mutable state and does not write to the database.
+The engine copies rules/evidence at construction, validates unique identifiers, and requires every
+rule's source evidence to be explicitly bound to that rule's segment. A source may cover multiple
+segments, but evidence bound only to another segment fails closed before evaluation. The engine
+then derives a stable evaluation ID from the query and normalized output. It has no hidden mutable
+state and does not write to the database.
 
 ## Persistence and migrations
 
-The existing `parking_rules` and `parking_sources` schema contains all Phase 3 inputs. No database
-column, persisted enum, or relationship changed, so Phase 3 adds no Alembic migration. Evaluation
-is contextual to time, duration, vehicle, permits, and engine version; it is therefore not written
-back to the canonical Phase 2 `street_segments` row.
+Migration `0004_rule_provenance_binding` enforces the same provenance invariant in PostgreSQL:
+`parking_rules(source_evidence_id, segment_id)` must match an existing
+`parking_source_segments(evidence_id, segment_id)` pair. The composite foreign key is deferrable
+and initially deferred so one transaction may stage a valid association and rule in either ORM
+flush order. Existing individual foreign keys remain in place.
+
+Before installing the constraint, the migration counts mismatched legacy rules and aborts with an
+operator-facing error if any exist. It never invents an association or deletes/quarantines a rule:
+an operator must audit each mismatch and either establish a legitimate segment binding or remove
+the invalid rule before retrying. Runtime snapshot construction independently enforces the same
+invariant, so an inconsistent or partially migrated store cannot authorize parking.
+
+Evaluation remains contextual to time, duration, vehicle, permits, and engine version; it is not
+written back to the canonical Phase 2 `street_segments` row.
 
 The PostgreSQL/PostGIS gate still runs the existing migration from a fresh dedicated database and
 the Phase 1/2 persistence tests to verify that the schema and GIS upsert guarantees remain intact.
@@ -97,5 +109,7 @@ TEST_DATABASE_URL=<dedicated-postgis-url> .venv/bin/pytest
 
 The truth-table suite covers weekday/weekend schedules, exact boundaries, overnight rules,
 effective dates, interval crossings, overlaps, duration limits, permits, payment windows, explicit
-free evidence, conflicts, insufficient coverage, authority tiers, provenance, input-order
-independence, timezone validation, and both DST transition directions.
+free evidence, conflicts, insufficient coverage, authority tiers, missing and cross-segment
+provenance, valid multi-segment evidence, input-order independence, timezone validation, and both
+DST transition directions. Postgres tests cover direct constraint rejection and the fresh and
+incremental migration paths.

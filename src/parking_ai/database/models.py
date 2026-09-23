@@ -13,6 +13,7 @@ from sqlalchemy import (
     Enum,
     Float,
     ForeignKey,
+    ForeignKeyConstraint,
     Index,
     Integer,
     String,
@@ -222,6 +223,16 @@ class ParkingRuleModel(Base):
             "effective_start_date IS NULL OR effective_end_date IS NULL "
             "OR effective_start_date <= effective_end_date",
             name="effective_date_order",
+        ),
+        ForeignKeyConstraint(
+            ["source_evidence_id", "segment_id"],
+            [
+                "parking_source_segments.evidence_id",
+                "parking_source_segments.segment_id",
+            ],
+            name="fk_parking_rules_evidence_segment_binding",
+            deferrable=True,
+            initially="DEFERRED",
         ),
     )
 

@@ -30,15 +30,25 @@ def test_migration_creates_phase_one_schema(engine: Engine) -> None:
 def test_migration_creates_foreign_keys(engine: Engine) -> None:
     inspector = inspect(engine)
 
-    rule_targets = {
-        foreign_key["referred_table"] for foreign_key in inspector.get_foreign_keys("parking_rules")
+    rule_foreign_keys = {
+        foreign_key["name"]: foreign_key
+        for foreign_key in inspector.get_foreign_keys("parking_rules")
     }
     step_targets = {
         foreign_key["referred_table"]
         for foreign_key in inspector.get_foreign_keys("search_route_steps")
     }
 
-    assert rule_targets == {"parking_sources", "street_segments"}
+    assert set(rule_foreign_keys) == {
+        "fk_parking_rules_evidence_segment_binding",
+        "fk_parking_rules_segment_id_street_segments",
+        "fk_parking_rules_source_evidence_id_parking_sources",
+    }
+    provenance = rule_foreign_keys["fk_parking_rules_evidence_segment_binding"]
+    assert provenance["constrained_columns"] == ["source_evidence_id", "segment_id"]
+    assert provenance["referred_table"] == "parking_source_segments"
+    assert provenance["referred_columns"] == ["evidence_id", "segment_id"]
+    assert provenance["options"] == {"deferrable": True, "initially": "DEFERRED"}
     assert step_targets == {"search_sessions", "street_segments"}
 
 

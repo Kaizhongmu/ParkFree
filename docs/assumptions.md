@@ -214,3 +214,8 @@
     stored. A future retention/deletion policy requires explicit operator approval and migration.
 70. The caller owns the SQLAlchemy transaction. Approval publication, queue state, and its audit
     event are committed or rolled back together; the repository adapter never commits implicitly.
+71. A parking rule may use evidence only when the exact `(evidence_id, segment_id)` pair exists in
+    `parking_source_segments`. Evidence may legitimately cover multiple segments, but a binding to
+    one segment never authorizes another. Engine construction and the deferred database constraint
+    both fail closed; migration `0004` aborts on legacy mismatches instead of manufacturing
+    provenance or silently deleting rules.

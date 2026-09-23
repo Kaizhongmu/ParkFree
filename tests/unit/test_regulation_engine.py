@@ -41,6 +41,7 @@ def evidence(
     source_type: EvidenceSourceType = EvidenceSourceType.OFFICIAL_CODE,
     retrieved_at: datetime = datetime(2026, 1, 1, tzinfo=CHICAGO),
     observed_at: datetime | None = None,
+    segment_ids: list[str] | None = None,
 ) -> Evidence:
     return Evidence(
         evidence_id=evidence_id,
@@ -50,6 +51,7 @@ def evidence(
         retrieved_at=retrieved_at,
         raw_storage_policy=EvidenceStoragePolicy.REFERENCE_ONLY,
         reliability_tier=tier,
+        segment_ids=["segment-1"] if segment_ids is None else segment_ids,
     )
 
 
@@ -879,6 +881,30 @@ def test_evaluation_is_independent_of_injected_rule_and_evidence_order() -> None
 def test_constructor_rejects_missing_provenance() -> None:
     with pytest.raises(ValueError, match="missing evidence"):
         DeterministicRegulationEngine([rule(ParkingRuleType.NO_PARKING)], [])
+
+
+@pytest.mark.parametrize("segment_ids", [[], ["segment-other"]])
+def test_constructor_rejects_evidence_not_bound_to_rule_segment(
+    segment_ids: list[str],
+) -> None:
+    with pytest.raises(
+        ValueError,
+        match=r"not bound to their segment: rule-1:evidence-a->segment-1",
+    ):
+        DeterministicRegulationEngine(
+            [rule(ParkingRuleType.NO_PARKING)],
+            [evidence(segment_ids=segment_ids)],
+        )
+
+
+def test_constructor_accepts_multi_segment_evidence_bound_to_rule_segment() -> None:
+    result = evaluate(
+        [rule(ParkingRuleType.NO_PARKING)],
+        evidence_items=[evidence(segment_ids=["segment-other", "segment-1"])],
+    )
+
+    assert result.legal_state is LegalState.ILLEGAL
+    assert result.evidence_refs == ["evidence-a"]
 
 
 def test_missing_duration_never_establishes_positive_legality_or_free_state() -> None:

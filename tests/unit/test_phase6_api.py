@@ -211,6 +211,11 @@ def test_default_database_handler_fails_closed_without_guaranteed_fallback() -> 
             503,
             "Parking search is temporarily unavailable",
         ),
+        (
+            ValueError("private corrupted provenance details"),
+            503,
+            "Parking search is temporarily unavailable",
+        ),
     ],
 )
 def test_search_maps_failures_without_leaking_exception_details(

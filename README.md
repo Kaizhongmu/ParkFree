@@ -209,4 +209,6 @@ persisted. It configures no live/paid model provider and never invokes AI during
 V1A durably stores normalized review proposals and an append-only audit chain, enforces
 least-privilege reviewer roles and claim leases, and atomically publishes approved evidence/rules.
 It adds no authenticated review API; deployments must supply and verify trusted operator identity
-before exposing any management surface.
+before exposing any management surface. A post-Phase 8 safety hardening also requires every rule's
+source evidence to be explicitly associated with that same segment, both when constructing the
+deterministic engine and through a deferred composite PostgreSQL foreign key.

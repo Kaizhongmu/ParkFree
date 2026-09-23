@@ -249,6 +249,41 @@ def test_regulation_factory_loads_candidate_snapshot_and_never_writes_back() -> 
     assert len(session.executed) == 1
 
 
+def test_regulation_factory_rejects_evidence_bound_to_a_different_segment() -> None:
+    rule_model = ParkingRuleModel(
+        rule_id="rule-a",
+        segment_id="segment-a",
+        rule_type=ParkingRuleType.PAID,
+        days=[],
+        payment_required=False,
+        permit_required=False,
+        exceptions=[],
+        source_evidence_id="evidence-a",
+        extraction_confidence=0.96,
+    )
+    evidence_model = EvidenceModel(
+        evidence_id="evidence-a",
+        source_type=EvidenceSourceType.OFFICIAL_CODE,
+        source_uri_or_identifier="city-code:test",
+        publisher="Test City",
+        retrieved_at=datetime(2026, 1, 1, tzinfo=UTC),
+        raw_storage_policy=EvidenceStoragePolicy.REFERENCE_ONLY,
+        normalized_claims=[],
+        reliability_tier=EvidenceReliabilityTier.A,
+    )
+    session = _ReadOnlySession(
+        scalar_results=[[rule_model], [evidence_model]],
+        execute_results=[[("evidence-a", "segment-other")]],
+    )
+
+    with pytest.raises(ValueError, match="not bound to their segment"):
+        build_regulation_engine(  # type: ignore[arg-type]
+            session,
+            ["segment-a"],
+            rule_engine_version="phase6-test-rules-v1",
+        )
+
+
 def test_local_matrix_is_complete_bound_content_addressed_and_order_independent() -> None:
     provider = LocalDeterministicRouteMatrixProvider(
         fallback_location=GeoPoint(latitude=32.842, longitude=-96.78),
