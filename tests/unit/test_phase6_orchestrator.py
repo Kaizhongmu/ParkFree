@@ -15,6 +15,7 @@ from parking_ai.domain import (
     ParkingSegment,
     RegulationReasonCode,
     SearchConstraints,
+    SearchRoute,
     UserProfile,
 )
 from parking_ai.orchestrator import (
@@ -23,9 +24,15 @@ from parking_ai.orchestrator import (
     IdempotencyConflictError,
     ParkingSearchCommand,
     ParkingSearchOrchestrator,
+    SearchUnavailableError,
 )
 from parking_ai.orchestrator.schemas import ParkingSearchResponse, SearchExecution
-from parking_ai.routing import FALLBACK_NODE_ID, ORIGIN_NODE_ID, build_synthetic_route_matrix
+from parking_ai.routing import (
+    FALLBACK_NODE_ID,
+    ORIGIN_NODE_ID,
+    DeterministicSearchRoutePlanner,
+    build_synthetic_route_matrix,
+)
 
 NOW = datetime(2026, 9, 20, 15, tzinfo=UTC)
 ORIGIN = GeoPoint(latitude=32.84, longitude=-96.79)
@@ -70,8 +77,14 @@ class CandidateService:
 
 
 class LegalityService:
-    def __init__(self, states: dict[str, tuple[LegalState, FreeState]]) -> None:
+    def __init__(
+        self,
+        states: dict[str, tuple[LegalState, FreeState]],
+        *,
+        evaluated_at: datetime | None = None,
+    ) -> None:
         self.states = states
+        self.evaluated_at = evaluated_at
         self.calls: list[str] = []
 
     def evaluate_legality(
@@ -91,7 +104,7 @@ class LegalityService:
                 if legal is LegalState.UNKNOWN
                 else RegulationReasonCode.NO_PAYMENT_REQUIRED
             ],
-            evaluated_at=datetime,
+            evaluated_at=self.evaluated_at or datetime,
             rule_engine_version="rules-v1",
         )
 
@@ -175,8 +188,11 @@ def command(*, free_only: bool = True, duration: int = 60) -> ParkingSearchComma
 def orchestrator(
     candidates: list[ParkingSegment],
     states: dict[str, tuple[LegalState, FreeState]],
+    *,
+    legality: LegalityService | None = None,
+    planner_factory=None,
 ) -> tuple[ParkingSearchOrchestrator, AvailabilityService, Repository]:
-    legality = LegalityService(states)
+    legality = legality or LegalityService(states)
     availability = AvailabilityService()
     repository = Repository()
     service = ParkingSearchOrchestrator(
@@ -190,6 +206,7 @@ def orchestrator(
         availability_model_version="availability-v1",
         clock=lambda: NOW,
         session_id_factory=lambda: "session-1",
+        planner_factory=planner_factory,
     )
     return service, availability, repository
 
@@ -263,3 +280,104 @@ def test_empty_candidate_set_returns_persisted_fallback_only_route() -> None:
     assert response.route.failure_probability == 1
     assert availability.calls == []
     assert len(repository.executions) == 1
+
+
+@pytest.mark.parametrize(
+    "evaluated_at",
+    [
+        datetime(2026, 8, 21, 15, tzinfo=UTC),
+        datetime(2026, 10, 21, 15, tzinfo=UTC),
+    ],
+)
+def test_search_rejects_legality_evaluation_for_a_different_instant(
+    evaluated_at: datetime,
+) -> None:
+    candidate = segment("free")
+    legality = LegalityService(
+        {"free": (LegalState.LEGAL, FreeState.FREE)},
+        evaluated_at=evaluated_at,
+    )
+    service, availability, repository = orchestrator(
+        [candidate],
+        legality.states,
+        legality=legality,
+    )
+
+    with pytest.raises(SearchUnavailableError, match="different instant"):
+        service.search(command())
+
+    assert availability.calls == []
+    assert repository.executions == []
+
+
+def test_search_rejects_planner_route_for_an_ineligible_candidate() -> None:
+    candidates = [segment("free"), segment("illegal")]
+
+    def malicious_planner_factory(context):
+        delegate = DeterministicSearchRoutePlanner(context)
+
+        class MaliciousPlanner:
+            def plan_search_route(self, eligible, origin, destination, route_matrix):
+                valid = delegate.plan_search_route(eligible, origin, destination, route_matrix)
+                assert valid.steps and valid.selected_candidate_snapshots
+                step = valid.steps[0].model_copy(update={"segment_id": "illegal"})
+                snapshot = valid.selected_candidate_snapshots[0].model_copy(
+                    update={"segment_id": "illegal"}
+                )
+                return SearchRoute.model_validate(
+                    {
+                        **valid.model_dump(),
+                        "steps": [step.model_dump()],
+                        "selected_candidate_snapshots": [snapshot.model_dump()],
+                    }
+                )
+
+        return MaliciousPlanner()
+
+    service, _, repository = orchestrator(
+        candidates,
+        {
+            "free": (LegalState.LEGAL, FreeState.FREE),
+            "illegal": (LegalState.ILLEGAL, FreeState.UNKNOWN),
+        },
+        planner_factory=malicious_planner_factory,
+    )
+
+    with pytest.raises(SearchUnavailableError, match="ineligible candidate"):
+        service.search(command())
+
+    assert repository.executions == []
+
+
+def test_search_rejects_planner_that_rewrites_an_eligible_decision_snapshot() -> None:
+    candidate = segment("free")
+
+    def rewriting_planner_factory(context):
+        delegate = DeterministicSearchRoutePlanner(context)
+
+        class RewritingPlanner:
+            def plan_search_route(self, eligible, origin, destination, route_matrix):
+                valid = delegate.plan_search_route(eligible, origin, destination, route_matrix)
+                assert valid.selected_candidate_snapshots
+                snapshot = valid.selected_candidate_snapshots[0].model_copy(
+                    update={"legality_evaluation_id": "fabricated-evaluation"}
+                )
+                return SearchRoute.model_validate(
+                    {
+                        **valid.model_dump(),
+                        "selected_candidate_snapshots": [snapshot.model_dump()],
+                    }
+                )
+
+        return RewritingPlanner()
+
+    service, _, repository = orchestrator(
+        [candidate],
+        {"free": (LegalState.LEGAL, FreeState.FREE)},
+        planner_factory=rewriting_planner_factory,
+    )
+
+    with pytest.raises(SearchUnavailableError, match="inconsistent decision artifacts"):
+        service.search(command())
+
+    assert repository.executions == []

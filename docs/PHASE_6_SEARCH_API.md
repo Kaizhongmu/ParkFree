@@ -31,7 +31,9 @@ contingent route, guaranteed fallback, warnings, and all rule/model/matrix/optim
    exclude `PAID`.
 5. Predict availability only for the remaining candidates.
 6. Build a request-bound local matrix and run the existing deterministic optimizer.
-7. Persist the complete execution in the same database transaction, then return the response.
+7. Verify that every returned route step carries the exact request-scoped decision snapshot of an
+   eligible candidate and that the legality evaluation instant matches the requested arrival.
+8. Persist the complete execution in the same database transaction, then return the response.
 
 Candidate ordering, IDs, evaluation IDs, prediction IDs, matrix IDs, route IDs, warnings, and
 snapshot hashes are deterministic for equivalent content. Session IDs and observation timestamps
@@ -68,7 +70,9 @@ Only the SHA-256 digest of an idempotency key is stored. The request hash includ
 command; the logical token `now` is retained for hash comparison while the first resolved arrival
 is stored and replayed. The aggregate artifact hash covers candidate decisions, exact route matrix,
 route, and response. Replay revalidates schemas and cross-checks hashes, versions, IDs, metadata,
-matrix binding, and normalized route-step rows.
+matrix binding, eligible decision snapshots, and normalized route-step rows. The normalized row
+check includes the legality evaluation ID, availability prediction ID, and target-window seconds;
+changing any of those traceability fields invalidates replay.
 
 ## Commands
 

@@ -233,4 +233,4 @@ def test_migration_preflight_rejects_legacy_orphan_without_mutation(
                 text("DELETE FROM street_segments WHERE segment_id = :segment_id"),
                 {"segment_id": segment_id},
             )
-        command.upgrade(config, MIGRATION_WITH_BINDING)
+        command.upgrade(config, "head")

@@ -184,6 +184,10 @@ class ParkingSearchOrchestrator:
                 raise SearchUnavailableError(
                     "regulation service returned an unexpected engine version"
                 )
+            if legality.evaluated_at.astimezone(dt.UTC) != command.arrival_time.astimezone(dt.UTC):
+                raise SearchUnavailableError(
+                    "regulation service returned an evaluation for a different instant"
+                )
             exclusion = _exclusion_reason(
                 legality.legal_state, legality.free_state, command.free_only
             )
@@ -264,6 +268,13 @@ class ParkingSearchOrchestrator:
         )
         if route.optimizer_snapshot is None or route.cost_model_version is None:
             raise SearchUnavailableError("route planner omitted required Phase 6 diagnostics")
+        _validate_planner_output(
+            route,
+            expected_session_id=session_id,
+            expected_snapshots=decision_snapshots,
+            route_matrix=route_matrix,
+            context=context,
+        )
 
         unknown_ids = sorted(
             decision.segment.segment_id
@@ -321,6 +332,41 @@ def _validated_candidates(candidates: Sequence[ParkingSegment]) -> dict[str, Par
             raise SearchUnavailableError("candidate service returned duplicate stable IDs")
         by_id[candidate.segment_id] = candidate.model_copy(deep=True)
     return by_id
+
+
+def _validate_planner_output(
+    route: SearchRoute,
+    *,
+    expected_session_id: str,
+    expected_snapshots: Sequence[RouteCandidateSnapshot],
+    route_matrix: RouteMatrix,
+    context: RoutePlanningContext,
+) -> None:
+    binding = route_matrix.binding
+    if binding is None:
+        raise SearchUnavailableError("route matrix provider returned an unbound matrix")
+    expected_by_id = {snapshot.segment_id: snapshot for snapshot in expected_snapshots}
+    selected: list[RouteCandidateSnapshot] = []
+    for step in route.steps:
+        expected = expected_by_id.get(step.segment_id)
+        if expected is None:
+            raise SearchUnavailableError("route planner selected an ineligible candidate")
+        selected.append(expected)
+    optimizer = route.optimizer_snapshot
+    if (
+        route.session_id != expected_session_id
+        or route.selected_candidate_snapshots != selected
+        or route.route_matrix_version != route_matrix.matrix_id
+        or route.route_matrix_provider_version != route_matrix.provider_version
+        or route.fallback_description != binding.fallback.description
+        or optimizer is None
+        or optimizer.rule_engine_version != context.rule_engine_version
+        or optimizer.availability_model_version != context.availability_model_version
+        or optimizer.availability_target_window_seconds
+        != context.availability_target_window_seconds
+        or optimizer.require_free is not context.require_free
+    ):
+        raise SearchUnavailableError("route planner returned inconsistent decision artifacts")
 
 
 def _exclusion_reason(

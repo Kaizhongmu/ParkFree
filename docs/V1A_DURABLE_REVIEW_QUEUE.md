@@ -70,6 +70,13 @@ Database protections add another layer:
 - revisions and transitions are constrained;
 - an insert trigger binds each new event to the current queue projection and prior event hash;
 - the insert trigger enforces the fixed roles and submitter/reviewer separation.
+- migration `0005_review_queue_event_guard` adds the reverse invariant: every inserted or updated
+  queue projection must have its matching audit event by transaction commit. The constraint is
+  deferred so the repository may stage the projection before the event in one transaction.
+
+The migration aborts if an existing projection lacks its current-revision event or disagrees with
+that event's status/time. It never fabricates missing audit history; an operator must investigate
+and repair such a database from a trustworthy source before retrying.
 
 Audit and queue records currently have no automatic expiry and are retained indefinitely. Any
 future deletion, archival, or legal-retention policy is an operator product/security decision and
@@ -101,5 +108,5 @@ TEST_DATABASE_URL='postgresql+psycopg://USER:PASSWORD@HOST:PORT/DEDICATED_TEST_D
 ```
 
 The database suite covers a fresh full migration chain, schema constraints/indexes/foreign keys,
-database immutability and role/chain guards, durable submit/claim/approval replay, idempotency,
-and atomic reviewed evidence/rule publication.
+database immutability and bidirectional projection/event guards, durable submit/claim/approval
+replay, idempotency, and atomic reviewed evidence/rule publication.

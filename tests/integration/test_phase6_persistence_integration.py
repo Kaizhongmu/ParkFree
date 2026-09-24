@@ -243,6 +243,44 @@ def test_database_rejects_incomplete_replayable_session(engine: Engine) -> None:
         transaction.rollback()
 
 
+def test_repository_rejects_route_for_candidate_not_in_eligible_decisions(engine: Engine) -> None:
+    with Session(engine) as session:
+        transaction = session.begin()
+        execution = _execution(session)
+        valid_route = execution.route
+        assert valid_route.steps and valid_route.selected_candidate_snapshots
+        invalid_step = valid_route.steps[0].model_copy(update={"segment_id": "ineligible"})
+        invalid_snapshot = valid_route.selected_candidate_snapshots[0].model_copy(
+            update={"segment_id": "ineligible"}
+        )
+        invalid_route = valid_route.model_validate(
+            {
+                **valid_route.model_dump(),
+                "steps": [invalid_step.model_dump()],
+                "selected_candidate_snapshots": [invalid_snapshot.model_dump()],
+            }
+        )
+        invalid_response = execution.response.model_copy(update={"route": invalid_route})
+        invalid_artifact_hash = search_artifact_hash(
+            execution.candidate_decisions,
+            execution.route_matrix,
+            invalid_route,
+            invalid_response,
+        )
+        invalid_execution = execution.model_copy(
+            update={
+                "route": invalid_route,
+                "response": invalid_response,
+                "artifact_hash": invalid_artifact_hash,
+            },
+            deep=True,
+        )
+
+        with pytest.raises(ReplayIntegrityError, match="ineligible candidate"):
+            SQLAlchemySearchSessionRepository(session).save(invalid_execution)
+        transaction.rollback()
+
+
 def test_replay_rejects_valid_json_when_matrix_content_was_tampered(engine: Engine) -> None:
     with Session(engine) as session:
         transaction = session.begin()
@@ -260,5 +298,83 @@ def test_replay_rejects_valid_json_when_matrix_content_was_tampered(engine: Engi
         session.flush()
 
         with pytest.raises(ReplayIntegrityError, match="content hash"):
+            repository.get_replay("b" * 64, execution.request_hash)
+        transaction.rollback()
+
+
+def test_replay_rejects_response_and_decisions_for_a_different_arrival(engine: Engine) -> None:
+    with Session(engine) as session:
+        transaction = session.begin()
+        execution = _execution(session)
+        repository = SQLAlchemySearchSessionRepository(session)
+        repository.save(execution)
+
+        stored = session.get(SearchSessionModel, execution.session_id)
+        assert stored is not None
+        decisions = deepcopy(stored.candidate_decisions_snapshot)
+        response = deepcopy(stored.response_snapshot)
+        assert decisions is not None and response is not None
+        different_arrival = "2026-09-21T15:00:00Z"
+        decisions[0]["legality"]["evaluated_at"] = different_arrival
+        response["candidate_decisions"][0]["legality"]["evaluated_at"] = different_arrival
+        response["resolved_arrival_time"] = different_arrival
+        stored.candidate_decisions_snapshot = decisions
+        stored.response_snapshot = response
+        session.flush()
+
+        with pytest.raises(ReplayIntegrityError, match="response arrival"):
+            repository.get_replay("b" * 64, execution.request_hash)
+        transaction.rollback()
+
+
+def test_replay_rejects_candidate_evaluation_for_a_different_instant(engine: Engine) -> None:
+    with Session(engine) as session:
+        transaction = session.begin()
+        execution = _execution(session)
+        repository = SQLAlchemySearchSessionRepository(session)
+        repository.save(execution)
+
+        stored = session.get(SearchSessionModel, execution.session_id)
+        assert stored is not None
+        decisions = deepcopy(stored.candidate_decisions_snapshot)
+        response = deepcopy(stored.response_snapshot)
+        assert decisions is not None and response is not None
+        different_arrival = "2026-09-21T15:00:00Z"
+        decisions[0]["legality"]["evaluated_at"] = different_arrival
+        response["candidate_decisions"][0]["legality"]["evaluated_at"] = different_arrival
+        stored.candidate_decisions_snapshot = decisions
+        stored.response_snapshot = response
+        session.flush()
+
+        with pytest.raises(ReplayIntegrityError, match="schema validation"):
+            repository.get_replay("b" * 64, execution.request_hash)
+        transaction.rollback()
+
+
+@pytest.mark.parametrize(
+    ("field_name", "tampered_value"),
+    [
+        ("legality_evaluation_id", "evaluation-tampered"),
+        ("availability_prediction_id", "prediction-tampered"),
+        ("availability_target_window_seconds", 91),
+    ],
+)
+def test_replay_rejects_tampered_normalized_route_step_decision_metadata(
+    engine: Engine,
+    field_name: str,
+    tampered_value: str | int,
+) -> None:
+    with Session(engine) as session:
+        transaction = session.begin()
+        execution = _execution(session)
+        repository = SQLAlchemySearchSessionRepository(session)
+        repository.save(execution)
+
+        step = session.scalar(select(SearchRouteStepModel))
+        assert step is not None
+        setattr(step, field_name, tampered_value)
+        session.flush()
+
+        with pytest.raises(ReplayIntegrityError, match="decision metadata"):
             repository.get_replay("b" * 64, execution.request_hash)
         transaction.rollback()

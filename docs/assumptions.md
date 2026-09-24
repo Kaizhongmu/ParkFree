@@ -219,3 +219,14 @@
     one segment never authorizes another. Engine construction and the deferred database constraint
     both fail closed; migration `0004` aborts on legacy mismatches instead of manufacturing
     provenance or silently deleting rules.
+72. Every durable review-queue projection revision must have one matching audit event. Migration
+    `0005` enforces this reverse edge with a deferred constraint trigger; legacy inconsistencies
+    abort migration and are never repaired by synthesizing audit history.
+73. A regulation evaluation consumed by search must represent the same instant as the requested
+    arrival. A planner may select only candidates that passed the request's legality/payment filter,
+    and it must return their exact request-scoped legality and availability snapshots.
+74. Replayable normalized route-step rows are integrity mirrors, including legality evaluation ID,
+    availability prediction ID, and availability target window. A mismatch in any mirror fails
+    replay even when the JSON snapshots remain internally valid.
+75. The Phase 7 HTML entrypoint is served only by `/` with its security headers. `/assets` is an
+    allowlist of the package CSS, JavaScript, and favicon and must not expose `index.html`.

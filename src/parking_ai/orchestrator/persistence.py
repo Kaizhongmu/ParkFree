@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC
 from typing import cast
 
 from geoalchemy2 import WKTElement
@@ -11,7 +12,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from parking_ai.database.models import SearchRouteStepModel, SearchSessionModel
-from parking_ai.domain import RouteMatrix, RouteOptimizerSnapshot, SearchRoute, SearchRouteStep
+from parking_ai.domain import (
+    RouteCandidateSnapshot,
+    RouteMatrix,
+    RouteOptimizerSnapshot,
+    SearchRoute,
+    SearchRouteStep,
+)
 from parking_ai.orchestrator.schemas import (
     SEARCH_SNAPSHOT_SCHEMA_VERSION,
     ParkingCandidateDecision,
@@ -156,6 +163,8 @@ class SQLAlchemySearchSessionRepository:
         ]
         if matrix.binding.candidate_segment_ids != eligible_decision_ids:
             raise ReplayIntegrityError("matrix candidates do not match eligible decision snapshots")
+        _validate_search_times(execution.command, execution.candidate_decisions, execution.response)
+        _validate_route_decision_binding(execution.candidate_decisions, route)
 
     @staticmethod
     def _accept_exact_repeat(
@@ -301,6 +310,8 @@ def _validated_replay(row: SearchSessionModel) -> ParkingSearchResponse:
     eligible_ids = [decision.segment.segment_id for decision in decisions if decision.eligible]
     if matrix.binding.candidate_segment_ids != eligible_ids:
         raise ReplayIntegrityError("stored route matrix candidates do not match decisions")
+    _validate_search_times(command, decisions, response)
+    _validate_route_decision_binding(decisions, route)
     if row.request_hash is None or search_request_hash(command) != row.request_hash:
         raise ReplayIntegrityError("stored request hash is invalid")
     if (
@@ -329,15 +340,51 @@ def _validated_replay(row: SearchSessionModel) -> ParkingSearchResponse:
         raise ReplayIntegrityError("stored route and matrix IDs are inconsistent")
     if route.route_matrix_provider_version != matrix.provider_version:
         raise ReplayIntegrityError("stored route and matrix providers are inconsistent")
-    if _stored_route_step_snapshot(row) != route.steps:
-        raise ReplayIntegrityError("stored route-step rows do not match the route snapshot")
+    _validate_stored_route_steps(row, route)
     return response
 
 
-def _stored_route_step_snapshot(row: SearchSessionModel) -> list[SearchRouteStep]:
-    """Hydrate route-step rows through the domain schema for integrity comparison."""
+def _validate_route_decision_binding(
+    decisions: list[ParkingCandidateDecision],
+    route: SearchRoute,
+) -> None:
+    expected_by_id: dict[str, RouteCandidateSnapshot] = {}
+    for decision in decisions:
+        if not decision.eligible:
+            continue
+        if decision.availability is None:
+            raise ReplayIntegrityError("eligible decision is missing availability output")
+        expected_by_id[decision.segment.segment_id] = RouteCandidateSnapshot.from_results(
+            decision.legality,
+            decision.availability,
+        )
+    expected_selected: list[RouteCandidateSnapshot] = []
+    for step in route.steps:
+        expected = expected_by_id.get(step.segment_id)
+        if expected is None:
+            raise ReplayIntegrityError("route contains an ineligible candidate")
+        expected_selected.append(expected)
+    if route.selected_candidate_snapshots != expected_selected:
+        raise ReplayIntegrityError("route candidate snapshots do not match eligible decisions")
 
-    return [
+
+def _validate_search_times(
+    command: ParkingSearchCommand,
+    decisions: list[ParkingCandidateDecision],
+    response: ParkingSearchResponse,
+) -> None:
+    arrival_utc = command.arrival_time.astimezone(UTC)
+    if response.resolved_arrival_time.astimezone(UTC) != arrival_utc:
+        raise ReplayIntegrityError("response arrival does not match the request command")
+    if any(decision.legality.evaluated_at.astimezone(UTC) != arrival_utc for decision in decisions):
+        raise ReplayIntegrityError("candidate legality evaluation instant does not match request")
+
+
+def _validate_stored_route_steps(row: SearchSessionModel, route: SearchRoute) -> None:
+    """Cross-check normalized route-step rows against both route and decision snapshots."""
+
+    stored_rows = list(row.route_steps)
+    stored_steps = [
         SearchRouteStep(
             route_step_id=step.route_step_id,
             session_id=step.session_id,
@@ -353,8 +400,26 @@ def _stored_route_step_snapshot(row: SearchSessionModel) -> list[SearchRouteStep
             rule_engine_version=step.rule_engine_version,
             availability_model_version=step.availability_model_version,
         )
-        for step in row.route_steps
+        for step in stored_rows
     ]
+    if stored_steps != route.steps:
+        raise ReplayIntegrityError("stored route-step rows do not match the route snapshot")
+    if len(stored_rows) != len(route.selected_candidate_snapshots):
+        raise ReplayIntegrityError("stored route-step decision metadata is incomplete")
+    for stored, snapshot in zip(
+        stored_rows,
+        route.selected_candidate_snapshots,
+        strict=True,
+    ):
+        if (
+            stored.legality_evaluation_id != snapshot.legality_evaluation_id
+            or stored.availability_prediction_id != snapshot.availability_prediction_id
+            or stored.availability_target_window_seconds
+            != snapshot.availability_target_window_seconds
+        ):
+            raise ReplayIntegrityError(
+                "stored route-step decision metadata does not match the route snapshot"
+            )
 
 
 def _point_wkt(longitude: float, latitude: float) -> WKBElement:

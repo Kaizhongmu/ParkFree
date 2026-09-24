@@ -79,6 +79,7 @@ def test_static_mount_rejects_missing_and_parent_paths() -> None:
 
     assert client.get("/assets/missing.js").status_code == 404
     assert client.get("/assets/../main.py").status_code == 404
+    assert client.get("/assets/index.html").status_code == 404
 
 
 def test_static_resources_are_in_the_installable_package() -> None:

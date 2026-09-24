@@ -1,5 +1,5 @@
 import pytest
-from sqlalchemy import Engine, inspect
+from sqlalchemy import Engine, inspect, text
 
 pytestmark = pytest.mark.integration
 
@@ -133,3 +133,20 @@ def test_v1a_migration_adds_review_queue_audit_constraints_and_indexes(engine: E
         for foreign_key in inspector.get_foreign_keys("evidence_review_events")
     }
     assert event_foreign_keys == {"evidence_review_queue", "parking_sources"}
+
+
+def test_review_queue_projection_event_guard_is_deferred(engine: Engine) -> None:
+    with engine.connect() as connection:
+        trigger = connection.execute(
+            text(
+                """
+                SELECT tgdeferrable, tginitdeferred
+                FROM pg_trigger
+                WHERE tgrelid = 'evidence_review_queue'::regclass
+                  AND tgname = 'trg_require_evidence_review_projection_event'
+                """
+            )
+        ).one()
+
+    assert trigger.tgdeferrable is True
+    assert trigger.tginitdeferred is True

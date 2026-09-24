@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC
 from enum import StrEnum
 from typing import Literal
 
@@ -130,6 +131,25 @@ class ParkingSearchResponse(DomainModel):
         )
         if self.unknown_segment_ids != expected_unknown:
             raise ValueError("unknown_segment_ids must exactly match unknown legality decisions")
+        resolved_arrival_utc = self.resolved_arrival_time.astimezone(UTC)
+        if any(
+            decision.legality.evaluated_at.astimezone(UTC) != resolved_arrival_utc
+            for decision in self.candidate_decisions
+        ):
+            raise ValueError(
+                "candidate legality evaluations must match the resolved arrival instant"
+            )
+        if any(
+            decision.legality.rule_engine_version != self.versions.rule_engine
+            for decision in self.candidate_decisions
+        ):
+            raise ValueError("candidate rule-engine versions must match response versions")
+        if any(
+            decision.availability is not None
+            and decision.availability.model_version != self.versions.availability_model
+            for decision in self.candidate_decisions
+        ):
+            raise ValueError("candidate availability versions must match response versions")
         if self.route.route_matrix_version != self.versions.route_matrix_id:
             raise ValueError("route matrix ID must match response versions")
         if self.route.route_matrix_provider_version != self.versions.route_matrix_provider:
@@ -138,6 +158,12 @@ class ParkingSearchResponse(DomainModel):
             raise ValueError("optimizer version must match response versions")
         if self.route.cost_model_version != self.versions.cost_model:
             raise ValueError("cost model version must match response versions")
+        optimizer = self.route.optimizer_snapshot
+        if optimizer is not None and (
+            optimizer.rule_engine_version != self.versions.rule_engine
+            or optimizer.availability_model_version != self.versions.availability_model
+        ):
+            raise ValueError("optimizer dependency versions must match response versions")
         if self.route.fallback_description != self.fallback.description:
             raise ValueError("route fallback description must match the response fallback")
         return self
@@ -165,6 +191,10 @@ class SearchExecution(DomainModel):
             raise ValueError("execution artifacts must share one session ID")
         if self.response.destination != self.destination:
             raise ValueError("execution response must contain the resolved destination")
+        if self.response.resolved_arrival_time.astimezone(
+            UTC
+        ) != self.command.arrival_time.astimezone(UTC):
+            raise ValueError("execution response arrival must match the request command")
         if self.response.candidate_decisions != self.candidate_decisions:
             raise ValueError("execution response must contain the candidate decision snapshot")
         if self.response.route != self.route:

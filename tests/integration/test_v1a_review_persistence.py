@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 from geoalchemy2 import WKTElement
-from sqlalchemy import Engine, delete, func, select, update
+from sqlalchemy import Engine, delete, func, select, text, update
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
 
@@ -177,6 +177,12 @@ def test_review_approval_persists_publication_state_and_audit_atomically(
             idempotency_key="v1a-integration-approve",
         )
         session.flush()
+        session.execute(
+            text("SET CONSTRAINTS trg_require_evidence_review_projection_event IMMEDIATE")
+        )
+        session.execute(
+            text("SET CONSTRAINTS trg_require_evidence_review_projection_event DEFERRED")
+        )
         session.expire_all()
 
         reloaded = service.get(submitted.item.queue_item_id)

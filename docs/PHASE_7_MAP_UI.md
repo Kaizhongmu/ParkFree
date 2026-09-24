@@ -63,6 +63,8 @@ does not invent publisher names or source links that are absent from the API con
 - Dynamic strings use DOM text nodes, never `innerHTML`, HTML templates, or evaluated code.
 - Coordinates are revalidated before SVG rendering; CSS state classes come from fixed enums.
 - The document sets CSP, `nosniff`, `no-referrer`, frame denial, and a restricted permissions policy.
+- Only the named CSS, JavaScript, and favicon files are exposed below `/assets`; the HTML entrypoint
+  is served exclusively at `/` with its security headers and is not reachable as a static asset.
 - Starting a new request clears prior results; an error cannot leave an old plan presented as new.
 
 ## Verification

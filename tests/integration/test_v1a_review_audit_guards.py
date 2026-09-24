@@ -1,7 +1,8 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import Engine, text
+from sqlalchemy.engine import Connection
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
 
@@ -18,6 +19,148 @@ NOW = datetime(2026, 9, 21, 12, tzinfo=UTC)
 HASH_A = "a" * 64
 HASH_B = "b" * 64
 HASH_C = "c" * 64
+
+
+def _insert_pending_queue(
+    connection: Connection,
+    *,
+    review_item_id: str,
+    extraction_result_id: str,
+) -> None:
+    connection.execute(
+        text(
+            """
+            INSERT INTO evidence_review_queue (
+                review_item_id, extraction_result_id, status, service_kind,
+                extraction_disposition, extractor_version, source_type,
+                source_uri_or_identifier, retrieved_at, raw_storage_policy,
+                snapshot_schema_version, result_snapshot, result_snapshot_hash,
+                review_reason_codes, error_codes, submitted_by, revision,
+                submitted_at, updated_at
+            ) VALUES (
+                :review_item_id, :extraction_result_id, 'PENDING', 'REGULATION',
+                'REVIEW_REQUIRED', 'fixture-extractor-v1', 'OFFICIAL_CODE',
+                'fixture://v1a/projection-event', :now, 'REFERENCE_ONLY',
+                'v1a-review-snapshot-v1', CAST(:snapshot AS jsonb), :snapshot_hash,
+                CAST(:reasons AS jsonb), CAST(:errors AS jsonb), 'fixture-submitter', 1,
+                :now, :now
+            )
+            """
+        ),
+        {
+            "review_item_id": review_item_id,
+            "extraction_result_id": extraction_result_id,
+            "now": NOW,
+            "snapshot": f'{{"result_id":"{extraction_result_id}"}}',
+            "snapshot_hash": HASH_A,
+            "reasons": '["HUMAN_VERIFICATION_REQUIRED"]',
+            "errors": "[]",
+        },
+    )
+
+
+def _insert_submit_event(connection: Connection, *, review_item_id: str) -> None:
+    connection.execute(
+        text(
+            """
+            INSERT INTO evidence_review_events (
+                event_id, review_item_id, queue_revision,
+                action_idempotency_key_hash, action_request_hash,
+                prior_event_hash, event_hash, actor_id, actor_roles,
+                action, reason_code, previous_status, new_status, occurred_at,
+                metadata_snapshot
+            ) VALUES (
+                :event_id, :review_item_id, 1,
+                :idempotency_hash, :request_hash, NULL, :event_hash,
+                'fixture-submitter', CAST('["SUBMITTER"]' AS jsonb),
+                'SUBMIT', 'EXTRACTION_READY', NULL, 'PENDING', :now,
+                CAST('{}' AS jsonb)
+            )
+            """
+        ),
+        {
+            "event_id": f"event-{review_item_id}",
+            "review_item_id": review_item_id,
+            "idempotency_hash": HASH_A,
+            "request_hash": HASH_B,
+            "event_hash": HASH_C,
+            "now": NOW,
+        },
+    )
+
+
+def test_review_queue_insert_requires_submission_event_at_commit(engine: Engine) -> None:
+    review_item_id = "review-projection-missing-submit"
+    with engine.connect() as connection:
+        transaction = connection.begin()
+        _insert_pending_queue(
+            connection,
+            review_item_id=review_item_id,
+            extraction_result_id="extract-projection-missing-submit",
+        )
+
+        with pytest.raises(DBAPIError) as captured:
+            transaction.commit()
+
+    assert captured.value.orig.sqlstate == "23514"
+    with engine.connect() as connection:
+        assert (
+            connection.scalar(
+                text(
+                    "SELECT count(*) FROM evidence_review_queue "
+                    "WHERE review_item_id = :review_item_id"
+                ),
+                {"review_item_id": review_item_id},
+            )
+            == 0
+        )
+
+
+def test_review_queue_transition_requires_same_revision_event_at_commit(
+    engine: Engine,
+) -> None:
+    review_item_id = "review-projection-missing-claim"
+    with engine.connect() as connection:
+        transaction = connection.begin()
+        _insert_pending_queue(
+            connection,
+            review_item_id=review_item_id,
+            extraction_result_id="extract-projection-missing-claim",
+        )
+        _insert_submit_event(connection, review_item_id=review_item_id)
+        claim_time = NOW + timedelta(minutes=1)
+        connection.execute(
+            text(
+                """
+                UPDATE evidence_review_queue
+                SET status = 'IN_REVIEW', assigned_reviewer_id = 'reviewer-2',
+                    claimed_at = :claim_time, claim_expires_at = :claim_expiry,
+                    revision = 2, updated_at = :claim_time
+                WHERE review_item_id = :review_item_id
+                """
+            ),
+            {
+                "claim_time": claim_time,
+                "claim_expiry": claim_time + timedelta(minutes=15),
+                "review_item_id": review_item_id,
+            },
+        )
+
+        with pytest.raises(DBAPIError) as captured:
+            transaction.commit()
+
+    assert captured.value.orig.sqlstate == "23514"
+    with engine.connect() as connection:
+        assert (
+            connection.scalar(
+                text(
+                    "SELECT count(*) FROM evidence_review_queue "
+                    "WHERE review_item_id = :review_item_id"
+                ),
+                {"review_item_id": review_item_id},
+            )
+            == 0
+        )
 
 
 def test_review_proposal_and_audit_events_are_database_immutable(engine: Engine) -> None:
