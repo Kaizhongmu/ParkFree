@@ -40,6 +40,7 @@ from parking_ai.evidence import (
     ReviewReasonCode,
     ReviewRole,
     SQLAlchemyReviewQueueRepository,
+    persist_approved_evidence,
 )
 
 pytestmark = pytest.mark.integration
@@ -211,6 +212,26 @@ def test_review_approval_persists_publication_state_and_audit_atomically(
             )
             == 1
         )
+
+        # A publication retry after terminal approval must validate and return before issuing
+        # INSERT statements, because the database immutability triggers intentionally reject even
+        # no-op ON CONFLICT inserts for approved evidence identities.
+        persist_approved_evidence(session, approved.approved_bundle)
+        session.flush()
+        conflicting_bundle = approved.approved_bundle.model_copy(
+            update={
+                "evidence": approved.approved_bundle.evidence.model_copy(
+                    update={"publisher": "Conflicting Fixture City"},
+                    deep=True,
+                )
+            },
+            deep=True,
+        )
+        with pytest.raises(
+            EvidencePersistenceConflictError,
+            match="stored reviewed evidence does not match approved content",
+        ):
+            persist_approved_evidence(session, conflicting_bundle)
 
         with pytest.raises(DBAPIError), session.begin_nested():
             session.execute(

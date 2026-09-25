@@ -57,6 +57,11 @@ Publication and every direct write to the same evidence/rule/segment-binding ide
 PostgreSQL transaction-level advisory lock. This closes the interval between validating a
 pre-existing idempotent publication and making its queue decision terminal.
 
+An exact publication retry after approval acquires that same lock, validates the complete stored
+evidence, segment-binding, and rule bundle, and returns without issuing an `INSERT`. This is
+required because terminal-publication immutability triggers intentionally reject even a no-op
+`INSERT ... ON CONFLICT`. A partial or different stored bundle remains a hard conflict.
+
 `SQLAlchemyReviewQueueRepository` never commits. The caller owns the transaction. For approval,
 the reviewed evidence/rules, queue transition, and audit event are staged in one savepoint and
 must be committed together. Stable-ID collisions are compared to stored content and fail closed

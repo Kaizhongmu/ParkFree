@@ -230,3 +230,7 @@
     replay even when the JSON snapshots remain internally valid.
 75. The Phase 7 HTML entrypoint is served only by `/` with its security headers. `/assets` is an
     allowlist of the package CSS, JavaScript, and favicon and must not expose `index.html`.
+76. An exact retry of an already-approved evidence publication is a locked read-validation no-op.
+    It must validate the complete stored evidence, segment bindings, and rules before returning;
+    partial or conflicting state fails closed, and no insert is attempted against terminal
+    publication identities protected by immutability triggers.

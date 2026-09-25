@@ -29,6 +29,10 @@ def persist_approved_evidence(session: Session, bundle: ApprovedEvidenceBundle) 
 
     evidence = bundle.evidence
     _lock_reviewed_identity(session, evidence.evidence_id)
+    if session.get(EvidenceModel, evidence.evidence_id) is not None:
+        validate_persisted_approved_evidence(session, bundle)
+        return
+
     evidence_values: dict[str, object] = {
         "evidence_id": evidence.evidence_id,
         "source_type": evidence.source_type,
