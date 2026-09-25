@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from pydantic import ValidationError
@@ -191,6 +191,74 @@ def test_evidence_tier_and_storage_policy_validation() -> None:
     with pytest.raises(ValidationError) as exc_info:
         Evidence.model_validate(invalid_data)
     assert exc_info.value.error_count() == 2
+
+
+@pytest.mark.parametrize("field_name", ["published_at", "observed_at"])
+def test_evidence_timestamp_cannot_be_after_retrieval(field_name: str) -> None:
+    data: dict[str, object] = {
+        "evidence_id": "evidence-future-metadata",
+        "source_type": EvidenceSourceType.OFFICIAL_CODE,
+        "source_uri_or_identifier": "fixture://future-metadata",
+        "retrieved_at": NOW,
+        field_name: NOW + timedelta(seconds=1),
+        "raw_storage_policy": EvidenceStoragePolicy.REFERENCE_ONLY,
+        "reliability_tier": EvidenceReliabilityTier.A,
+    }
+
+    with pytest.raises(ValidationError, match=f"{field_name} cannot be after retrieved_at"):
+        Evidence.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    ("source_type", "tier"),
+    [
+        (EvidenceSourceType.UNIVERSITY, EvidenceReliabilityTier.A),
+        (EvidenceSourceType.OSM, EvidenceReliabilityTier.A),
+        (EvidenceSourceType.COMMUNITY, EvidenceReliabilityTier.A),
+        (EvidenceSourceType.COMMUNITY, EvidenceReliabilityTier.B),
+        (EvidenceSourceType.IMAGERY_INFERENCE, EvidenceReliabilityTier.C),
+    ],
+)
+def test_evidence_rejects_tier_above_source_authority_ceiling(
+    source_type: EvidenceSourceType,
+    tier: EvidenceReliabilityTier,
+) -> None:
+    with pytest.raises(ValidationError, match="exceeds its source authority ceiling"):
+        Evidence(
+            evidence_id="evidence-elevated",
+            source_type=source_type,
+            source_uri_or_identifier="fixture://elevated",
+            retrieved_at=NOW,
+            raw_storage_policy=EvidenceStoragePolicy.REFERENCE_ONLY,
+            reliability_tier=tier,
+        )
+
+
+@pytest.mark.parametrize(
+    ("source_type", "tier"),
+    [
+        (EvidenceSourceType.OFFICIAL_CODE, EvidenceReliabilityTier.D),
+        (EvidenceSourceType.OSM, EvidenceReliabilityTier.C),
+        (EvidenceSourceType.COMMUNITY, EvidenceReliabilityTier.D),
+        (EvidenceSourceType.IMAGERY_INFERENCE, EvidenceReliabilityTier.D),
+    ],
+)
+def test_evidence_allows_tier_at_or_below_source_authority_ceiling(
+    source_type: EvidenceSourceType,
+    tier: EvidenceReliabilityTier,
+) -> None:
+    evidence = Evidence(
+        evidence_id="evidence-conservative",
+        source_type=source_type,
+        source_uri_or_identifier="fixture://conservative",
+        published_at=NOW,
+        observed_at=NOW,
+        retrieved_at=NOW,
+        raw_storage_policy=EvidenceStoragePolicy.REFERENCE_ONLY,
+        reliability_tier=tier,
+    )
+
+    assert evidence.reliability_tier is tier
 
 
 def route_step(**updates: object) -> SearchRouteStep:

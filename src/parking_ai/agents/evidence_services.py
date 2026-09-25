@@ -23,6 +23,7 @@ from parking_ai.domain.enums import (
     EvidenceStoragePolicy,
     ParkingRuleType,
 )
+from parking_ai.domain.evidence_policy import EVIDENCE_SOURCE_AUTHORITY_CEILING
 from parking_ai.domain.schemas import Evidence, NormalizedClaim, ParkingRule, RuleException
 
 
@@ -291,17 +292,6 @@ class ApprovedEvidenceBundle(ExtractionModel):
             raise ValueError("approved rules must reference the approved evidence")
         return self
 
-
-_RELIABILITY_BY_SOURCE: dict[EvidenceSourceType, EvidenceReliabilityTier] = {
-    EvidenceSourceType.OFFICIAL_CODE: EvidenceReliabilityTier.A,
-    EvidenceSourceType.OFFICIAL_GIS: EvidenceReliabilityTier.A,
-    EvidenceSourceType.VERIFIED_SIGN: EvidenceReliabilityTier.A,
-    EvidenceSourceType.UNIVERSITY: EvidenceReliabilityTier.B,
-    EvidenceSourceType.OSM: EvidenceReliabilityTier.B,
-    EvidenceSourceType.COMMUNITY: EvidenceReliabilityTier.C,
-    EvidenceSourceType.WEB: EvidenceReliabilityTier.C,
-    EvidenceSourceType.IMAGERY_INFERENCE: EvidenceReliabilityTier.D,
-}
 
 _REGULATION_SOURCE_TYPES = frozenset(
     {
@@ -645,7 +635,7 @@ def _validated_result(
         raw_storage_policy=source.raw_storage_policy,
         segment_ids=source.segment_ids,
         normalized_claims=normalized_claims,
-        reliability_tier=_RELIABILITY_BY_SOURCE[source.source_type],
+        reliability_tier=EVIDENCE_SOURCE_AUTHORITY_CEILING[source.source_type],
         extractor_version=extractor_version,
         content_hash=content_hash,
     )
@@ -808,7 +798,7 @@ def validate_extraction_result_integrity(result: EvidenceExtractionResult) -> No
         or any(character not in "0123456789abcdef" for character in evidence.content_hash)
     ):
         raise ValueError("validated extraction evidence requires a SHA-256 content hash")
-    expected_tier = _RELIABILITY_BY_SOURCE.get(evidence.source_type)
+    expected_tier = EVIDENCE_SOURCE_AUTHORITY_CEILING[evidence.source_type]
     if evidence.reliability_tier is not expected_tier:
         raise ValueError("evidence reliability tier does not match its source type")
 

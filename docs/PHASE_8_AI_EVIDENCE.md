@@ -41,9 +41,10 @@ cost.
 
 ## Source authority and storage policy
 
-Trusted caller metadata determines source type, reliability tier, source identifier, publisher,
-timestamps, segment binding, and raw-storage policy. Extractor output cannot choose or elevate
-these values.
+Trusted caller metadata determines source type, source identifier, publisher, timestamps, segment
+binding, and raw-storage policy. The shared domain policy derives the canonical reliability tier
+from source type; extractor output cannot choose or elevate it. Other trusted ingestion paths may
+conservatively downgrade a source but cannot exceed the same authority ceiling.
 
 | Source type | Tier | Phase 8 behavior |
 |---|---:|---|

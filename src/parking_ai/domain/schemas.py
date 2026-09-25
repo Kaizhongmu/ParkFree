@@ -29,6 +29,7 @@ from parking_ai.domain.enums import (
     SearchSessionStatus,
     SegmentSide,
 )
+from parking_ai.domain.evidence_policy import evidence_reliability_within_source_authority
 from parking_ai.domain.geometry import GeoPoint, LineStringGeometry
 
 
@@ -160,6 +161,19 @@ class Evidence(DomainModel):
     reliability_tier: EvidenceReliabilityTier
     extractor_version: str | None = Field(default=None, max_length=128)
     content_hash: str | None = Field(default=None, max_length=128)
+
+    @model_validator(mode="after")
+    def validate_integrity(self) -> "Evidence":
+        if self.published_at is not None and self.published_at > self.retrieved_at:
+            raise ValueError("published_at cannot be after retrieved_at")
+        if self.observed_at is not None and self.observed_at > self.retrieved_at:
+            raise ValueError("observed_at cannot be after retrieved_at")
+        if not evidence_reliability_within_source_authority(
+            self.source_type,
+            self.reliability_tier,
+        ):
+            raise ValueError("evidence reliability tier exceeds its source authority ceiling")
+        return self
 
 
 class LegalityEvaluation(DomainModel):

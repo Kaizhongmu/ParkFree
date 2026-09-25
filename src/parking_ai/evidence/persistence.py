@@ -29,7 +29,7 @@ def persist_approved_evidence(session: Session, bundle: ApprovedEvidenceBundle) 
 
     evidence = bundle.evidence
     _lock_reviewed_identity(session, evidence.evidence_id)
-    if session.get(EvidenceModel, evidence.evidence_id) is not None:
+    if session.get(EvidenceModel, evidence.evidence_id, populate_existing=True) is not None:
         validate_persisted_approved_evidence(session, bundle)
         return
 
@@ -56,7 +56,11 @@ def persist_approved_evidence(session: Session, bundle: ApprovedEvidenceBundle) 
         ).returning(EvidenceModel.evidence_id)
     )
     if inserted_evidence_id is None:
-        existing_evidence = session.get(EvidenceModel, evidence.evidence_id)
+        existing_evidence = session.get(
+            EvidenceModel,
+            evidence.evidence_id,
+            populate_existing=True,
+        )
         if existing_evidence is None or not _evidence_matches(existing_evidence, evidence_values):
             raise EvidencePersistenceConflictError(
                 "reviewed evidence ID is already associated with different content"
@@ -101,7 +105,11 @@ def persist_approved_evidence(session: Session, bundle: ApprovedEvidenceBundle) 
             )
         )
         if inserted_rule_id is None:
-            existing_rule = session.get(ParkingRuleModel, rule.rule_id)
+            existing_rule = session.get(
+                ParkingRuleModel,
+                rule.rule_id,
+                populate_existing=True,
+            )
             if existing_rule is None or not _rule_matches(existing_rule, rule_values):
                 raise EvidencePersistenceConflictError(
                     "reviewed rule ID is already associated with different content"
@@ -134,7 +142,11 @@ def validate_persisted_approved_evidence(
         "extractor_version": evidence.extractor_version,
         "content_hash": evidence.content_hash,
     }
-    stored_evidence = session.get(EvidenceModel, evidence.evidence_id)
+    stored_evidence = session.get(
+        EvidenceModel,
+        evidence.evidence_id,
+        populate_existing=True,
+    )
     if stored_evidence is None or not _evidence_matches(stored_evidence, evidence_values):
         raise EvidencePersistenceConflictError(
             "stored reviewed evidence does not match approved content"
@@ -164,7 +176,11 @@ def validate_persisted_approved_evidence(
         )
     expected_rules = {rule.rule_id: rule for rule in bundle.rules}
     for stored_rule_id in stored_rule_ids:
-        stored_rule = session.get(ParkingRuleModel, stored_rule_id)
+        stored_rule = session.get(
+            ParkingRuleModel,
+            stored_rule_id,
+            populate_existing=True,
+        )
         expected_rule = expected_rules[stored_rule_id]
         rule_values: dict[str, object] = {
             "rule_id": expected_rule.rule_id,

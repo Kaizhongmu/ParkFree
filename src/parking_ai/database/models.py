@@ -180,6 +180,25 @@ Index("ix_street_segments_street_name", ParkingSegmentModel.street_name)
 
 class EvidenceModel(Base):
     __tablename__ = "parking_sources"
+    __table_args__ = (
+        CheckConstraint(
+            "published_at IS NULL OR published_at <= retrieved_at",
+            name="published_not_after_retrieved",
+        ),
+        CheckConstraint(
+            "observed_at IS NULL OR observed_at <= retrieved_at",
+            name="observed_not_after_retrieved",
+        ),
+        CheckConstraint(
+            "source_type IN ('OFFICIAL_CODE', 'OFFICIAL_GIS', 'VERIFIED_SIGN') OR "
+            "(source_type IN ('UNIVERSITY', 'OSM') AND "
+            "reliability_tier IN ('B', 'C', 'D')) OR "
+            "(source_type IN ('COMMUNITY', 'WEB') AND "
+            "reliability_tier IN ('C', 'D')) OR "
+            "(source_type = 'IMAGERY_INFERENCE' AND reliability_tier = 'D')",
+            name="source_authority_ceiling",
+        ),
+    )
 
     evidence_id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid_str)
     source_type: Mapped[EvidenceSourceType] = mapped_column(

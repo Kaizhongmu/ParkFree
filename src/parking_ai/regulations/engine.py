@@ -19,6 +19,7 @@ from parking_ai.domain.enums import (
     ParkingRuleType,
     RegulationReasonCode,
 )
+from parking_ai.domain.evidence_policy import evidence_reliability_within_source_authority
 from parking_ai.domain.schemas import (
     Evidence,
     LegalityEvaluation,
@@ -28,7 +29,7 @@ from parking_ai.domain.schemas import (
     UserProfile,
 )
 
-RULE_ENGINE_VERSION = "regulation-engine-v1"
+RULE_ENGINE_VERSION = "regulation-engine-v2"
 DEFAULT_REGULATION_TIMEZONE = ZoneInfo("America/Chicago")
 
 # A source-specific default avoids pretending that all evidence ages in the same way. Official
@@ -123,6 +124,30 @@ class DeterministicRegulationEngine:
             raise ValueError("rule_engine_version must not be empty")
 
         evidence_copies = [item.model_copy(deep=True) for item in evidence]
+        invalid_timestamps = sorted(
+            item.evidence_id
+            for item in evidence_copies
+            if (item.published_at is not None and item.published_at > item.retrieved_at)
+            or (item.observed_at is not None and item.observed_at > item.retrieved_at)
+        )
+        if invalid_timestamps:
+            raise ValueError(
+                "evidence publication/observation timestamps cannot be after retrieval: "
+                + ", ".join(invalid_timestamps)
+            )
+        elevated_authority = sorted(
+            item.evidence_id
+            for item in evidence_copies
+            if not evidence_reliability_within_source_authority(
+                item.source_type,
+                item.reliability_tier,
+            )
+        )
+        if elevated_authority:
+            raise ValueError(
+                "evidence reliability tier exceeds its source authority ceiling: "
+                + ", ".join(elevated_authority)
+            )
         evidence_by_id = {item.evidence_id: item for item in evidence_copies}
         if len(evidence_by_id) != len(evidence_copies):
             raise ValueError("evidence IDs must be unique")
@@ -524,11 +549,16 @@ def _evidence_freshness_issue(
     max_age_by_source: Mapping[EvidenceSourceType, dt.timedelta | None],
 ) -> RegulationReasonCode | None:
     retrieved_utc = evidence.retrieved_at.astimezone(dt.UTC)
+    published_utc = (
+        evidence.published_at.astimezone(dt.UTC) if evidence.published_at is not None else None
+    )
     observed_utc = (
         evidence.observed_at.astimezone(dt.UTC) if evidence.observed_at is not None else None
     )
-    if retrieved_utc > query_start_utc or (
-        observed_utc is not None and observed_utc > query_start_utc
+    if (
+        retrieved_utc > query_start_utc
+        or (published_utc is not None and published_utc > query_start_utc)
+        or (observed_utc is not None and observed_utc > query_start_utc)
     ):
         return RegulationReasonCode.EVIDENCE_NOT_YET_AVAILABLE
     freshness_utc = observed_utc or retrieved_utc

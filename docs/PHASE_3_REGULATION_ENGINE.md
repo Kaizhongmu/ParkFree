@@ -48,9 +48,11 @@ persistence independence.
 
 ## Evidence, conflicts, and confidence
 
-The request is partitioned at every active rule boundary. Evidence tiers are ordered A, B, C, D,
-and precedence is applied separately to the legality and payment axes within each atomic time
-slice. Lower-tier claims do not override higher-tier conclusions in the same slice, but a
+The request is partitioned at every active rule boundary. Evidence tiers are ordered A, B, C, D.
+Source authority is capped at A for official code/GIS and verified signs, B for university/OSM,
+C for community/web, and D for imagery inference. Deliberate downgrades are allowed; promotion
+above that ceiling is rejected. Precedence is applied separately to the legality and payment axes
+within each atomic time slice. Lower-tier claims do not override higher-tier conclusions, but a
 lower-tier restriction in a different slice is not discarded. Direct same-tier contradictions
 that cannot be composed deterministically return `UNKNOWN` for the affected axis. An active
 prohibition composes with a time limit or permission and makes the stay illegal.
@@ -61,8 +63,9 @@ automatic age expiry. Default maximum ages are 365 days for official GIS and uni
 days for verified signs and OSM, 90 days for web and imagery evidence, and 30 days for community
 evidence. Freshness must hold through the requested departure. A stale active source fails closed
 to `UNKNOWN`; caller overrides merge into the defaults for a different jurisdiction. Evidence
-observed or retrieved after the requested arrival also fails closed, preventing future
-information from authorizing a historical request.
+published, observed, or retrieved after the requested arrival also fails closed, preventing
+future information from authorizing a historical request. Publication and observation timestamps
+must not be later than retrieval.
 
 Every result includes typed reason codes and deterministic, sorted evidence references. The
 reported confidence is the minimum extraction confidence among the evidence selected for known
@@ -88,6 +91,11 @@ operator-facing error if any exist. It never invents an association or deletes/q
 an operator must audit each mismatch and either establish a legitimate segment binding or remove
 the invalid rule before retrying. Runtime snapshot construction independently enforces the same
 invariant, so an inconsistent or partially migrated store cannot authorize parking.
+
+Migration `0006_evidence_integrity` adds canonical `parking_sources` checks for
+publication/observation chronology and source-authority ceilings. It takes a write-conflicting
+table lock, scans legacy rows, and aborts before adding constraints if an inconsistency exists.
+The migration never rewrites evidence metadata; operators must audit any reported row and retry.
 
 Evaluation remains contextual to time, duration, vehicle, permits, and engine version; it is not
 written back to the canonical Phase 2 `street_segments` row.

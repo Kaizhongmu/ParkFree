@@ -265,3 +265,79 @@ def test_review_approval_persists_publication_state_and_audit_atomically(
         assert session.scalar(select(func.count()).select_from(EvidenceReviewEventModel)) == 3
 
         transaction.rollback()
+
+
+def test_approved_publication_retry_refreshes_stale_session_identity_map(
+    engine: Engine,
+) -> None:
+    segment_id = "v1a-stale-retry-segment"
+    result = RegulationEvidenceService(RegulationFixtureAdapter()).extract(
+        SourceMaterial(
+            source_type=EvidenceSourceType.OFFICIAL_CODE,
+            source_uri_or_identifier="fixture://v1a/stale-retry",
+            publisher="Original Fixture City",
+            retrieved_at=NOW - timedelta(hours=1),
+            raw_storage_policy=EvidenceStoragePolicy.REFERENCE_ONLY,
+            segment_ids=[segment_id],
+            content="Parking prohibited at all times for stale retry testing.",
+        )
+    )
+    bundle = approve_extraction(
+        result,
+        reviewer_id="stale-retry-reviewer",
+        reviewed_at=NOW,
+        scope=ApprovalScope.EVIDENCE_AND_RULES,
+    )
+
+    with Session(engine) as setup_session, setup_session.begin():
+        setup_session.add(
+            ParkingSegmentModel(
+                segment_id=segment_id,
+                geometry=WKTElement(
+                    "LINESTRING(-96.784 32.842, -96.783 32.843)",
+                    srid=4326,
+                ),
+                street_name="Stale Retry Street",
+                side=SegmentSide.LEFT,
+                length_m=50.0,
+                estimated_capacity=None,
+                road_type="residential",
+                physical_state=PhysicalState.UNKNOWN,
+                legal_state=LegalState.UNKNOWN,
+                free_state=FreeState.UNKNOWN,
+                legal_confidence=0.0,
+                data_freshness=NOW - timedelta(days=1),
+            )
+        )
+        persist_approved_evidence(setup_session, bundle)
+
+    try:
+        with Session(engine) as stale_session:
+            cached = stale_session.get(EvidenceModel, bundle.evidence.evidence_id)
+            assert cached is not None
+            assert cached.publisher == "Original Fixture City"
+
+            with Session(engine) as mutating_session, mutating_session.begin():
+                mutating_session.execute(
+                    update(EvidenceModel)
+                    .where(EvidenceModel.evidence_id == bundle.evidence.evidence_id)
+                    .values(publisher="Changed Fixture City")
+                )
+
+            # The advisory lock is necessary for writer serialization but does not invalidate
+            # SQLAlchemy's identity map. The retry must refresh after locking and see the change.
+            with pytest.raises(
+                EvidencePersistenceConflictError,
+                match="stored reviewed evidence does not match approved content",
+            ):
+                persist_approved_evidence(stale_session, bundle)
+    finally:
+        with Session(engine) as cleanup_session, cleanup_session.begin():
+            cleanup_session.execute(
+                delete(ParkingSegmentModel).where(ParkingSegmentModel.segment_id == segment_id)
+            )
+            cleanup_session.execute(
+                delete(EvidenceModel).where(
+                    EvidenceModel.evidence_id == bundle.evidence.evidence_id
+                )
+            )

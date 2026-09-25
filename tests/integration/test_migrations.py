@@ -1,7 +1,15 @@
+from datetime import UTC, datetime
+from pathlib import Path
+
 import pytest
+from alembic.config import Config
 from sqlalchemy import Engine, inspect, text
+from sqlalchemy.exc import DBAPIError
+
+from alembic import command
 
 pytestmark = pytest.mark.integration
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 EXPECTED_TABLES = {
     "alembic_version",
@@ -150,3 +158,139 @@ def test_review_queue_projection_event_guard_is_deferred(engine: Engine) -> None
 
     assert trigger.tgdeferrable is True
     assert trigger.tginitdeferred is True
+
+
+def test_evidence_integrity_constraints_are_migrated(engine: Engine) -> None:
+    inspector = inspect(engine)
+    constraints = {
+        constraint["name"]: constraint["sqltext"]
+        for constraint in inspector.get_check_constraints("parking_sources")
+    }
+
+    assert "ck_parking_sources_published_not_after_retrieved" in constraints
+    assert "ck_parking_sources_observed_not_after_retrieved" in constraints
+    authority_sql = constraints["ck_parking_sources_source_authority_ceiling"]
+    assert "UNIVERSITY" in authority_sql
+    assert "IMAGERY_INFERENCE" in authority_sql
+
+
+@pytest.mark.parametrize(
+    ("evidence_id", "published_at", "observed_at", "source_type", "tier"),
+    [
+        (
+            "legacy-future-publication",
+            datetime(2026, 9, 24, 12, 1, tzinfo=UTC),
+            None,
+            "OFFICIAL_CODE",
+            "A",
+        ),
+        (
+            "legacy-future-observation",
+            None,
+            datetime(2026, 9, 24, 12, 1, tzinfo=UTC),
+            "OFFICIAL_CODE",
+            "A",
+        ),
+        (
+            "legacy-elevated-community",
+            None,
+            None,
+            "COMMUNITY",
+            "A",
+        ),
+    ],
+)
+def test_evidence_integrity_migration_rejects_legacy_violations_without_rewriting(
+    engine: Engine,
+    database_url: str,
+    evidence_id: str,
+    published_at: datetime | None,
+    observed_at: datetime | None,
+    source_type: str,
+    tier: str,
+) -> None:
+    config = Config(PROJECT_ROOT / "alembic.ini")
+    config.set_main_option("script_location", str(PROJECT_ROOT / "alembic"))
+    config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
+    retrieved_at = datetime(2026, 9, 24, 12, tzinfo=UTC)
+
+    command.downgrade(config, "0005_review_queue_event_guard")
+    try:
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO parking_sources (
+                        evidence_id,
+                        source_type,
+                        source_uri_or_identifier,
+                        published_at,
+                        observed_at,
+                        retrieved_at,
+                        raw_storage_policy,
+                        normalized_claims,
+                        reliability_tier
+                    ) VALUES (
+                        :evidence_id,
+                        CAST(:source_type AS evidence_source_type),
+                        :source_uri,
+                        :published_at,
+                        :observed_at,
+                        :retrieved_at,
+                        'REFERENCE_ONLY',
+                        CAST('[]' AS jsonb),
+                        CAST(:tier AS evidence_reliability_tier)
+                    )
+                    """
+                ),
+                {
+                    "evidence_id": evidence_id,
+                    "source_type": source_type,
+                    "source_uri": f"fixture://{evidence_id}",
+                    "published_at": published_at,
+                    "observed_at": observed_at,
+                    "retrieved_at": retrieved_at,
+                    "tier": tier,
+                },
+            )
+
+        with pytest.raises(DBAPIError) as exc_info:
+            command.upgrade(config, "head")
+        assert exc_info.value.orig.sqlstate == "23514"
+
+        with engine.connect() as connection:
+            assert connection.scalar(text("SELECT version_num FROM alembic_version")) == (
+                "0005_review_queue_event_guard"
+            )
+            stored = connection.execute(
+                text(
+                    """
+                    SELECT published_at, observed_at, source_type::text, reliability_tier::text
+                    FROM parking_sources
+                    WHERE evidence_id = :evidence_id
+                    """
+                ),
+                {"evidence_id": evidence_id},
+            ).one()
+            assert stored == (published_at, observed_at, source_type, tier)
+            constraint_count = connection.scalar(
+                text(
+                    """
+                    SELECT count(*)
+                    FROM pg_constraint
+                    WHERE conrelid = 'parking_sources'::regclass
+                      AND (
+                          conname LIKE 'ck_parking_sources_%_not_after_retrieved'
+                          OR conname = 'ck_parking_sources_source_authority_ceiling'
+                      )
+                    """
+                )
+            )
+            assert constraint_count == 0
+    finally:
+        with engine.begin() as connection:
+            connection.execute(
+                text("DELETE FROM parking_sources WHERE evidence_id = :evidence_id"),
+                {"evidence_id": evidence_id},
+            )
+        command.upgrade(config, "head")

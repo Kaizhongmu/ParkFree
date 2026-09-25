@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from parking_ai.domain import (
+    EVIDENCE_SOURCE_AUTHORITY_CEILING,
     DayOfWeek,
     Evidence,
     EvidenceReliabilityTier,
@@ -37,8 +38,9 @@ def segment() -> ParkingSegment:
 
 def evidence(
     evidence_id: str = "evidence-a",
-    tier: EvidenceReliabilityTier = EvidenceReliabilityTier.A,
+    tier: EvidenceReliabilityTier | None = None,
     source_type: EvidenceSourceType = EvidenceSourceType.OFFICIAL_CODE,
+    published_at: datetime | None = None,
     retrieved_at: datetime = datetime(2026, 1, 1, tzinfo=CHICAGO),
     observed_at: datetime | None = None,
     segment_ids: list[str] | None = None,
@@ -47,10 +49,11 @@ def evidence(
         evidence_id=evidence_id,
         source_type=source_type,
         source_uri_or_identifier=f"source:{evidence_id}",
+        published_at=published_at,
         observed_at=observed_at,
         retrieved_at=retrieved_at,
         raw_storage_policy=EvidenceStoragePolicy.REFERENCE_ONLY,
-        reliability_tier=tier,
+        reliability_tier=tier or EVIDENCE_SOURCE_AUTHORITY_CEILING[source_type],
         segment_ids=["segment-1"] if segment_ids is None else segment_ids,
     )
 
@@ -423,8 +426,17 @@ def test_higher_tier_evidence_wins_per_axis() -> None:
         ),
     ]
     evidence_items = [
-        evidence("official", EvidenceReliabilityTier.A),
-        evidence("community", EvidenceReliabilityTier.C),
+        evidence(
+            "official",
+            EvidenceReliabilityTier.A,
+            EvidenceSourceType.OFFICIAL_CODE,
+        ),
+        evidence(
+            "community",
+            EvidenceReliabilityTier.C,
+            EvidenceSourceType.COMMUNITY,
+            retrieved_at=MONDAY - timedelta(days=1),
+        ),
     ]
 
     result = evaluate(
@@ -457,8 +469,17 @@ def test_evidence_precedence_is_resolved_per_time_slice() -> None:
         ),
     ]
     evidence_items = [
-        evidence("official", EvidenceReliabilityTier.A),
-        evidence("community", EvidenceReliabilityTier.C),
+        evidence(
+            "official",
+            EvidenceReliabilityTier.A,
+            EvidenceSourceType.OFFICIAL_CODE,
+        ),
+        evidence(
+            "community",
+            EvidenceReliabilityTier.C,
+            EvidenceSourceType.COMMUNITY,
+            retrieved_at=MONDAY - timedelta(days=1),
+        ),
     ]
 
     result = evaluate(
@@ -660,7 +681,7 @@ def test_evaluation_is_deterministic_and_versioned() -> None:
 
     assert first == second
     assert first.evaluation_id.startswith("eval_")
-    assert first.rule_engine_version == "regulation-engine-v1"
+    assert first.rule_engine_version == "regulation-engine-v2"
     assert first.confidence == 0.83
 
 
@@ -824,7 +845,11 @@ def test_partial_evidence_age_override_retains_other_source_defaults() -> None:
         evidence(
             source_type=EvidenceSourceType.OSM,
             observed_at=MONDAY + timedelta(minutes=1),
-            retrieved_at=MONDAY,
+            retrieved_at=MONDAY + timedelta(minutes=2),
+        ),
+        evidence(
+            published_at=MONDAY + timedelta(minutes=1),
+            retrieved_at=MONDAY + timedelta(minutes=2),
         ),
         evidence(
             observed_at=MONDAY - timedelta(days=1),
@@ -848,6 +873,25 @@ def test_evidence_not_available_at_query_time_fails_closed(
         FreeState.UNKNOWN,
     )
     assert RegulationReasonCode.EVIDENCE_NOT_YET_AVAILABLE in result.reason_codes
+
+
+def test_engine_rejects_causally_invalid_evidence_even_if_validation_was_bypassed() -> None:
+    invalid = evidence().model_copy(
+        update={"published_at": MONDAY, "retrieved_at": MONDAY - timedelta(minutes=1)},
+        deep=True,
+    )
+
+    with pytest.raises(ValueError, match="timestamps cannot be after retrieval"):
+        DeterministicRegulationEngine([], [invalid])
+
+
+def test_engine_rejects_source_authority_elevation_even_if_validation_was_bypassed() -> None:
+    elevated = evidence(
+        source_type=EvidenceSourceType.COMMUNITY,
+    ).model_copy(update={"reliability_tier": EvidenceReliabilityTier.A}, deep=True)
+
+    with pytest.raises(ValueError, match="exceeds its source authority ceiling"):
+        DeterministicRegulationEngine([], [elevated])
 
 
 def test_evaluation_is_independent_of_injected_rule_and_evidence_order() -> None:

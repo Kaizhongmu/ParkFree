@@ -185,8 +185,9 @@
     new request clears the previous result and failures remain fail-closed with no stale plan shown.
 58. Phase 8 is a provider-independent extraction and review boundary, not a live provider rollout.
     No model, community, web, or image service is called by default or during parking search.
-59. Source type, publisher, timestamps, segment binding, storage policy, and resulting reliability
-    tier are trusted caller metadata. An extractor response cannot select or elevate them.
+59. Source type, publisher, timestamps, segment binding, and storage policy are trusted caller
+    metadata. Phase 8 derives the canonical reliability tier from source type; an extractor
+    response cannot select or elevate it, and all other ingestion paths obey the same ceiling.
 60. Every valid AI extraction requires explicit human review. Only regulation extraction can be
     approved for rule publication; community and imagery results remain evidence-only, and vision
     cannot self-promote an inference to `VERIFIED_SIGN`.
@@ -234,3 +235,10 @@
     It must validate the complete stored evidence, segment bindings, and rules before returning;
     partial or conflicting state fails closed, and no insert is attempted against terminal
     publication identities protected by immutability triggers.
+77. Evidence source types impose authority ceilings: official code/GIS and verified signs are at
+    most tier A; university and OSM at most B; community and web at most C; imagery inference at
+    most D. A source may be conservatively downgraded but never promoted above its ceiling.
+78. Canonical evidence publication/observation timestamps cannot be after retrieval. Migration
+    `0006` preflights chronology and authority under a write-conflicting table lock and aborts on
+    legacy violations rather than changing legal evidence metadata automatically. The regulation
+    engine repeats these checks and is versioned as `regulation-engine-v2`.

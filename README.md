@@ -213,5 +213,6 @@ before exposing any management surface. A post-Phase 8 safety hardening also req
 source evidence to be explicitly associated with that same segment, both when constructing the
 deterministic engine and through a deferred composite PostgreSQL foreign key. Additional safety
 guards bind every review projection revision to its audit event, reject stale regulation results
-or ineligible planner output, verify normalized replay provenance, and expose the HTML UI only
+or ineligible planner output, reject causally invalid or source-elevated evidence at the domain,
+engine, and database boundaries, verify normalized replay provenance, and expose the HTML UI only
 through its security-header-protected entrypoint.

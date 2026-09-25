@@ -1,5 +1,5 @@
 from geoalchemy2 import Geometry
-from sqlalchemy import Enum, ForeignKeyConstraint
+from sqlalchemy import CheckConstraint, Enum, ForeignKeyConstraint
 
 from parking_ai.database import models  # noqa: F401
 from parking_ai.database.base import Base
@@ -88,6 +88,26 @@ def test_parking_rule_provenance_binding_is_composite_and_deferred() -> None:
     # Preserve the original independent evidence and segment references as well.
     assert "fk_parking_rules_source_evidence_id_parking_sources" in constraints
     assert "fk_parking_rules_segment_id_street_segments" in constraints
+
+
+def test_evidence_metadata_enforces_chronology_and_source_authority() -> None:
+    evidence = Base.metadata.tables["parking_sources"]
+    constraints = {
+        constraint.name: str(constraint.sqltext)
+        for constraint in evidence.constraints
+        if isinstance(constraint, CheckConstraint)
+    }
+
+    assert set(constraints) == {
+        "ck_parking_sources_observed_not_after_retrieved",
+        "ck_parking_sources_published_not_after_retrieved",
+        "ck_parking_sources_source_authority_ceiling",
+    }
+    authority_sql = constraints["ck_parking_sources_source_authority_ceiling"]
+    assert "source_type IN ('UNIVERSITY', 'OSM')" in authority_sql
+    assert "reliability_tier IN ('B', 'C', 'D')" in authority_sql
+    assert "source_type = 'IMAGERY_INFERENCE'" in authority_sql
+    assert "reliability_tier = 'D'" in authority_sql
 
 
 def test_review_queue_metadata_uses_check_constrained_strings_and_audit_keys() -> None:
