@@ -16,23 +16,46 @@ Configure and migrate the Phase 6 application as described in `PHASE_6_SEARCH_AP
 Open `http://127.0.0.1:8000/`. No `npm install`, frontend build, remote tile, CDN, API key, or paid
 service is required.
 
+Do not open `src/parking_ai/web/index.html` with a `file://` URL. Assets and search requests are
+same-origin by design. If JavaScript does not initialize, a default-visible diagnostic explains
+the supported HTTP entrypoint; successful initialization hides it. The non-JavaScript form uses
+POST so a failed script load does not copy coordinates and preferences into the URL.
+
+On a fresh migrated database, load the deterministic map geometry before searching:
+
+```bash
+parking-ai-seed-smu
+```
+
+This creates the destination and candidate geometry only. Search still fails closed until the
+operator configures a verified guaranteed fallback, and all curbs remain `UNKNOWN` until separate
+authoritative regulation evidence exists.
+
 ## Search workflow
 
 The form collects origin coordinates, destination name, arrival time, parking duration, walking
 limit, optional permits, candidate limit, and free-only preference. Browser geolocation is
 requested only when the user presses the location button. A search posts the existing strict
-Phase 6 JSON contract.
+Phase 6 JSON contract. Its default destination is the exact canonical fixture name, `Fondren
+Library Center`, so the first supported search resolves without relying on fuzzy aliases.
 
 An identical failed request keeps its in-memory idempotency key for a safe retry. Changed form
 content receives a different key. Once a request succeeds, its key is discarded so another `now`
 search is a fresh execution. Inputs, coordinates, keys, and results are not stored in URLs,
 cookies, localStorage, or analytics.
 
+Each request owns an abortable in-memory token. Editing the form or accepting a new geolocation
+invalidates the pending request and prompts the user to submit again. A superseded or aborted
+response cannot render results, clear a newer request's loading state, or alter its idempotency
+identity.
+
 ## Map and semantics
 
 The SVG map projects validated WGS84 LineStrings into a local viewport. It displays:
 
 - legal/free, legal/paid, illegal, and unknown segments with both labels and distinct line styles;
+- left/right records offset to opposite sides of their shared road-centerline geometry so both
+  side-specific decisions remain visible and independently selectable;
 - availability probability and interval where the backend produced one;
 - numbered route stops and a dashed schematic connection;
 - the destination and a local fallback marker when it lies within the candidate viewport;
@@ -56,8 +79,13 @@ does not invent publisher names or source links that are absent from the API con
 
 ## Accessibility and security
 
-- Every form field has a visible label; search status uses polite/assertive live regions.
+- Every form field has a visible label; search and geolocation status use atomic
+  polite/assertive live regions.
 - The route is an ordered list and every map candidate has an equivalent keyboard-operable card.
+- The SVG uses group semantics because its candidate paths are interactive; it is not exposed as
+  a flattened image containing inaccessible button descendants.
+- At narrow widths the SVG retains a readable minimum canvas inside a horizontal pan container;
+  non-scaling visible strokes and separate 24-pixel hit strokes preserve pointer/focus access.
 - State uses text, line style, and color; probability always has numeric text.
 - Layout collapses to one column, supports 320-pixel viewports, and respects reduced motion.
 - Dynamic strings use DOM text nodes, never `innerHTML`, HTML templates, or evaluated code.
@@ -82,8 +110,8 @@ multi-step routes, fallback-only behavior, malicious HTML-like source text, safe
 keyboard-visible semantics, and an empty console. Python tests additionally verify asset MIME
 types, package visibility, security headers, and that existing health/search endpoints are unchanged.
 
-## Current phase boundary
+## Phase 7 scope boundary
 
-Phase 7 is the current implemented phase. Phase 8 AI/LLM evidence extraction, live routing/maps,
-publisher/source-detail APIs, outcome collection, accounts, analytics, and learned availability
-models are not implemented.
+This document describes the Phase 7 UI slice. Later Phase 8/V1A evidence workflow features do not
+run in the parking-search request path. Live routing/maps, publisher/source-detail APIs, outcome
+collection, accounts, analytics, and learned availability models remain outside this UI phase.

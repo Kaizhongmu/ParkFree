@@ -24,6 +24,7 @@ from parking_ai.domain import (
     SearchRoute,
     SearchRouteStep,
     SegmentSide,
+    UserProfile,
 )
 
 NOW = datetime(2026, 9, 19, 12, tzinfo=UTC)
@@ -259,6 +260,37 @@ def test_evidence_allows_tier_at_or_below_source_authority_ceiling(
     )
 
     assert evidence.reliability_tier is tier
+
+
+def test_user_profile_normalizes_permits_without_changing_order_or_case() -> None:
+    profile = UserProfile(permit_types=[" SMU-A ", "Visitor"])
+
+    assert profile.permit_types == ["SMU-A", "Visitor"]
+
+
+@pytest.mark.parametrize(
+    "permit_types",
+    [
+        [""],
+        ["   "],
+        ["SMU-A", "smu-a"],
+        ["x" * 129],
+        [f"permit-{index}" for index in range(33)],
+        [123],
+    ],
+)
+def test_user_profile_rejects_invalid_or_unbounded_permits(
+    permit_types: list[object],
+) -> None:
+    with pytest.raises(ValidationError):
+        UserProfile(permit_types=permit_types)  # type: ignore[arg-type]
+
+
+def test_user_profile_accepts_permit_boundaries() -> None:
+    profile = UserProfile(permit_types=["x" * 128, *[f"permit-{index}" for index in range(31)]])
+
+    assert len(profile.permit_types) == 32
+    assert len(profile.permit_types[0]) == 128
 
 
 def route_step(**updates: object) -> SearchRouteStep:

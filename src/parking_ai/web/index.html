@@ -12,6 +12,11 @@
   <body>
     <a class="skip-link" href="#search-form">Skip to parking search</a>
 
+    <div id="runtime-notice" class="runtime-notice">
+      Interactive map code did not start. Run ParkFree through its FastAPI server and open the
+      server root (normally 127.0.0.1 on port 8000); do not open this HTML file directly.
+    </div>
+
     <header class="site-header">
       <div class="brand-lockup" aria-label="ParkFree">
         <span class="brand-mark" aria-hidden="true">P</span>
@@ -46,7 +51,7 @@
             <h2 id="search-title">Plan your parking approach</h2>
           </div>
 
-          <form id="search-form">
+          <form id="search-form" method="post" action="/v1/parking/search">
             <fieldset>
               <legend>Starting point</legend>
               <div class="field-grid">
@@ -59,15 +64,15 @@
                   <input id="origin-lon" name="origin-lon" type="number" value="-96.784" min="-180" max="180" step="any" required>
                 </label>
               </div>
-              <button class="text-button" id="locate-button" type="button">Use my location</button>
-              <p class="field-help" id="location-help">Location stays in this browser and is sent only with this search.</p>
+              <button class="text-button" id="locate-button" type="button" aria-describedby="location-help">Use my location</button>
+              <p class="field-help" id="location-help" role="status" aria-live="polite" aria-atomic="true">Location stays in this browser and is sent only with this search.</p>
             </fieldset>
 
             <fieldset>
               <legend>Destination and stay</legend>
               <label>
                 Destination
-                <input id="destination" name="destination" type="text" value="Fondren Library" maxlength="255" autocomplete="off" required>
+                <input id="destination" name="destination" type="text" value="Fondren Library Center" maxlength="255" autocomplete="off" required>
               </label>
               <label class="check-row">
                 <input id="arrival-now" name="arrival-now" type="checkbox" checked>
@@ -98,7 +103,8 @@
                 </label>
                 <label>
                   Permit types <span class="optional">optional, comma-separated</span>
-                  <input id="permits" name="permits" type="text" placeholder="SMU-A, visitor">
+                  <input id="permits" name="permits" type="text" maxlength="8192" aria-describedby="permit-help" placeholder="SMU-A, visitor">
+                  <span class="field-help" id="permit-help">Up to 32 permits; each name may contain up to 128 characters.</span>
                 </label>
                 <label>
                   Candidate limit
@@ -117,7 +123,7 @@
             </button>
           </form>
 
-          <div id="request-status" class="request-status" role="status" aria-live="polite"></div>
+          <div id="request-status" class="request-status" role="status" aria-live="polite" aria-atomic="true"></div>
         </aside>
 
         <section class="results-panel" aria-labelledby="results-title">
@@ -130,7 +136,7 @@
           </div>
 
           <div class="map-shell">
-            <svg id="parking-map" viewBox="0 0 900 580" role="img" aria-labelledby="map-title map-description">
+            <svg id="parking-map" viewBox="0 0 900 580" role="group" aria-labelledby="map-title map-description">
               <title id="map-title">Parking candidate map</title>
               <desc id="map-description">Submit a search to show parking curb candidates and route order.</desc>
               <defs>

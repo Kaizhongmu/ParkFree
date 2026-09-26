@@ -12,11 +12,12 @@ does not add a frontend, live routing, live OSM retrieval, model training, or AI
 - an aware `arrival_time` or the literal `now`;
 - a required parking duration from 1 through 1,440 minutes;
 - `free_only`, a walking limit greater than 0 and at most 30 minutes, and at most 20 candidates;
-- vehicle type and zero or more permit types.
+- vehicle type and up to 32 permit types, each at most 128 characters after trimming.
 
-Unknown fields, naive timestamps, coercive booleans, invalid bounds, duplicate permits, and blank
-selectors are rejected at the HTTP boundary. `Idempotency-Key` is optional, trimmed, nonblank, and
-limited to 128 characters.
+Unknown fields, naive timestamps, coercive booleans, invalid bounds, case-insensitive duplicate
+permits, blank permit names, and blank selectors are rejected at the HTTP boundary. Permit order
+and original case are preserved. `Idempotency-Key` is optional, trimmed, nonblank, and limited to
+128 characters.
 
 The response contains the resolved destination and arrival, every candidate's legality/payment
 decision, optional availability prediction, exclusion reason, explicit unknown IDs, the selected
@@ -97,8 +98,9 @@ The integration fixture downgrades the dedicated test database to `base`, migrat
 runs geometry/migration/persistence/API checks, and downgrades it afterward. Never point it at a
 database containing data that must be retained.
 
-## Current phase boundary
+## Phase 6 scope boundary
 
-Phase 6 is the current implemented phase. There is no Phase 7 map UI, Phase 8 AI/LLM extraction,
-live OSM or routing call, paid service, regulation administration API, outcome API, or learned
-availability model in this phase.
+This document describes the Phase 6 API slice. Later Phase 7 UI and Phase 8/V1A evidence workflow
+features do not change this API's deterministic orchestration contract. Live OSM or routing calls,
+paid services, a public regulation-administration API, an outcome API, and learned availability
+models remain outside this phase.

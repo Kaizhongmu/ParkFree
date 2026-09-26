@@ -8,14 +8,21 @@ const arrivalNow = document.querySelector("#arrival-now");
 const arrivalField = document.querySelector("#arrival-time-field");
 const arrivalInput = document.querySelector("#arrival-time");
 const mapContent = document.querySelector("#map-content");
+const mapShell = document.querySelector(".map-shell");
 const mapEmpty = document.querySelector("#map-empty");
 const mapEmptyNote = document.querySelector("#map-empty-note");
 const mapDescription = document.querySelector("#map-description");
 const candidateList = document.querySelector("#candidate-list");
+const runtimeNotice = document.querySelector("#runtime-notice");
 
 let activeSegmentId = null;
 let lastRequestBody = null;
 let lastRequestKey = null;
+let activeSearch = null;
+
+form.addEventListener("input", () => {
+  invalidatePendingSearch("Search settings changed. Submit again to build a current plan.");
+});
 
 arrivalNow.addEventListener("change", () => {
   arrivalField.hidden = arrivalNow.checked;
@@ -31,6 +38,7 @@ document.querySelector("#locate-button").addEventListener("click", () => {
   help.textContent = "Requesting your browser location…";
   navigator.geolocation.getCurrentPosition(
     (position) => {
+      invalidatePendingSearch("Location changed. Submit again to build a current plan.");
       document.querySelector("#origin-lat").value = position.coords.latitude.toFixed(6);
       document.querySelector("#origin-lon").value = position.coords.longitude.toFixed(6);
       help.textContent = "Location added. It will be sent only when you submit this search.";
@@ -48,6 +56,7 @@ form.addEventListener("submit", async (event) => {
 
   const payload = buildRequest();
   const requestBody = JSON.stringify(payload);
+  invalidatePendingSearch();
   if (requestBody !== lastRequestBody) {
     lastRequestBody = requestBody;
     lastRequestKey = createRequestKey();
@@ -55,16 +64,23 @@ form.addEventListener("submit", async (event) => {
   clearResults();
   setLoading(true);
   setStatus("Evaluating curb rules and building a route…", false);
+  const search = {
+    controller: new AbortController(),
+    requestKey: lastRequestKey,
+  };
+  activeSearch = search;
   try {
     const response = await fetch("/v1/parking/search", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Idempotency-Key": lastRequestKey,
+        "Idempotency-Key": search.requestKey,
       },
       body: requestBody,
+      signal: search.controller.signal,
     });
     const body = await response.json().catch(() => ({}));
+    if (activeSearch !== search) return;
     if (!response.ok) throw new Error(readError(body, response.status));
     renderSearch(body);
     setStatus(`Plan ready for ${body.destination.name}.`, false);
@@ -73,13 +89,29 @@ form.addEventListener("submit", async (event) => {
     lastRequestBody = null;
     lastRequestKey = null;
   } catch (error) {
+    if (activeSearch !== search || error?.name === "AbortError") return;
     const message = error instanceof Error ? error.message : "The parking search failed.";
     markSearchFailed();
     setStatus(message, true);
   } finally {
-    setLoading(false);
+    if (activeSearch === search) {
+      activeSearch = null;
+      setLoading(false);
+    }
   }
 });
+
+function invalidatePendingSearch(message = null) {
+  if (!activeSearch) return;
+  const staleSearch = activeSearch;
+  activeSearch = null;
+  staleSearch.controller.abort();
+  setLoading(false);
+  if (message) {
+    markSearchChanged();
+    setStatus(message, false);
+  }
+}
 
 function buildRequest() {
   const permits = document.querySelector("#permits").value
@@ -127,10 +159,11 @@ function setLoading(isLoading) {
 }
 
 function setStatus(message, isError) {
-  statusBox.textContent = message;
   statusBox.classList.toggle("error", isError);
   statusBox.setAttribute("role", isError ? "alert" : "status");
   statusBox.setAttribute("aria-live", isError ? "assertive" : "polite");
+  statusBox.setAttribute("aria-atomic", "true");
+  statusBox.textContent = message;
 }
 
 function clearResults() {
@@ -150,6 +183,13 @@ function markSearchFailed() {
   document.querySelector("#result-time").textContent = "No current plan";
   mapEmpty.textContent = "Search did not complete";
   mapEmptyNote.textContent = "Review the message beside the search form, then try again";
+  setMapEmptyVisibility(true);
+}
+
+function markSearchChanged() {
+  document.querySelector("#result-time").textContent = "No current plan";
+  mapEmpty.textContent = "Search settings changed";
+  mapEmptyNote.textContent = "Submit again to build a plan for the current inputs";
   setMapEmptyVisibility(true);
 }
 
@@ -214,25 +254,39 @@ function renderMap(result) {
   }
 
   decisions.forEach((decision) => {
-    const points = coordinatesForDecision(decision).map(project);
+    const points = offsetProjectedPoints(
+      coordinatesForDecision(decision).map(project),
+      decision.segment.side,
+    );
     if (points.length < 2) return;
-    const path = svgElement("polyline", {
-      points: points.map(([x, y]) => `${x},${y}`).join(" "),
-      class: `map-segment ${decisionClass(decision)}`,
+    const segmentGroup = svgElement("g", {
+      class: "map-segment-group",
       tabindex: "0",
       role: "button",
       "aria-pressed": "false",
       "aria-label": candidateAriaLabel(decision, routeOrder.get(decision.segment.segment_id)),
       "data-segment-id": decision.segment.segment_id,
     });
-    path.addEventListener("click", () => selectSegment(decision.segment.segment_id));
-    path.addEventListener("keydown", (event) => {
+    const pathPoints = points.map(([x, y]) => `${x},${y}`).join(" ");
+    const hitPath = svgElement("polyline", {
+      points: pathPoints,
+      class: "map-segment-hit",
+      "aria-hidden": "true",
+    });
+    const visiblePath = svgElement("polyline", {
+      points: pathPoints,
+      class: `map-segment ${decisionClass(decision)}`,
+      "aria-hidden": "true",
+    });
+    segmentGroup.append(hitPath, visiblePath);
+    segmentGroup.addEventListener("click", () => selectSegment(decision.segment.segment_id));
+    segmentGroup.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
         selectSegment(decision.segment.segment_id);
       }
     });
-    mapContent.append(path);
+    mapContent.append(segmentGroup);
 
     const order = routeOrder.get(decision.segment.segment_id);
     if (order) {
@@ -272,6 +326,7 @@ function renderMap(result) {
       );
     }
   }
+  centerMapViewport();
 }
 
 function setMapEmptyVisibility(isVisible) {
@@ -280,6 +335,10 @@ function setMapEmptyVisibility(isVisible) {
   mapEmptyNote.setAttribute("visibility", visibility);
   mapEmpty.setAttribute("aria-hidden", String(!isVisible));
   mapEmptyNote.setAttribute("aria-hidden", String(!isVisible));
+}
+
+function centerMapViewport() {
+  mapShell.scrollLeft = Math.max(0, (mapShell.scrollWidth - mapShell.clientWidth) / 2);
 }
 
 function makeProjection(coordinates) {
@@ -315,6 +374,21 @@ function validCoordinate(coordinate) {
   return Number.isFinite(longitude) && Number.isFinite(latitude)
     && longitude >= -180 && longitude <= 180
     && latitude >= -90 && latitude <= 90;
+}
+
+function offsetProjectedPoints(points, side) {
+  if (points.length < 2 || (side !== "LEFT" && side !== "RIGHT")) return points;
+  const [startX, startY] = points[0];
+  const [endX, endY] = points[points.length - 1];
+  const deltaX = endX - startX;
+  const deltaY = endY - startY;
+  const length = Math.hypot(deltaX, deltaY);
+  if (length === 0) return points;
+  const direction = side === "LEFT" ? 1 : -1;
+  const offset = 12 * direction;
+  const offsetX = (deltaY / length) * offset;
+  const offsetY = (-deltaX / length) * offset;
+  return points.map(([x, y]) => [x + offsetX, y + offsetY]);
 }
 
 function renderRoute(result) {
@@ -434,7 +508,7 @@ function selectSegment(segmentId) {
     const isActive = activeSegmentId === node.dataset.segmentId;
     node.classList.toggle("is-active", isActive);
     node.setAttribute("aria-pressed", String(isActive));
-    if (node.classList.contains("map-segment")) {
+    if (node.classList.contains("map-segment-group")) {
       node.classList.toggle("is-muted", activeSegmentId !== null && !isActive);
     }
   });
@@ -515,3 +589,6 @@ function svgElement(tag, attributes, text = null) {
   if (text !== null) node.textContent = text;
   return node;
 }
+
+centerMapViewport();
+runtimeNotice.hidden = true;

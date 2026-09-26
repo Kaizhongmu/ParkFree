@@ -100,6 +100,18 @@ No Phase 2 migration is required: migration `0001_initial_schema` already suppli
 tables, PostGIS geometries, primary keys, provenance links, enums, and spatial indexes. The Phase 2
 integration test starts from the freshly migrated schema and exercises the ingestion twice.
 
+Operators can run the same idempotent path after applying migrations:
+
+```bash
+parking-ai-seed-smu
+```
+
+The command reads `DATABASE_URL`, commits one transaction, prints only the destination ID and
+segment count, and is safe to repeat across transactions. It enforces the canonical 284 unique
+segments within the documented eight-minute search constraint before writing. It does not load
+parking rules, turn unknown candidates into legal/free recommendations, or prune other existing
+rows whose stable IDs are outside this fixture projection.
+
 ## Verification commands
 
 Run focused Phase 2 tests without a database:

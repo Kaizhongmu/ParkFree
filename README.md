@@ -49,6 +49,7 @@ Run migrations against the Compose database:
 
 ```bash
 docker compose run --rm api alembic upgrade head
+docker compose run --rm api parking-ai-seed-smu
 ```
 
 Verify the API:
@@ -60,7 +61,9 @@ curl http://localhost:8000/health
 The response is `{"status":"ok"}`.
 
 Open the Phase 7 interface at [`http://localhost:8000/`](http://localhost:8000/). The page is
-served by FastAPI and needs no separate frontend build or package manager.
+served by FastAPI and needs no separate frontend build or package manager. Do not open
+`src/parking_ai/web/index.html` directly: the UI intentionally requires the same HTTP origin as
+the API. The page now shows a persistent diagnostic if its JavaScript never starts.
 
 Phase 6 search also requires an explicitly configured fallback location. The sample fallback
 values are commented out in `.env.example` because a deployment must verify that the location
@@ -103,8 +106,16 @@ set -a
 source .env
 set +a
 alembic upgrade head
+parking-ai-seed-smu
 uvicorn parking_ai.main:app --reload
 ```
+
+`parking-ai-seed-smu` is an idempotent initialization command. It loads the canonical destination,
+two access points, OSM fixture evidence, and 284 candidate segments. It does not invent or load
+parking regulations; candidates remain explicitly `UNKNOWN` until authoritative rule evidence is
+separately ingested. The command enforces the fixture's exact 284-unique-segment/eight-minute
+contract and fails before writing if it changes unexpectedly. It upserts those stable identities
+but does not prune unrelated or historical database rows.
 
 ## Migrations
 

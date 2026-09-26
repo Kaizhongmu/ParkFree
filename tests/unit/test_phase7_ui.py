@@ -22,9 +22,22 @@ def test_home_serves_dependency_free_accessible_map_ui() -> None:
         "camera=(), geolocation=(self), microphone=()"
     )
     assert response.headers["x-frame-options"] == "DENY"
-    assert 'id="search-form"' in response.text
-    assert 'id="parking-map"' in response.text
+    assert 'id="search-form" method="post" action="/v1/parking/search"' in response.text
+    assert 'id="parking-map" viewBox="0 0 900 580" role="group"' in response.text
+    assert 'id="runtime-notice" class="runtime-notice"' in response.text
+    assert "do not open this HTML file directly" in response.text
+    assert (
+        'id="destination" name="destination" type="text" value="Fondren Library Center"'
+        in response.text
+    )
     assert 'aria-live="polite"' in response.text
+    assert 'id="location-help" role="status" aria-live="polite" aria-atomic="true"' in response.text
+    assert 'aria-describedby="location-help"' in response.text
+    assert (
+        'id="request-status" class="request-status" role="status" '
+        'aria-live="polite" aria-atomic="true"' in response.text
+    )
+    assert 'id="permits" name="permits" type="text" maxlength="8192"' in response.text
     assert "Unknown · verify signs" in response.text
     assert "Guaranteed fallback" not in response.text
     assert "https://" not in response.text
@@ -45,18 +58,40 @@ def test_ui_assets_are_local_and_have_expected_types() -> None:
     assert stylesheet.headers["content-type"].startswith("text/css")
     assert "@media (max-width: 600px)" in stylesheet.text
     assert "prefers-reduced-motion" in stylesheet.text
+    assert "aspect-ratio: 900 / 580" in stylesheet.text
+    assert "stroke-width: 24" in stylesheet.text
+    assert "vector-effect: non-scaling-stroke" in stylesheet.text
+    assert "min-width: 48rem" in stylesheet.text
+    assert ".route-marker, .route-number" in stylesheet.text
+    assert "pointer-events: none" in stylesheet.text
+    assert (
+        ".map-segment-group:focus-visible .map-segment-hit { stroke: var(--brand-dark); }"
+        in stylesheet.text
+    )
     assert script.status_code == 200
     assert "javascript" in script.headers["content-type"]
     assert 'fetch("/v1/parking/search"' in script.text
     assert "candidate_decisions" in script.text
+    assert "runtimeNotice.hidden = true" in script.text
+    assert 'class: "map-segment-group"' in script.text
+    assert 'class: "map-segment-hit"' in script.text
+    assert "offsetProjectedPoints" in script.text
+    assert "centerMapViewport" in script.text
     assert "evidence_refs" in script.text
     assert "unknown_segment_ids" in script.text
     assert "result.fallback" in script.text
     assert "lastRequestBody" in script.text
     assert "lastRequestBody = null" in script.text
+    assert "new AbortController()" in script.text
+    assert "activeSearch !== search" in script.text
+    assert "invalidatePendingSearch" in script.text
+    assert 'form.addEventListener("input"' in script.text
+    assert "staleSearch.controller.abort()" in script.text
+    assert "Search settings changed. Submit again" in script.text
     assert "clearResults()" in script.text
     assert "markSearchFailed()" in script.text
     assert 'setAttribute("aria-busy"' in script.text
+    assert 'setAttribute("aria-atomic", "true")' in script.text
     assert "route-guide" in script.text
     assert "validCoordinate" in script.text
     assert "setMapEmptyVisibility(false)" in script.text

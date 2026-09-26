@@ -34,7 +34,7 @@ def _payload(**overrides: Any) -> dict[str, Any]:
         "parking_duration_minutes": 90,
         "free_only": True,
         "max_walk_minutes": 8,
-        "vehicle_profile": {"type": "passenger", "permit_types": ["SMU-A"]},
+        "vehicle_profile": {"type": "passenger", "permit_types": [" SMU-A "]},
         "max_candidates": 20,
     }
     payload.update(overrides)
@@ -143,6 +143,20 @@ def test_search_preserves_explicit_aware_arrival() -> None:
         _payload(free_only=1),
         _payload(max_walk_minutes="8"),
         _payload(max_candidates=21),
+        _payload(vehicle_profile={"type": "passenger", "permit_types": [" "]}),
+        _payload(
+            vehicle_profile={
+                "type": "passenger",
+                "permit_types": ["SMU-A", "smu-a"],
+            }
+        ),
+        _payload(vehicle_profile={"type": "passenger", "permit_types": ["x" * 129]}),
+        _payload(
+            vehicle_profile={
+                "type": "passenger",
+                "permit_types": [f"permit-{index}" for index in range(33)],
+            }
+        ),
         _payload(unexpected=True),
     ],
 )
@@ -169,6 +183,14 @@ def test_search_rejects_invalid_idempotency_key(key: str) -> None:
     )
 
     assert response.status_code == 422
+
+
+def test_openapi_exposes_permit_input_bounds() -> None:
+    schemas = _client(None).get("/openapi.json").json()["components"]["schemas"]
+    permit_schema = schemas["VehicleProfileRequest"]["properties"]["permit_types"]
+
+    assert permit_schema["maxItems"] == 32
+    assert permit_schema["items"]["maxLength"] == 128
 
 
 def test_search_without_configured_handler_is_safely_unavailable() -> None:

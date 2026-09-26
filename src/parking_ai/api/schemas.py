@@ -6,6 +6,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, field_validator, model_validator
 
 from parking_ai.domain import GeoPoint, UserProfile
+from parking_ai.domain.schemas import PermitTypes
 from parking_ai.orchestrator.schemas import (
     DestinationSelector,
     ParkingSearchCommand,
@@ -58,7 +59,7 @@ class DestinationRequest(ApiModel):
 
 class VehicleProfileRequest(ApiModel):
     type: str = Field(default="passenger", min_length=1, max_length=64)
-    permit_types: list[str] = Field(default_factory=list)
+    permit_types: PermitTypes = Field(default_factory=list)
 
     @field_validator("type")
     @classmethod
@@ -66,16 +67,6 @@ class VehicleProfileRequest(ApiModel):
         normalized = value.strip()
         if not normalized:
             raise ValueError("vehicle type must not be blank")
-        return normalized
-
-    @field_validator("permit_types")
-    @classmethod
-    def validate_permit_types(cls, values: list[str]) -> list[str]:
-        normalized = [value.strip() for value in values]
-        if any(not value for value in normalized):
-            raise ValueError("permit types must not be blank")
-        if len(normalized) != len(set(normalized)):
-            raise ValueError("permit types must not contain duplicates")
         return normalized
 
 

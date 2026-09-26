@@ -6,6 +6,7 @@ from uuid import uuid4
 from pydantic import (
     AfterValidator,
     BaseModel,
+    BeforeValidator,
     ConfigDict,
     Field,
     model_validator,
@@ -46,6 +47,38 @@ def _require_timezone(value: datetime) -> datetime:
 AwareDateTime = Annotated[datetime, AfterValidator(_require_timezone)]
 Probability = Annotated[float, Field(ge=0, le=1)]
 NonNegativeFloat = Annotated[float, Field(ge=0)]
+MAX_PERMIT_TYPES = 32
+MAX_PERMIT_TYPE_LENGTH = 128
+
+
+def _normalize_permit_type(value: object) -> object:
+    if not isinstance(value, str):
+        return value
+    normalized = value.strip()
+    if not normalized:
+        raise ValueError("permit types must not be blank")
+    if len(normalized) > MAX_PERMIT_TYPE_LENGTH:
+        raise ValueError(f"permit types must be at most {MAX_PERMIT_TYPE_LENGTH} characters")
+    return normalized
+
+
+def _require_unique_permit_types(values: list[str]) -> list[str]:
+    normalized_keys = [value.casefold() for value in values]
+    if len(normalized_keys) != len(set(normalized_keys)):
+        raise ValueError("permit types must not contain case-insensitive duplicates")
+    return values
+
+
+PermitType = Annotated[
+    str,
+    BeforeValidator(_normalize_permit_type),
+    Field(min_length=1, max_length=MAX_PERMIT_TYPE_LENGTH),
+]
+PermitTypes = Annotated[
+    list[PermitType],
+    Field(max_length=MAX_PERMIT_TYPES),
+    AfterValidator(_require_unique_permit_types),
+]
 
 
 class DomainModel(BaseModel):
@@ -434,7 +467,7 @@ class SearchConstraints(DomainModel):
 
 class UserProfile(DomainModel):
     vehicle_type: str = Field(default="passenger", min_length=1, max_length=64)
-    permit_types: list[str] = Field(default_factory=list)
+    permit_types: PermitTypes = Field(default_factory=list)
     requested_parking_duration_min: int | None = Field(default=None, gt=0)
 
 

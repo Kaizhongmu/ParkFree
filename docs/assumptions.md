@@ -242,3 +242,13 @@
     `0006` preflights chronology and authority under a write-conflicting table lock and aborts on
     legacy violations rather than changing legal evidence metadata automatically. The regulation
     engine repeats these checks and is versioned as `regulation-engine-v2`.
+79. A user profile accepts at most 32 permit types and each trimmed permit name is at most 128
+    characters. Blank, non-string, and case-insensitive duplicate values fail validation; valid
+    input preserves caller order and original case so existing request hashes remain stable.
+80. The Phase 7 form remains editable during a search. Any input or accepted geolocation change
+    aborts and invalidates the pending browser request; only the current request token may update
+    results, status, loading state, or the in-memory idempotency identity.
+81. A supported local UI session is served from FastAPI over HTTP, never directly from the package
+    HTML with `file://`. The idempotent `parking-ai-seed-smu` command initializes only the canonical
+    destination, access points, OSM evidence, and 284 unknown candidate segments; it never creates
+    regulation evidence, legality, free status, or a guaranteed fallback.
