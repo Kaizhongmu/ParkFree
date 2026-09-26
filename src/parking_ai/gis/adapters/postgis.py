@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import json
+import math
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from sqlalchemy import func, select
+from geoalchemy2 import Geography
+from sqlalchemy import and_, cast, func, or_, select
 from sqlalchemy.orm import Session
 
 from parking_ai.database.models import (
@@ -24,6 +26,28 @@ from parking_ai.domain import (
     SearchConstraints,
 )
 from parking_ai.gis.generator import DEFAULT_WALKING_SPEED_M_PER_MIN, point_geometry_distance_m
+
+# PostGIS geography and the deterministic local projection use slightly different earth models.
+# Keep the database predicate a conservative prefilter, then apply the existing exact Phase 2
+# distance boundary below. The maximum supported search radius is small enough that one percent is
+# comfortably conservative without materially widening the rows hydrated from PostGIS.
+_SPATIAL_PREFILTER_SAFETY_FACTOR = 1.01
+_CONSERVATIVE_METRES_PER_DEGREE = 110_000.0
+
+
+def _spatial_padding_degrees(point: GeoPoint, distance_m: float) -> tuple[float, float]:
+    """Return conservative longitude/latitude padding for an indexable WGS84 bounding box."""
+
+    latitude_padding = distance_m / _CONSERVATIVE_METRES_PER_DEGREE
+    furthest_absolute_latitude = min(90.0, abs(point.latitude) + latitude_padding)
+    longitude_scale = math.cos(math.radians(furthest_absolute_latitude))
+    if longitude_scale <= 0:
+        return 180.0, latitude_padding
+    longitude_padding = min(
+        180.0,
+        distance_m / (_CONSERVATIVE_METRES_PER_DEGREE * longitude_scale),
+    )
+    return longitude_padding, latitude_padding
 
 
 def _geojson_object(value: str | Mapping[str, Any]) -> Mapping[str, Any]:
@@ -134,16 +158,63 @@ class PostGISCandidateSegmentService:
         destination: Destination,
         search_constraints: SearchConstraints,
     ) -> list[ParkingSegment]:
+        access_points = [point.location for point in destination.access_points]
+        if not access_points:
+            access_points = [destination.location]
+        maximum_distance_m = search_constraints.max_walk_minutes * self._walking_speed_m_per_min
+        prefilter_distance_m = maximum_distance_m * _SPATIAL_PREFILTER_SAFETY_FACTOR
+        segment_geography = cast(ParkingSegmentModel.geometry, Geography(srid=4326))
+        spatial_predicates = []
+        for point in access_points:
+            point_geometry = func.ST_SetSRID(
+                func.ST_MakePoint(point.longitude, point.latitude),
+                4326,
+            )
+            longitude_padding, latitude_padding = _spatial_padding_degrees(
+                point,
+                prefilter_distance_m,
+            )
+            spatial_predicates.append(
+                and_(
+                    ParkingSegmentModel.geometry.op("&&")(
+                        func.ST_Expand(
+                            point_geometry,
+                            longitude_padding,
+                            latitude_padding,
+                        )
+                    ),
+                    func.ST_DWithin(
+                        segment_geography,
+                        cast(point_geometry, Geography(srid=4326)),
+                        prefilter_distance_m,
+                    ),
+                )
+            )
         segment_rows = self._session.execute(
             select(
                 ParkingSegmentModel,
                 func.ST_AsGeoJSON(ParkingSegmentModel.geometry),
-            ).order_by(ParkingSegmentModel.segment_id)
+            )
+            .where(or_(*spatial_predicates))
+            .order_by(ParkingSegmentModel.segment_id)
         ).all()
         if not segment_rows:
             return []
 
-        segment_ids = [model.segment_id for model, _ in segment_rows]
+        ranked_rows: list[tuple[float, ParkingSegmentModel, LineStringGeometry]] = []
+        for model, geometry_json in segment_rows:
+            geometry = _line_from_geojson(geometry_json)
+            distance_m = min(
+                point_geometry_distance_m(point, geometry.coordinates) for point in access_points
+            )
+            if distance_m <= maximum_distance_m:
+                ranked_rows.append((distance_m, model, geometry))
+        ranked_rows.sort(key=lambda item: (round(item[0], 6), item[1].segment_id))
+        ranked_rows = ranked_rows[: search_constraints.max_candidates]
+        if not ranked_rows:
+            return []
+
+        segment_ids = [model.segment_id for _, model, _ in ranked_rows]
         rule_refs = self._reference_map(
             select(ParkingRuleModel.segment_id, ParkingRuleModel.rule_id)
             .where(ParkingRuleModel.segment_id.in_(segment_ids))
@@ -161,43 +232,25 @@ class PostGISCandidateSegmentService:
             )
         )
 
-        access_points = [point.location for point in destination.access_points]
-        if not access_points:
-            access_points = [destination.location]
-        maximum_distance_m = search_constraints.max_walk_minutes * self._walking_speed_m_per_min
-
-        ranked: list[tuple[float, ParkingSegment]] = []
-        for model, geometry_json in segment_rows:
-            geometry = _line_from_geojson(geometry_json)
-            distance_m = min(
-                point_geometry_distance_m(point, geometry.coordinates) for point in access_points
+        return [
+            ParkingSegment(
+                segment_id=model.segment_id,
+                geometry=geometry,
+                street_name=model.street_name,
+                side=model.side,
+                length_m=model.length_m,
+                estimated_capacity=model.estimated_capacity,
+                road_type=model.road_type,
+                physical_state=model.physical_state,
+                regulation_refs=rule_refs.get(model.segment_id, []),
+                # Contextual decisions are recomputed per search. The legacy flattened database
+                # columns must never become an implicit regulation/prediction input or leak into
+                # the request snapshot.
+                evidence_refs=evidence_refs.get(model.segment_id, []),
+                data_freshness=model.data_freshness,
             )
-            if distance_m > maximum_distance_m:
-                continue
-            ranked.append(
-                (
-                    distance_m,
-                    ParkingSegment(
-                        segment_id=model.segment_id,
-                        geometry=geometry,
-                        street_name=model.street_name,
-                        side=model.side,
-                        length_m=model.length_m,
-                        estimated_capacity=model.estimated_capacity,
-                        road_type=model.road_type,
-                        physical_state=model.physical_state,
-                        regulation_refs=rule_refs.get(model.segment_id, []),
-                        # Contextual decisions are recomputed per search. The legacy flattened
-                        # database columns must never become an implicit regulation/prediction
-                        # input or leak into the request snapshot.
-                        evidence_refs=evidence_refs.get(model.segment_id, []),
-                        data_freshness=model.data_freshness,
-                    ),
-                )
-            )
-
-        ranked.sort(key=lambda item: (round(item[0], 6), item[1].segment_id))
-        return [item[1] for item in ranked[: search_constraints.max_candidates]]
+            for _, model, geometry in ranked_rows
+        ]
 
     def _reference_map(self, statement: Any) -> dict[str, list[str]]:
         references: defaultdict[str, list[str]] = defaultdict(list)

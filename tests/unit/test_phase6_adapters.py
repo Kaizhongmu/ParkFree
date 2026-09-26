@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
+from sqlalchemy.dialects import postgresql
 
 from parking_ai.database.models import (
     DestinationAccessPointModel,
@@ -14,6 +15,7 @@ from parking_ai.database.models import (
 )
 from parking_ai.domain import (
     Destination,
+    DestinationAccessPoint,
     EvidenceReliabilityTier,
     EvidenceSourceType,
     EvidenceStoragePolicy,
@@ -200,7 +202,86 @@ def test_postgis_candidate_service_hydrates_refs_and_uses_phase_two_ordering() -
     assert candidates[0].availability_probability is None
     assert candidates[1].regulation_refs == []
     assert candidates[1].evidence_refs == ["evidence-b"]
-    assert "ST_AsGeoJSON" in str(session.executed[0])
+    candidate_statement = session.executed[0].compile(dialect=postgresql.dialect())
+    candidate_sql = str(candidate_statement)
+    assert "ST_AsGeoJSON" in candidate_sql
+    assert candidate_sql.count("ST_DWithin(") == 1
+    assert candidate_sql.count("street_segments.geometry && ST_Expand(") == 1
+    assert "CAST(street_segments.geometry AS geography" in candidate_sql
+    assert candidate_statement.params["ST_MakePoint_1"] == pytest.approx(-96.784)
+    assert candidate_statement.params["ST_MakePoint_2"] == pytest.approx(32.842)
+    assert candidate_statement.params["ST_DWithin_1"] == pytest.approx(80.8)
+
+
+def test_postgis_candidate_service_prefilters_all_access_points_before_ref_hydration() -> None:
+    destination = Destination(
+        destination_id="destination-a",
+        name="Destination A",
+        location=GeoPoint(latitude=32.842, longitude=-96.79),
+        access_points=[
+            DestinationAccessPoint(
+                access_point_id="entrance-west",
+                destination_id="destination-a",
+                location=GeoPoint(latitude=32.842, longitude=-96.784),
+            ),
+            DestinationAccessPoint(
+                access_point_id="entrance-east",
+                destination_id="destination-a",
+                location=GeoPoint(latitude=32.842, longitude=-96.78),
+            ),
+        ],
+    )
+    near_second_access_point = (
+        '{"type":"LineString","coordinates":[[-96.78,32.842],[-96.7798,32.842]]}'
+    )
+    # About 80.4 m north of the first entrance: admitted by the conservative database
+    # prefilter, but outside the exact 80 m Phase 2 boundary.
+    outside_exact_boundary = (
+        '{"type":"LineString","coordinates":[[-96.784,32.842723],[-96.7838,32.842723]]}'
+    )
+    session = _ReadOnlySession(
+        execute_results=[
+            [
+                (_segment_model("segment-near-east"), near_second_access_point),
+                (_segment_model("segment-outside"), outside_exact_boundary),
+            ],
+            [],
+            [],
+        ]
+    )
+
+    candidates = PostGISCandidateSegmentService(session).get_candidate_segments(  # type: ignore[arg-type]
+        destination,
+        SearchConstraints(max_walk_minutes=1, max_candidates=1),
+    )
+
+    assert [candidate.segment_id for candidate in candidates] == ["segment-near-east"]
+    candidate_statement = session.executed[0].compile(dialect=postgresql.dialect())
+    candidate_sql = str(candidate_statement)
+    assert candidate_sql.count("ST_DWithin(") == 2
+    assert candidate_sql.count("street_segments.geometry && ST_Expand(") == 2
+    assert " OR " in candidate_sql
+    assert candidate_statement.params["ST_MakePoint_1"] == pytest.approx(-96.784)
+    assert candidate_statement.params["ST_MakePoint_3"] == pytest.approx(-96.78)
+    assert candidate_statement.params["ST_DWithin_1"] == pytest.approx(80.8)
+    assert candidate_statement.params["ST_DWithin_2"] == pytest.approx(80.8)
+    for reference_statement in session.executed[1:]:
+        assert reference_statement.compile().params == {"segment_id_1": ["segment-near-east"]}
+
+
+def test_postgis_candidate_service_stops_after_empty_spatial_prefilter() -> None:
+    session = _ReadOnlySession(execute_results=[[]])
+
+    candidates = PostGISCandidateSegmentService(session).get_candidate_segments(  # type: ignore[arg-type]
+        _destination(),
+        SearchConstraints(max_walk_minutes=1, max_candidates=2),
+    )
+
+    assert candidates == []
+    assert len(session.executed) == 1
+    candidate_sql = str(session.executed[0].compile(dialect=postgresql.dialect()))
+    assert "WHERE (street_segments.geometry && ST_Expand(" in candidate_sql
+    assert ") AND ST_DWithin(" in candidate_sql
 
 
 def test_regulation_factory_loads_candidate_snapshot_and_never_writes_back() -> None:

@@ -252,3 +252,15 @@
     HTML with `file://`. The idempotent `parking-ai-seed-smu` command initializes only the canonical
     destination, access points, OSM evidence, and 284 unknown candidate segments; it never creates
     regulation evidence, legality, free status, or a guaranteed fallback.
+82. The first nationwide-readiness slice provides US destination discovery, not nationwide
+    parking coverage. A resolved place has no implied candidate-road, regulation, availability, or
+    guaranteed-fallback coverage.
+83. Public Nominatim discovery is disabled until an identifying operator User-Agent is configured.
+    It is limited to explicit user submissions, a single application process, one cache-miss
+    request per second, bounded in-memory caching, and no automated live-network tests.
+84. Destination discovery uses a same-origin POST body so raw destination queries are not placed
+    in browser history or normal access-log URLs. Application logs must not include the raw query,
+    provider URL with query parameters, or precise result coordinates.
+85. The deterministic `/v1/parking/search` path never invokes geocoding or another live provider.
+    Provider results require a later explicit selection and coverage-preparation boundary before
+    they may become canonical destination IDs.

@@ -9,6 +9,8 @@ optimizer, a replayable end-to-end parking-search API, a dependency-free local m
 AI evidence-service contracts with explicit human review before persistence.
 The post-Phase 8 V1A hardening slice adds a durable least-privilege review queue and append-only
 audit trail for trusted backend operators; it intentionally exposes no public review endpoint.
+The first nationwide-readiness slice adds zero-cost, US-only destination discovery while keeping
+the deterministic parking-search path isolated from live providers.
 
 ## Requirements
 
@@ -59,6 +61,26 @@ curl http://localhost:8000/health
 ```
 
 The response is `{"status":"ok"}`.
+
+Optional zero-cost US destination discovery uses public Nominatim and requires an identifying
+application/contact string, but no API key or billing account:
+
+```text
+NOMINATIM_USER_AGENT=ParkFree/0.1 (contact: operator@example.com)
+```
+
+After configuration, explicitly submit a lookup (the public service must not be used for
+type-ahead autocomplete):
+
+```bash
+curl -X POST http://localhost:8000/v1/destinations/search \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"Seattle Center"}'
+```
+
+This endpoint discovers places only. It does not claim parking coverage or pass unprepared
+destinations to the optimizer. See
+[`docs/ZERO_COST_DESTINATION_DISCOVERY.md`](docs/ZERO_COST_DESTINATION_DISCOVERY.md).
 
 Open the Phase 7 interface at [`http://localhost:8000/`](http://localhost:8000/). The page is
 served by FastAPI and needs no separate frontend build or package manager. Do not open
@@ -175,6 +197,9 @@ See [`docs/PHASE_8_AI_EVIDENCE.md`](docs/PHASE_8_AI_EVIDENCE.md) for the strict 
 source/storage policy, quarantine behavior, human-review boundary, and approved persistence flow.
 See [`docs/V1A_DURABLE_REVIEW_QUEUE.md`](docs/V1A_DURABLE_REVIEW_QUEUE.md) for roles, leases,
 state transitions, transaction ownership, audit integrity, retention, and verification commands.
+See [`docs/ZERO_COST_DESTINATION_DISCOVERY.md`](docs/ZERO_COST_DESTINATION_DISCOVERY.md) for the
+free Nominatim adapter, privacy/rate limits, and the boundary between place discovery and parking
+coverage.
 
 ## Project structure
 
