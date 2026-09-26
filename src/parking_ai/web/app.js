@@ -1,6 +1,8 @@
 "use strict";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
+const LOCAL_DEMO_DESTINATION = "Fondren Library Center";
+const LOCAL_DEMO_DESTINATION_ID = "smu-fondren-library";
 const form = document.querySelector("#search-form");
 const statusBox = document.querySelector("#request-status");
 const submitButton = document.querySelector("#submit-button");
@@ -14,14 +16,31 @@ const mapEmptyNote = document.querySelector("#map-empty-note");
 const mapDescription = document.querySelector("#map-description");
 const candidateList = document.querySelector("#candidate-list");
 const runtimeNotice = document.querySelector("#runtime-notice");
+const destinationInput = document.querySelector("#destination");
+const destinationSearchButton = document.querySelector("#destination-search-button");
+const useDemoDestinationButton = document.querySelector("#use-demo-destination-button");
+const destinationSearchStatus = document.querySelector("#destination-search-status");
+const destinationResults = document.querySelector("#destination-results");
+const destinationMatchList = document.querySelector("#destination-match-list");
+const destinationAttribution = document.querySelector("#destination-attribution");
+const selectedDestinationPanel = document.querySelector("#selected-destination");
 
 let activeSegmentId = null;
 let lastRequestBody = null;
 let lastRequestKey = null;
 let activeSearch = null;
+let activeDestinationSearch = null;
+let selectedDestination = null;
+let hasCurrentPlan = false;
 
 form.addEventListener("input", () => {
   invalidatePendingSearch("Search settings changed. Submit again to build a current plan.");
+});
+
+destinationInput.addEventListener("input", () => {
+  invalidateDestinationSearch();
+  clearDestinationDiscovery();
+  showDestinationCoverageGate();
 });
 
 arrivalNow.addEventListener("change", () => {
@@ -50,10 +69,72 @@ document.querySelector("#locate-button").addEventListener("click", () => {
   );
 });
 
+destinationSearchButton.addEventListener("click", async () => {
+  const query = destinationInput.value.replace(/\s+/g, " ").trim();
+  if (query.length < 2) {
+    destinationInput.setCustomValidity("Enter at least two characters to find a US place.");
+    destinationInput.reportValidity();
+    destinationInput.setCustomValidity("");
+    return;
+  }
+
+  invalidateDestinationSearch();
+  clearDestinationDiscovery();
+  destinationSearchButton.disabled = true;
+  destinationSearchButton.textContent = "Finding places…";
+  destinationSearchStatus.textContent = "Searching US destinations…";
+  const search = { controller: new AbortController() };
+  activeDestinationSearch = search;
+  try {
+    const response = await fetch("/v1/destinations/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query }),
+      signal: search.controller.signal,
+    });
+    const body = await response.json().catch(() => ({}));
+    if (activeDestinationSearch !== search) return;
+    if (!response.ok) throw new Error(readDestinationError(body, response.status));
+    renderDestinationDiscovery(normalizeDestinationDiscovery(body));
+  } catch (error) {
+    if (activeDestinationSearch !== search || error?.name === "AbortError") return;
+    const message = error instanceof Error ? error.message : "Destination search failed.";
+    destinationSearchStatus.textContent = message;
+    destinationSearchStatus.classList.add("error");
+  } finally {
+    if (activeDestinationSearch === search) {
+      activeDestinationSearch = null;
+      destinationSearchButton.disabled = false;
+      destinationSearchButton.textContent = "Find this US place";
+    }
+  }
+});
+
+useDemoDestinationButton.addEventListener("click", () => {
+  invalidateDestinationSearch();
+  invalidatePendingSearch();
+  destinationInput.value = LOCAL_DEMO_DESTINATION;
+  clearDestinationDiscovery();
+  resetMapForLocalDemo();
+  setLoading(false);
+  destinationSearchStatus.textContent =
+    "SMU demo destination selected. Local GIS fixture coverage can now be checked.";
+  setStatus("SMU demo ready. Build a parking plan when the local database is configured.", false);
+  destinationInput.focus();
+});
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!form.reportValidity()) return;
+  if (!isLocalDemoDestination()) {
+    setStatus(
+      "Parking-plan coverage is unavailable for this discovered place. Use the SMU demo destination to build a route.",
+      true,
+    );
+    return;
+  }
 
+  invalidateDestinationSearch();
   const payload = buildRequest();
   const requestBody = JSON.stringify(payload);
   invalidatePendingSearch();
@@ -63,7 +144,12 @@ form.addEventListener("submit", async (event) => {
   }
   clearResults();
   setLoading(true);
-  setStatus("Evaluating curb rules and building a route…", false);
+  setStatus(
+    selectedDestination
+      ? "Checking local parking coverage, then evaluating curb rules…"
+      : "Evaluating curb rules and building a route…",
+    false,
+  );
   const search = {
     controller: new AbortController(),
     requestKey: lastRequestKey,
@@ -101,13 +187,214 @@ form.addEventListener("submit", async (event) => {
   }
 });
 
-function invalidatePendingSearch(message = null) {
-  if (!activeSearch) return;
-  const staleSearch = activeSearch;
-  activeSearch = null;
+function invalidateDestinationSearch() {
+  if (!activeDestinationSearch) return;
+  const staleSearch = activeDestinationSearch;
+  activeDestinationSearch = null;
   staleSearch.controller.abort();
+  destinationSearchButton.disabled = false;
+  destinationSearchButton.textContent = "Find this US place";
+}
+
+function clearDestinationDiscovery() {
+  selectedDestination = null;
+  destinationMatchList.replaceChildren();
+  destinationAttribution.textContent = "";
+  destinationResults.hidden = true;
+  selectedDestinationPanel.hidden = true;
+  destinationSearchStatus.classList.remove("error");
+}
+
+function isLocalDemoDestination() {
+  return selectedDestination === null
+    && destinationInput.value.trim() === LOCAL_DEMO_DESTINATION;
+}
+
+function showDestinationCoverageGate() {
   setLoading(false);
-  if (message) {
+  hasCurrentPlan = false;
+  activeSegmentId = null;
+  mapContent.replaceChildren();
+  setMapEmptyVisibility(true);
+  document.querySelector("#result-time").textContent = "No current plan";
+  ["#summary-cards", "#route-section", "#candidate-section", "#warning-section"]
+    .forEach((selector) => {
+      document.querySelector(selector).hidden = true;
+    });
+  if (isLocalDemoDestination()) {
+    resetMapForLocalDemo();
+    destinationSearchStatus.textContent =
+      "SMU demo destination selected. Local GIS fixture coverage can now be checked.";
+    return;
+  }
+  mapEmpty.textContent = "Find and select the intended US destination";
+  mapEmptyNote.textContent = "Destination discovery does not create local parking coverage";
+  mapDescription.textContent = "No parking plan is available for the edited destination.";
+  document.querySelector("#map-source-caption").textContent =
+    "Destination not selected · parking coverage unavailable";
+  destinationSearchStatus.textContent =
+    "Search the place explicitly. Parking coverage will remain separate.";
+}
+
+function resetMapForLocalDemo() {
+  hasCurrentPlan = false;
+  mapContent.replaceChildren();
+  setMapEmptyVisibility(true);
+  mapEmpty.textContent = "Your candidate map will appear here";
+  mapEmptyNote.textContent = "SMU fixture coverage · build a plan to evaluate local curbs";
+  mapDescription.textContent = "Submit the SMU demo search to show parking curb candidates.";
+  document.querySelector("#map-source-caption").textContent =
+    "© OpenStreetMap contributors · ODbL fixture geometry";
+  document.querySelector("#result-time").textContent = "No plan yet";
+}
+
+function normalizeDestinationDiscovery(body) {
+  if (!body || !["NO_MATCH", "UNIQUE", "AMBIGUOUS"].includes(body.status)) {
+    throw new Error("Destination search returned an invalid response.");
+  }
+  if (!Array.isArray(body.matches) || !body.metadata) {
+    throw new Error("Destination search returned an invalid response.");
+  }
+  const matches = body.matches.map(normalizeDestinationMatch);
+  const expectedStatus = matches.length === 0
+    ? "NO_MATCH"
+    : matches.length === 1 ? "UNIQUE" : "AMBIGUOUS";
+  if (body.status !== expectedStatus || typeof body.metadata.attribution !== "string") {
+    throw new Error("Destination search returned an invalid response.");
+  }
+  return {
+    status: body.status,
+    matches,
+    attribution: body.metadata.attribution,
+    providerName: typeof body.metadata.provider_name === "string"
+      ? body.metadata.provider_name
+      : "destination provider",
+    cacheHit: body.cache_hit === true,
+  };
+}
+
+function normalizeDestinationMatch(match) {
+  const coordinate = [match?.location?.longitude, match?.location?.latitude];
+  if (
+    typeof match?.match_id !== "string"
+    || typeof match?.name !== "string"
+    || typeof match?.formatted_address !== "string"
+    || !validCoordinate(coordinate)
+  ) {
+    throw new Error("Destination search returned an invalid place candidate.");
+  }
+  return {
+    matchId: match.match_id,
+    name: match.name,
+    formattedAddress: match.formatted_address,
+    latitude: coordinate[1],
+    longitude: coordinate[0],
+  };
+}
+
+function renderDestinationDiscovery(discovery) {
+  destinationSearchStatus.classList.remove("error");
+  if (discovery.status === "NO_MATCH") {
+    destinationSearchStatus.textContent =
+      "No US place matched. Add a city, state, or ZIP code and try again.";
+    destinationAttribution.textContent = `Search source: ${discovery.attribution}`;
+    destinationResults.hidden = false;
+    return;
+  }
+
+  destinationSearchStatus.textContent = discovery.status === "AMBIGUOUS"
+    ? `Found ${discovery.matches.length} possible places. Choose the intended one.`
+    : "One place matched. Select it to confirm the coordinates.";
+  destinationMatchList.replaceChildren(
+    ...discovery.matches.map((match) => destinationMatchButton(match)),
+  );
+  destinationAttribution.textContent =
+    `Search source: ${discovery.attribution} · ${discovery.providerName}`
+    + (discovery.cacheHit ? " · cached result" : "");
+  destinationResults.hidden = false;
+}
+
+function destinationMatchButton(match) {
+  const item = element("li", "destination-match");
+  const button = element("button", "destination-match-button");
+  button.type = "button";
+  button.dataset.matchId = match.matchId;
+  button.setAttribute("aria-pressed", "false");
+  button.append(
+    element("strong", "", match.name),
+    element("span", "", match.formattedAddress),
+    element(
+      "span",
+      "destination-coordinate",
+      `${formatNumber(match.latitude, 5)}, ${formatNumber(match.longitude, 5)}`,
+    ),
+  );
+  button.addEventListener("click", () => selectDestinationMatch(match));
+  item.append(button);
+  return item;
+}
+
+function selectDestinationMatch(match) {
+  selectedDestination = match;
+  destinationInput.value = match.name;
+  invalidatePendingSearch("Destination changed. Submit to check local parking coverage.");
+  document.querySelectorAll(".destination-match-button").forEach((button) => {
+    button.setAttribute("aria-pressed", String(button.dataset.matchId === match.matchId));
+  });
+  document.querySelector("#selected-destination-name").textContent = match.formattedAddress;
+  document.querySelector("#selected-destination-coordinates").textContent =
+    `Coordinates: ${formatNumber(match.latitude, 6)}, ${formatNumber(match.longitude, 6)}`;
+  selectedDestinationPanel.hidden = false;
+  destinationSearchStatus.textContent =
+    "Place selected. Coordinates stay in page memory; parking coverage is still unconfirmed.";
+  setLoading(false);
+  renderDiscoveredDestination(match);
+}
+
+function renderDiscoveredDestination(match) {
+  hasCurrentPlan = false;
+  activeSegmentId = null;
+  mapContent.replaceChildren();
+  setMapEmptyVisibility(false);
+  const coordinate = [match.longitude, match.latitude];
+  const [x, y] = makeProjection([coordinate])(coordinate);
+  mapContent.append(
+    svgElement("circle", {
+      cx: x, cy: y, r: "12", class: "map-discovered-destination",
+    }),
+    svgElement("text", {
+      x: x + 18, y: y - 14, class: "map-label",
+    }, match.name),
+  );
+  mapDescription.textContent =
+    `${match.name} was discovered, but no local parking coverage is available.`;
+  document.querySelector("#map-source-caption").textContent =
+    `${destinationAttribution.textContent} · parking coverage unavailable`;
+  document.querySelector("#result-time").textContent = "Place discovered · no parking coverage";
+  ["#summary-cards", "#route-section", "#candidate-section", "#warning-section"]
+    .forEach((selector) => {
+      document.querySelector(selector).hidden = true;
+    });
+  centerMapViewport();
+}
+
+function readDestinationError(body, code) {
+  if (code === 503) {
+    return "Place search is not configured or is temporarily unavailable. The local SMU demo still works.";
+  }
+  if (code === 422) return "Check the destination name and try again.";
+  return typeof body.detail === "string" ? body.detail : "Destination search failed. Try again.";
+}
+
+function invalidatePendingSearch(message = null) {
+  const hadCurrentSearchOrPlan = activeSearch !== null || hasCurrentPlan;
+  if (activeSearch) {
+    const staleSearch = activeSearch;
+    activeSearch = null;
+    staleSearch.controller.abort();
+    setLoading(false);
+  }
+  if (message && hadCurrentSearchOrPlan) {
     markSearchChanged();
     setStatus(message, false);
   }
@@ -123,7 +410,7 @@ function buildRequest() {
       lat: Number(document.querySelector("#origin-lat").value),
       lon: Number(document.querySelector("#origin-lon").value),
     },
-    destination: { query: document.querySelector("#destination").value.trim() },
+    destination: { destination_id: LOCAL_DEMO_DESTINATION_ID },
     arrival_time: arrivalNow.checked ? "now" : new Date(arrivalInput.value).toISOString(),
     parking_duration_minutes: Number(document.querySelector("#duration").value),
     free_only: document.querySelector("#free-only").checked,
@@ -153,7 +440,7 @@ function readError(body, code) {
 }
 
 function setLoading(isLoading) {
-  submitButton.disabled = isLoading;
+  submitButton.disabled = isLoading || !isLocalDemoDestination();
   form.setAttribute("aria-busy", String(isLoading));
   submitButton.querySelector("span").textContent = isLoading ? "Building plan…" : "Build parking plan";
 }
@@ -167,6 +454,7 @@ function setStatus(message, isError) {
 }
 
 function clearResults() {
+  hasCurrentPlan = false;
   activeSegmentId = null;
   mapContent.replaceChildren();
   setMapEmptyVisibility(true);
@@ -180,6 +468,12 @@ function clearResults() {
 }
 
 function markSearchFailed() {
+  hasCurrentPlan = false;
+  mapContent.replaceChildren();
+  ["#summary-cards", "#route-section", "#candidate-section", "#warning-section"]
+    .forEach((selector) => {
+      document.querySelector(selector).hidden = true;
+    });
   document.querySelector("#result-time").textContent = "No current plan";
   mapEmpty.textContent = "Search did not complete";
   mapEmptyNote.textContent = "Review the message beside the search form, then try again";
@@ -187,6 +481,13 @@ function markSearchFailed() {
 }
 
 function markSearchChanged() {
+  hasCurrentPlan = false;
+  activeSegmentId = null;
+  mapContent.replaceChildren();
+  ["#summary-cards", "#route-section", "#candidate-section", "#warning-section"]
+    .forEach((selector) => {
+      document.querySelector(selector).hidden = true;
+    });
   document.querySelector("#result-time").textContent = "No current plan";
   mapEmpty.textContent = "Search settings changed";
   mapEmptyNote.textContent = "Submit again to build a plan for the current inputs";
@@ -194,6 +495,7 @@ function markSearchChanged() {
 }
 
 function renderSearch(result) {
+  hasCurrentPlan = true;
   activeSegmentId = null;
   document.querySelector("#result-time").textContent = formatDate(result.resolved_arrival_time);
   renderSummary(result);
@@ -352,14 +654,16 @@ function makeProjection(coordinates) {
   const maxY = Math.max(...ys);
   const width = Math.max(maxX - minX, 0.0005);
   const height = Math.max(maxY - minY, 0.0005);
+  const projectionMinX = (minX + maxX - width) / 2;
+  const projectionMinY = (minY + maxY - height) / 2;
   const scale = Math.min(780 / width, 460 / height);
   const drawWidth = width * scale;
   const drawHeight = height * scale;
   const offsetX = (900 - drawWidth) / 2;
   const offsetY = (580 - drawHeight) / 2;
   return ([longitude, latitude]) => [
-    offsetX + (longitude - minX) * scale,
-    offsetY + (maxY - latitude) * scale,
+    offsetX + (longitude - projectionMinX) * scale,
+    offsetY + (projectionMinY + height - latitude) * scale,
   ];
 }
 
@@ -424,7 +728,7 @@ function renderRoute(result) {
     `${result.versions.optimizer} · ${result.versions.availability_model}`;
   const fallback = document.querySelector("#fallback-card");
   const fallbackContent = [
-    element("h4", "", "Guaranteed fallback"),
+    element("h4", "", "Configured fallback"),
     element("p", "", result.fallback.description),
   ];
   if (result.fallback.location) {

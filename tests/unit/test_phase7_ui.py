@@ -30,6 +30,11 @@ def test_home_serves_dependency_free_accessible_map_ui() -> None:
         'id="destination" name="destination" type="text" value="Fondren Library Center"'
         in response.text
     )
+    assert 'id="destination-search-button" type="button"' in response.text
+    assert 'id="use-demo-destination-button" type="button"' in response.text
+    assert 'id="destination-match-list" class="destination-match-list"' in response.text
+    assert "Finding a place does not mean" in response.text
+    assert "parking coverage" in response.text.lower()
     assert 'aria-live="polite"' in response.text
     assert 'id="location-help" role="status" aria-live="polite" aria-atomic="true"' in response.text
     assert 'aria-describedby="location-help"' in response.text
@@ -71,6 +76,17 @@ def test_ui_assets_are_local_and_have_expected_types() -> None:
     assert script.status_code == 200
     assert "javascript" in script.headers["content-type"]
     assert 'fetch("/v1/parking/search"' in script.text
+    assert 'fetch("/v1/destinations/search"' in script.text
+    assert 'method: "POST"' in script.text
+    assert "body: JSON.stringify({ query })" in script.text
+    assert 'const LOCAL_DEMO_DESTINATION = "Fondren Library Center"' in script.text
+    assert 'const LOCAL_DEMO_DESTINATION_ID = "smu-fondren-library"' in script.text
+    assert "destination: { destination_id: LOCAL_DEMO_DESTINATION_ID }" in script.text
+    assert "Parking-plan coverage is unavailable" in script.text
+    assert "renderDiscoveredDestination" in script.text
+    assert "activeDestinationSearch" in script.text
+    assert "staleSearch.controller.abort()" in script.text
+    assert "hasCurrentPlan" in script.text
     assert "candidate_decisions" in script.text
     assert "runtimeNotice.hidden = true" in script.text
     assert 'class: "map-segment-group"' in script.text

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#14281f">
-    <title>ParkFree · SMU parking intelligence</title>
+    <title>ParkFree · parking intelligence demo</title>
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/assets/app.css">
     <script src="/assets/app.js" defer></script>
@@ -21,7 +21,7 @@
       <div class="brand-lockup" aria-label="ParkFree">
         <span class="brand-mark" aria-hidden="true">P</span>
         <div>
-          <p class="eyebrow">SMU parking intelligence</p>
+          <p class="eyebrow">Zero-cost parking intelligence demo</p>
           <h1>ParkFree</h1>
         </div>
       </div>
@@ -31,11 +31,11 @@
     <main>
       <section class="hero" aria-labelledby="hero-title">
         <div>
-          <p class="eyebrow">Curb-level search planning</p>
+          <p class="eyebrow">US place discovery · local curb planning</p>
           <h2 id="hero-title">Find a smarter sequence of streets to check.</h2>
           <p class="hero-copy">
-            Compare regulation evidence, estimated availability, walking time, and a guaranteed
-            fallback in one transparent search plan.
+            Find a US destination, then compare regulation evidence, estimated availability,
+            walking time, and fallback options where verified local parking data exists.
           </p>
         </div>
         <div class="safety-card">
@@ -72,8 +72,36 @@
               <legend>Destination and stay</legend>
               <label>
                 Destination
-                <input id="destination" name="destination" type="text" value="Fondren Library Center" maxlength="255" autocomplete="off" required>
+                <input id="destination" name="destination" type="text" value="Fondren Library Center" minlength="2" maxlength="255" autocomplete="off" aria-describedby="destination-help" required>
               </label>
+              <p class="field-help" id="destination-help">
+                Search is explicit—there is no live autocomplete. Finding a place does not mean
+                its streets, parking rules, or availability are covered yet.
+              </p>
+              <div class="destination-actions">
+                <button class="secondary-button" id="destination-search-button" type="button">
+                  Find this US place
+                </button>
+                <button class="text-button" id="use-demo-destination-button" type="button">
+                  Use SMU demo destination
+                </button>
+              </div>
+              <div id="destination-discovery" class="destination-discovery" aria-live="polite" aria-atomic="true">
+                <p id="destination-search-status" class="destination-search-status">
+                  The parking-plan demo currently has local GIS fixture coverage around SMU.
+                </p>
+                <section id="destination-results" hidden aria-labelledby="destination-results-title">
+                  <h3 id="destination-results-title">Choose the intended place</h3>
+                  <ul id="destination-match-list" class="destination-match-list"></ul>
+                  <p id="destination-attribution" class="destination-attribution"></p>
+                </section>
+                <div id="selected-destination" class="selected-destination" hidden>
+                  <p><strong>Place selected</strong> · discovery only</p>
+                  <p id="selected-destination-name"></p>
+                  <p id="selected-destination-coordinates"></p>
+                  <p class="coverage-note">Parking coverage is not confirmed by this selection. Building a plan checks the separate local parking database.</p>
+                </div>
+              </div>
               <label class="check-row">
                 <input id="arrival-now" name="arrival-now" type="checkbox" checked>
                 <span>Arrive now</span>
@@ -151,7 +179,7 @@
             </svg>
             <div class="map-caption">
               <span>Dashed route connectors are schematic · not turn-by-turn navigation</span>
-              <span>© OpenStreetMap contributors · ODbL fixture geometry</span>
+              <span id="map-source-caption">© OpenStreetMap contributors · ODbL fixture geometry</span>
             </div>
           </div>
 

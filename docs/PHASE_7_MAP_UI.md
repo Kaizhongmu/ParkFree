@@ -37,7 +37,16 @@ The form collects origin coordinates, destination name, arrival time, parking du
 limit, optional permits, candidate limit, and free-only preference. Browser geolocation is
 requested only when the user presses the location button. A search posts the existing strict
 Phase 6 JSON contract. Its default destination is the exact canonical fixture name, `Fondren
-Library Center`, so the first supported search resolves without relying on fuzzy aliases.
+Library Center`; the browser submits the fixed canonical ID `smu-fondren-library`, never a
+geocoder match ID or free-text place name, so the supported demo cannot bind to an out-of-area
+same-name place.
+
+The destination panel also exposes an explicit, zero-cost US place lookup through the separate
+`POST /v1/destinations/search` endpoint. It never performs type-ahead requests. Users must select
+a returned match before its coordinate is drawn, and the UI labels that coordinate as discovery
+only. Discovered places without backend-confirmed parking coverage cannot be submitted to the
+parking optimizer. The “Use SMU demo destination” action restores the only bundled canonical
+destination and its local GIS fixture boundary.
 
 An identical failed request keeps its in-memory idempotency key for a safe retry. Changed form
 content receives a different key. Once a request succeeds, its key is discarded so another `now`
@@ -94,6 +103,8 @@ does not invent publisher names or source links that are absent from the API con
 - Only the named CSS, JavaScript, and favicon files are exposed below `/assets`; the HTML entrypoint
   is served exclusively at `/` with its security headers and is not reachable as a static asset.
 - Starting a new request clears prior results; an error cannot leave an old plan presented as new.
+- Editing any completed search invalidates and clears the old plan; a discovered but unsupported
+  destination shows only its place marker and never reuses an SMU route or fallback.
 
 ## Verification
 

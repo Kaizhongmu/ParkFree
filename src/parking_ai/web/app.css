@@ -159,6 +159,25 @@ input:focus-visible, button:focus-visible, summary:focus-visible, .candidate-car
 .field-help, .optional { color: var(--muted); font-size: 0.7rem; font-weight: 500; }
 .field-help { margin: 0; }
 .text-button { justify-self: start; padding: 0; color: var(--brand); background: transparent; border: 0; font-size: 0.77rem; font-weight: 800; text-decoration: underline; text-underline-offset: 0.2rem; }
+.destination-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.65rem 0.9rem; }
+.secondary-button { min-height: 2.55rem; padding: 0.55rem 0.8rem; color: var(--brand-dark); background: white; border: 1px solid #94aa9e; border-radius: 0.55rem; font-size: 0.77rem; font-weight: 800; }
+.secondary-button:hover { background: var(--mint); }
+.secondary-button:disabled { cursor: wait; opacity: 0.65; }
+.destination-discovery { display: grid; gap: 0.65rem; }
+.destination-search-status { margin: 0; color: var(--muted); font-size: 0.72rem; }
+.destination-search-status.error { color: #7e2220; }
+.destination-discovery section { padding: 0.75rem; background: #f2f5f0; border: 1px solid var(--line); border-radius: 0.65rem; }
+.destination-discovery h3 { margin: 0 0 0.55rem; font-size: 0.78rem; }
+.destination-match-list { display: grid; gap: 0.45rem; margin: 0; padding: 0; list-style: none; }
+.destination-match-button { display: grid; width: 100%; gap: 0.12rem; padding: 0.65rem 0.7rem; color: var(--ink); background: white; border: 1px solid #c8d0ca; border-radius: 0.5rem; text-align: left; }
+.destination-match-button:hover, .destination-match-button[aria-pressed="true"] { border-color: var(--brand); background: var(--mint); }
+.destination-match-button strong { font-size: 0.77rem; }
+.destination-match-button span { color: var(--muted); font-size: 0.67rem; overflow-wrap: anywhere; }
+.destination-coordinate { font-variant-numeric: tabular-nums; }
+.destination-attribution { margin: 0.55rem 0 0; color: var(--muted); font-size: 0.64rem; }
+.selected-destination { padding: 0.7rem 0.8rem; background: var(--amber-soft); border-left: 4px solid var(--amber); border-radius: 0 0.55rem 0.55rem 0; }
+.selected-destination p { margin: 0.15rem 0; color: #665126; font-size: 0.7rem; overflow-wrap: anywhere; }
+.selected-destination .coverage-note { margin-top: 0.4rem; color: #70211e; font-weight: 700; }
 
 details { border-bottom: 1px solid var(--line); padding-bottom: 1.15rem; }
 summary { color: var(--brand-dark); font-size: 0.82rem; font-weight: 800; }
@@ -206,11 +225,12 @@ summary { color: var(--brand-dark); font-size: 0.82rem; font-weight: 800; }
 .map-segment.unknown { stroke: var(--amber); stroke-dasharray: 11 8; }
 .route-guide { fill: none; stroke: var(--ink); stroke-width: 2; stroke-dasharray: 7 7; opacity: 0.65; vector-effect: non-scaling-stroke; }
 .map-destination { fill: var(--ink); stroke: white; stroke-width: 4; }
+.map-discovered-destination { fill: var(--amber); stroke: white; stroke-width: 5; }
 .map-fallback { fill: var(--amber); stroke: white; stroke-width: 4; }
 .map-label { paint-order: stroke; stroke: white; stroke-width: 4; fill: var(--ink); font: 700 13px system-ui, sans-serif; }
 .route-marker { fill: white; stroke: var(--ink); stroke-width: 2.5; }
 .route-number { fill: var(--ink); font: 800 12px system-ui, sans-serif; text-anchor: middle; dominant-baseline: central; }
-.route-guide, .route-marker, .route-number, .map-label, .map-destination, .map-fallback { pointer-events: none; }
+.route-guide, .route-marker, .route-number, .map-label, .map-destination, .map-discovered-destination, .map-fallback { pointer-events: none; }
 
 .legend { display: flex; flex-wrap: wrap; gap: 0.75rem 1.2rem; margin: 0.85rem 0 0; padding: 0; list-style: none; color: var(--muted); font-size: 0.75rem; }
 .legend li { display: flex; align-items: center; gap: 0.4rem; }

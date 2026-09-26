@@ -82,6 +82,11 @@ This endpoint discovers places only. It does not claim parking coverage or pass 
 destinations to the optimizer. See
 [`docs/ZERO_COST_DESTINATION_DISCOVERY.md`](docs/ZERO_COST_DESTINATION_DISCOVERY.md).
 
+The web demo exposes this lookup through an explicit “Find this US place” action. Selected places
+are plotted as discovery-only markers. Parking-plan submission remains disabled unless the bundled
+canonical SMU demo destination is active, preventing an uncovered place from inheriting SMU
+candidates or a global fallback.
+
 Open the Phase 7 interface at [`http://localhost:8000/`](http://localhost:8000/). The page is
 served by FastAPI and needs no separate frontend build or package manager. Do not open
 `src/parking_ai/web/index.html` directly: the UI intentionally requires the same HTTP origin as
