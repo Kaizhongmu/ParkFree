@@ -24,6 +24,9 @@ const destinationResults = document.querySelector("#destination-results");
 const destinationMatchList = document.querySelector("#destination-match-list");
 const destinationAttribution = document.querySelector("#destination-attribution");
 const selectedDestinationPanel = document.querySelector("#selected-destination");
+const coverageStatusBanner = document.querySelector("#coverage-status-banner");
+const evaluatedLegend = document.querySelector("#evaluated-legend");
+const provisionalLegend = document.querySelector("#provisional-legend");
 
 let activeSegmentId = null;
 let lastRequestBody = null;
@@ -39,7 +42,9 @@ form.addEventListener("input", () => {
 
 destinationInput.addEventListener("input", () => {
   invalidateDestinationSearch();
+  invalidatePendingSearch();
   clearDestinationDiscovery();
+  showDestinationCoverageGate();
   showDestinationCoverageGate();
 });
 
@@ -95,7 +100,7 @@ destinationSearchButton.addEventListener("click", async () => {
     const body = await response.json().catch(() => ({}));
     if (activeDestinationSearch !== search) return;
     if (!response.ok) throw new Error(readDestinationError(body, response.status));
-    renderDestinationDiscovery(normalizeDestinationDiscovery(body));
+    renderDestinationDiscovery(normalizeDestinationDiscovery(body), query);
   } catch (error) {
     if (activeDestinationSearch !== search || error?.name === "AbortError") return;
     const message = error instanceof Error ? error.message : "Destination search failed.";
@@ -127,10 +132,11 @@ form.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!form.reportValidity()) return;
   if (!isLocalDemoDestination()) {
-    setStatus(
-      "Parking-plan coverage is unavailable for this discovered place. Use the SMU demo destination to build a route.",
-      true,
-    );
+    if (!selectedDestination) {
+      setStatus("Find and select the intended US destination first.", true);
+      return;
+    }
+    await runOnDemandParking();
     return;
   }
 
@@ -217,6 +223,7 @@ function showDestinationCoverageGate() {
   mapContent.replaceChildren();
   setMapEmptyVisibility(true);
   document.querySelector("#result-time").textContent = "No current plan";
+  setProvisionalPresentation(false);
   ["#summary-cards", "#route-section", "#candidate-section", "#warning-section"]
     .forEach((selector) => {
       document.querySelector(selector).hidden = true;
@@ -228,12 +235,12 @@ function showDestinationCoverageGate() {
     return;
   }
   mapEmpty.textContent = "Find and select the intended US destination";
-  mapEmptyNote.textContent = "Destination discovery does not create local parking coverage";
-  mapDescription.textContent = "No parking plan is available for the edited destination.";
+  mapEmptyNote.textContent = "Selecting a match starts bounded on-demand road research";
+  mapDescription.textContent = "No destination has been selected for on-demand research.";
   document.querySelector("#map-source-caption").textContent =
-    "Destination not selected · parking coverage unavailable";
+    "Destination not selected · live coverage not requested";
   destinationSearchStatus.textContent =
-    "Search the place explicitly. Parking coverage will remain separate.";
+    "Search for a US place, select the intended match, and nearby road research starts automatically.";
 }
 
 function resetMapForLocalDemo() {
@@ -246,6 +253,7 @@ function resetMapForLocalDemo() {
   document.querySelector("#map-source-caption").textContent =
     "© OpenStreetMap contributors · ODbL fixture geometry";
   document.querySelector("#result-time").textContent = "No plan yet";
+  setProvisionalPresentation(false);
 }
 
 function normalizeDestinationDiscovery(body) {
@@ -292,7 +300,7 @@ function normalizeDestinationMatch(match) {
   };
 }
 
-function renderDestinationDiscovery(discovery) {
+function renderDestinationDiscovery(discovery, query) {
   destinationSearchStatus.classList.remove("error");
   if (discovery.status === "NO_MATCH") {
     destinationSearchStatus.textContent =
@@ -306,12 +314,13 @@ function renderDestinationDiscovery(discovery) {
     ? `Found ${discovery.matches.length} possible places. Choose the intended one.`
     : "One place matched. Select it to confirm the coordinates.";
   destinationMatchList.replaceChildren(
-    ...discovery.matches.map((match) => destinationMatchButton(match)),
+    ...discovery.matches.map((match) => destinationMatchButton({ ...match, query })),
   );
   destinationAttribution.textContent =
     `Search source: ${discovery.attribution} · ${discovery.providerName}`
     + (discovery.cacheHit ? " · cached result" : "");
   destinationResults.hidden = false;
+  destinationMatchList.querySelector("button")?.focus();
 }
 
 function destinationMatchButton(match) {
@@ -345,10 +354,163 @@ function selectDestinationMatch(match) {
   document.querySelector("#selected-destination-coordinates").textContent =
     `Coordinates: ${formatNumber(match.latitude, 6)}, ${formatNumber(match.longitude, 6)}`;
   selectedDestinationPanel.hidden = false;
-  destinationSearchStatus.textContent =
-    "Place selected. Coordinates stay in page memory; parking coverage is still unconfirmed.";
   setLoading(false);
   renderDiscoveredDestination(match);
+  if (form.checkValidity()) {
+    destinationSearchStatus.textContent =
+      "Place selected. Starting bounded live road and parking-tag research now…";
+    void runOnDemandParking();
+  } else {
+    destinationSearchStatus.textContent =
+      "Place selected. Correct the highlighted search fields, then build the parking plan.";
+    setStatus("Place selected, but the current search settings need attention.", true);
+  }
+}
+
+async function runOnDemandParking() {
+  if (!selectedDestination) return;
+  invalidatePendingSearch();
+  clearResults();
+  setLoading(true);
+  setStatus(
+    "Fetching nearby roads and parking tags, then generating local curb candidates…",
+    false,
+  );
+  const search = { controller: new AbortController(), mode: "on-demand" };
+  activeSearch = search;
+  try {
+    const response = await fetch("/v1/parking/on-demand", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(buildOnDemandRequest(selectedDestination)),
+      signal: search.controller.signal,
+    });
+    const body = await response.json().catch(() => ({}));
+    if (activeSearch !== search) return;
+    if (!response.ok) throw new Error(readOnDemandError(body, response.status));
+    renderOnDemandCoverage(body);
+  } catch (error) {
+    if (activeSearch !== search || error?.name === "AbortError") return;
+    const message = error instanceof Error ? error.message : "On-demand research failed.";
+    markSearchFailed();
+    setStatus(message, true);
+  } finally {
+    if (activeSearch === search) {
+      activeSearch = null;
+      setLoading(false);
+    }
+  }
+}
+
+function buildOnDemandRequest(match) {
+  const request = buildRequest();
+  return {
+    ...request,
+    destination: { query: match.query, match_id: match.matchId },
+  };
+}
+
+function readOnDemandError(body, code) {
+  if (code === 409) return "That place selection changed upstream. Find and select it again.";
+  if (code === 503) return "On-demand road research is not configured or is unavailable.";
+  if (code === 422) return "Check the search settings and try the on-demand research again.";
+  return typeof body.detail === "string" ? body.detail : "On-demand research failed.";
+}
+
+function renderOnDemandCoverage(result) {
+  const segments = Array.isArray(result.candidate_segments) ? result.candidate_segments : [];
+  const predictions = Array.isArray(result.availability_predictions)
+    ? result.availability_predictions
+    : [];
+  const status = result.status;
+  if (!result.destination || !["PROVISIONAL_LEADS", "NO_CANDIDATES", "PROVIDER_UNAVAILABLE"].includes(status)) {
+    throw new Error("On-demand research returned an invalid response.");
+  }
+  hasCurrentPlan = status === "PROVISIONAL_LEADS";
+  document.querySelector("#result-time").textContent = status === "PROVISIONAL_LEADS"
+    ? "Live road coverage · provisional"
+    : "No provisional candidates";
+
+  if (status !== "PROVISIONAL_LEADS") {
+    markSearchFailed();
+    renderWarnings(result.warnings || []);
+    setStatus(
+      status === "PROVIDER_UNAVAILABLE"
+        ? "The live road provider is unavailable. No SMU data or fallback was substituted."
+        : "No eligible road candidates were found in the bounded live snapshot.",
+      status === "PROVIDER_UNAVAILABLE",
+    );
+    return;
+  }
+
+  const evaluatedAt = result.resolved_arrival_time;
+  const predictionBySegment = new Map();
+  predictions.forEach((prediction) => {
+    if (typeof prediction?.segment_id !== "string" || predictionBySegment.has(prediction.segment_id)) {
+      throw new Error("On-demand research returned invalid availability estimates.");
+    }
+    predictionBySegment.set(prediction.segment_id, prediction);
+  });
+  const decisions = segments.map((segment) => ({
+    segment,
+    legality: {
+      segment_id: segment.segment_id,
+      legal_state: "UNKNOWN",
+      free_state: "UNKNOWN",
+      confidence: 0,
+      evidence_refs: segment.evidence_refs || [],
+      reason_codes: ["INSUFFICIENT_EVIDENCE"],
+      evaluated_at: evaluatedAt,
+    },
+    availability: predictionBySegment.get(segment.segment_id) || null,
+    availability_is_conditional: predictionBySegment.has(segment.segment_id),
+    eligible: false,
+    exclusion_reason: "UNKNOWN_LEGALITY",
+  }));
+  const view = {
+    destination: result.destination,
+    candidate_decisions: decisions,
+    route: { steps: [] },
+    fallback: { location: null },
+    provisional_mode: true,
+  };
+  renderMap(view);
+  renderCandidates(view);
+  renderOnDemandSummary(result, segments.length);
+  setProvisionalPresentation(true);
+  document.querySelector("#route-section").hidden = true;
+  renderWarnings(result.warnings || []);
+  document.querySelector("#map-source-caption").textContent =
+    `${(result.attribution || []).join(" · ")} · live provisional coverage`;
+  setStatus(
+    predictions.length
+      ? `Found ${segments.length} nearby curb leads in proximity order. The vacancy numbers are uncalibrated conditional priors; legality and free status remain UNKNOWN.`
+      : `Found ${segments.length} nearby curb leads from live road data. Rules and free status remain UNKNOWN until trustworthy evidence is available.`,
+    false,
+  );
+}
+
+function renderOnDemandSummary(result, candidateCount) {
+  const container = document.querySelector("#summary-cards");
+  container.replaceChildren();
+  const coverage = result.coverage || {};
+  const probabilities = (result.availability_predictions || [])
+    .map((prediction) => Number(prediction.probability))
+    .filter(Number.isFinite);
+  const values = [
+    ["Curb leads", String(candidateCount)],
+    ["Roads fetched", String(coverage.road_count ?? 0)],
+    ["Parking-tagged roads", String(coverage.tagged_road_count ?? 0)],
+    ["Highest V0 prior", probabilities.length ? formatPercent(Math.max(...probabilities)) : "Not estimated"],
+    ["Model basis", result.calibration_status === "UNCALIBRATED_HEURISTIC" ? "Uncalibrated" : "Not reported"],
+    ["Destination timezone", result.destination_timezone || "Not resolved"],
+  ];
+  values.forEach(([label, value]) => {
+    const card = element("div", "summary-card");
+    card.append(element("span", "", label), element("strong", "", value));
+    container.append(card);
+  });
+  container.hidden = false;
 }
 
 function renderDiscoveredDestination(match) {
@@ -367,10 +529,10 @@ function renderDiscoveredDestination(match) {
     }, match.name),
   );
   mapDescription.textContent =
-    `${match.name} was discovered, but no local parking coverage is available.`;
+    `${match.name} was selected. Live road research is starting for this location.`;
   document.querySelector("#map-source-caption").textContent =
-    `${destinationAttribution.textContent} · parking coverage unavailable`;
-  document.querySelector("#result-time").textContent = "Place discovered · no parking coverage";
+    `${destinationAttribution.textContent} · awaiting live road coverage`;
+  document.querySelector("#result-time").textContent = "Place selected · research starting";
   ["#summary-cards", "#route-section", "#candidate-section", "#warning-section"]
     .forEach((selector) => {
       document.querySelector(selector).hidden = true;
@@ -380,7 +542,7 @@ function renderDiscoveredDestination(match) {
 
 function readDestinationError(body, code) {
   if (code === 503) {
-    return "Place search is not configured or is temporarily unavailable. The local SMU demo still works.";
+    return "Place search is not configured or is temporarily unavailable. The SMU destination remains selectable, but its route still requires configured local data.";
   }
   if (code === 422) return "Check the destination name and try again.";
   return typeof body.detail === "string" ? body.detail : "Destination search failed. Try again.";
@@ -440,9 +602,14 @@ function readError(body, code) {
 }
 
 function setLoading(isLoading) {
-  submitButton.disabled = isLoading || !isLocalDemoDestination();
+  submitButton.disabled = isLoading || (!isLocalDemoDestination() && !selectedDestination);
   form.setAttribute("aria-busy", String(isLoading));
-  submitButton.querySelector("span").textContent = isLoading ? "Building plan…" : "Build parking plan";
+  const idleLabel = isLocalDemoDestination()
+    ? "Build parking plan"
+    : selectedDestination ? "Refresh on-demand research" : "Select a destination";
+  submitButton.querySelector("span").textContent = isLoading
+    ? (selectedDestination ? "Researching local data…" : "Building plan…")
+    : idleLabel;
 }
 
 function setStatus(message, isError) {
@@ -461,6 +628,7 @@ function clearResults() {
   mapEmpty.textContent = "Building a fresh candidate map…";
   mapEmptyNote.textContent = "Previous results have been cleared";
   document.querySelector("#result-time").textContent = "Searching…";
+  setProvisionalPresentation(false);
   ["#summary-cards", "#route-section", "#candidate-section", "#warning-section"]
     .forEach((selector) => {
       document.querySelector(selector).hidden = true;
@@ -475,6 +643,7 @@ function markSearchFailed() {
       document.querySelector(selector).hidden = true;
     });
   document.querySelector("#result-time").textContent = "No current plan";
+  setProvisionalPresentation(false);
   mapEmpty.textContent = "Search did not complete";
   mapEmptyNote.textContent = "Review the message beside the search form, then try again";
   setMapEmptyVisibility(true);
@@ -489,6 +658,7 @@ function markSearchChanged() {
       document.querySelector(selector).hidden = true;
     });
   document.querySelector("#result-time").textContent = "No current plan";
+  setProvisionalPresentation(false);
   mapEmpty.textContent = "Search settings changed";
   mapEmptyNote.textContent = "Submit again to build a plan for the current inputs";
   setMapEmptyVisibility(true);
@@ -498,6 +668,7 @@ function renderSearch(result) {
   hasCurrentPlan = true;
   activeSegmentId = null;
   document.querySelector("#result-time").textContent = formatDate(result.resolved_arrival_time);
+  setProvisionalPresentation(false);
   renderSummary(result);
   renderMap(result);
   renderRoute(result);
@@ -529,7 +700,9 @@ function renderMap(result) {
   const routeOrder = new Map(
     (result.route.steps || []).map((step, index) => [step.segment_id, index + 1]),
   );
-  mapDescription.textContent = `${decisions.length} evaluated parking curbs with ${routeOrder.size} recommended route stops.`;
+  mapDescription.textContent = result.provisional_mode
+    ? `${decisions.length} provisional curb leads. Conditional vacancy ranking does not verify legality or price.`
+    : `${decisions.length} evaluated parking curbs with ${routeOrder.size} recommended route stops.`;
   const coordinates = decisions.flatMap((decision) => coordinatesForDecision(decision));
   const destinationCoordinate = [
     result.destination.location.longitude,
@@ -773,8 +946,17 @@ function renderCandidates(result) {
       element("span", "", `${formatNumber(decision.segment.length_m, 0)} m curb`),
       element("span", "", decision.segment.side.toLowerCase()),
       element("span", "", availabilityLabel(decision)),
+      element(
+        "span",
+        "",
+        `Curb usability ${humanize(decision.segment.physical_state || "UNKNOWN")}`,
+      ),
       element("span", "", `${formatPercent(decision.legality.confidence)} evidence confidence`),
-      element("span", "", `Evaluated ${formatDate(decision.legality.evaluated_at)}`),
+      element(
+        "span",
+        "",
+        `${result.provisional_mode ? "Arrival" : "Evaluated"} ${formatDate(decision.legality.evaluated_at)}`,
+      ),
     );
     const reasons = (decision.legality.reason_codes || []).map(humanize).join(", ");
     const provenance = element("p", "provenance");
@@ -790,11 +972,29 @@ function renderCandidates(result) {
         decision.exclusion_reason ? humanize(decision.exclusion_reason) : "Eligible for route",
       ),
     );
+    if (decision.availability_is_conditional && decision.availability) {
+      provenance.append(
+        document.createElement("br"),
+        element("strong", "", "Prediction: "),
+        document.createTextNode(
+          `${decision.availability.model_version} · conditional on legal, usable curb`,
+        ),
+      );
+      provenance.append(
+        document.createElement("br"),
+        element("strong", "", "Model basis: "),
+        document.createTextNode(
+          (decision.availability.reason_codes || []).map(humanize).join(", ")
+            || "Uncalibrated heuristic prior",
+        ),
+      );
+    }
     card.append(top, meta, provenance);
     candidateList.append(card);
   });
-  document.querySelector("#candidate-count").textContent =
-    `${result.candidate_decisions.length} evaluated`;
+  document.querySelector("#candidate-count").textContent = result.provisional_mode
+    ? `${result.candidate_decisions.length} provisional · proximity order`
+    : `${result.candidate_decisions.length} evaluated`;
   document.querySelector("#candidate-section").hidden = false;
 }
 
@@ -802,8 +1002,14 @@ function renderWarnings(warnings) {
   const section = document.querySelector("#warning-section");
   const list = document.querySelector("#warning-list");
   list.replaceChildren();
-  warnings.forEach((warning) => list.append(element("li", "", humanize(warning))));
+  warnings.forEach((warning) => list.append(element("li", "", String(warning))));
   section.hidden = warnings.length === 0;
+}
+
+function setProvisionalPresentation(isProvisional) {
+  coverageStatusBanner.hidden = !isProvisional;
+  evaluatedLegend.hidden = isProvisional;
+  provisionalLegend.hidden = !isProvisional;
 }
 
 function selectSegment(segmentId) {
@@ -844,7 +1050,10 @@ function availabilityLabel(decision) {
   const band = interval
     ? ` (${formatPercent(interval[0])}–${formatPercent(interval[1])})`
     : "";
-  return `${formatPercent(decision.availability.probability)} available${band}`;
+  const prefix = decision.availability_is_conditional
+    ? "Conditional vacancy chance"
+    : "Available";
+  return `${prefix} ${formatPercent(decision.availability.probability)}${band}`;
 }
 
 function candidateAriaLabel(decision, routeOrder) {

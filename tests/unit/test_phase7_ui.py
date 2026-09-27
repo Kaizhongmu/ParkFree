@@ -34,7 +34,13 @@ def test_home_serves_dependency_free_accessible_map_ui() -> None:
     assert 'id="use-demo-destination-button" type="button"' in response.text
     assert 'id="destination-match-list" class="destination-match-list"' in response.text
     assert "Finding a place does not mean" in response.text
-    assert "parking coverage" in response.text.lower()
+    assert "live OpenStreetMap road lookup" in response.text
+    assert "ready for on-demand research" in response.text
+    assert "conditional vacancy chance" in response.text
+    assert "Provisional road leads — not a parking route." in response.text
+    assert "Verified legal/free curbs: 0" in response.text
+    assert 'id="provisional-legend"' in response.text
+    assert "in this device's timezone" in response.text
     assert 'aria-live="polite"' in response.text
     assert 'id="location-help" role="status" aria-live="polite" aria-atomic="true"' in response.text
     assert 'aria-describedby="location-help"' in response.text
@@ -66,7 +72,9 @@ def test_ui_assets_are_local_and_have_expected_types() -> None:
     assert "aspect-ratio: 900 / 580" in stylesheet.text
     assert "stroke-width: 24" in stylesheet.text
     assert "vector-effect: non-scaling-stroke" in stylesheet.text
-    assert "min-width: 48rem" in stylesheet.text
+    assert "#parking-map { min-width: 0; }" in stylesheet.text
+    assert "#parking-map { min-width: 48rem; }" not in stylesheet.text
+    assert ".coverage-status-banner" in stylesheet.text
     assert ".route-marker, .route-number" in stylesheet.text
     assert "pointer-events: none" in stylesheet.text
     assert (
@@ -77,12 +85,25 @@ def test_ui_assets_are_local_and_have_expected_types() -> None:
     assert "javascript" in script.headers["content-type"]
     assert 'fetch("/v1/parking/search"' in script.text
     assert 'fetch("/v1/destinations/search"' in script.text
+    assert 'fetch("/v1/parking/on-demand"' in script.text
     assert 'method: "POST"' in script.text
     assert "body: JSON.stringify({ query })" in script.text
     assert 'const LOCAL_DEMO_DESTINATION = "Fondren Library Center"' in script.text
     assert 'const LOCAL_DEMO_DESTINATION_ID = "smu-fondren-library"' in script.text
     assert "destination: { destination_id: LOCAL_DEMO_DESTINATION_ID }" in script.text
-    assert "Parking-plan coverage is unavailable" in script.text
+    assert "Starting bounded live road and parking-tag research" in script.text
+    assert "Rules and free status remain UNKNOWN" in script.text
+    assert "availability_predictions" in script.text
+    assert "Conditional vacancy chance" in script.text
+    assert "destination_timezone" in script.text
+    assert "calibration_status" in script.text
+    assert "Uncalibrated heuristic prior" in script.text
+    assert "proximity order" in script.text
+    assert "ranked them by conditional availability" not in script.text
+    assert "setProvisionalPresentation" in script.text
+    assert "form.checkValidity()" in script.text
+    assert "form.reportValidity()) void runOnDemandParking" not in script.text
+    assert 'element("li", "", String(warning))' in script.text
     assert "renderDiscoveredDestination" in script.text
     assert "activeDestinationSearch" in script.text
     assert "staleSearch.controller.abort()" in script.text

@@ -12,7 +12,8 @@ fallback, or parking-availability coverage exists there.
 
 `POST /v1/parking/search` remains cached-data-only. It never invokes geocoding, OSM retrieval, an
 AI extractor, or another live provider. Only persisted destinations and approved evidence may
-affect its deterministic response.
+affect its deterministic response. The separate `POST /v1/parking/on-demand` endpoint can recheck
+an exact selected match and prepare provisional live road coverage without changing that contract.
 
 ## Zero-cost provider policy
 
@@ -63,9 +64,9 @@ All automated tests inject provider-shaped local JSON values and fake clocks/tra
 integration, and CI tests must never call live Nominatim. A manual live smoke test is optional,
 must use an identifying `User-Agent`, and must respect the public usage policy.
 
-## Next slice
+## On-demand continuation
 
-Destination selection, durable resolution caching, OSM road-coverage preparation, regional
-fallback verification, and reviewed regulation acquisition remain separate work. Until those are
-available, a nationwide discovery result must not be passed to the parking optimizer or presented
-as a free-parking recommendation.
+Destination selection and bounded OSM road-coverage preparation are implemented in the separate
+on-demand path described in `ON_DEMAND_PARKING.md`. Regional fallback verification and automatic
+reviewed regulation acquisition remain separate work. A nationwide discovery result is therefore
+never passed directly to the strict parking optimizer or presented as verified free parking.

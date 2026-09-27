@@ -32,10 +32,18 @@ class Settings(BaseSettings):
     )
     nominatim_timeout_seconds: float = Field(default=3.0, gt=0, le=10)
     nominatim_cache_ttl_seconds: float = Field(default=3_600.0, gt=0, le=86_400)
+    overpass_user_agent: str | None = Field(default=None, min_length=8, max_length=255)
+    overpass_url: str = Field(
+        default="https://overpass-api.de/api/interpreter",
+        min_length=1,
+        max_length=2_048,
+    )
+    overpass_timeout_seconds: float = Field(default=20.0, gt=0, le=30)
+    overpass_cache_ttl_seconds: float = Field(default=3_600.0, gt=0, le=86_400)
 
-    @field_validator("nominatim_user_agent")
+    @field_validator("nominatim_user_agent", "overpass_user_agent")
     @classmethod
-    def validate_nominatim_user_agent(cls, value: str | None) -> str | None:
+    def validate_provider_user_agent(cls, value: str | None) -> str | None:
         if value is None:
             return None
         normalized = value.strip()
@@ -44,7 +52,7 @@ class Settings(BaseSettings):
             or "/" not in normalized
             or any(character in normalized for character in "\r\n")
         ):
-            raise ValueError("nominatim_user_agent must be an identifying single-line value")
+            raise ValueError("provider user agent must be an identifying single-line value")
         return normalized
 
 

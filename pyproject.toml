@@ -16,6 +16,7 @@ dependencies = [
     "pydantic>=2.10,<3",
     "pydantic-settings>=2.7,<3",
     "sqlalchemy>=2.0,<3",
+    "timezonefinder>=9,<10",
     "uvicorn[standard]>=0.34,<1",
 ]
 

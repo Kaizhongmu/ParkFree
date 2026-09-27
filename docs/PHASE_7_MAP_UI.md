@@ -10,7 +10,7 @@ or recompute route order in the browser.
 Configure and migrate the Phase 6 application as described in `PHASE_6_SEARCH_API.md`, then run:
 
 ```bash
-.venv/bin/uvicorn parking_ai.main:app --reload
+.venv/bin/python -m uvicorn parking_ai.main:app --reload
 ```
 
 Open `http://127.0.0.1:8000/`. No `npm install`, frontend build, remote tile, CDN, API key, or paid
@@ -43,10 +43,13 @@ same-name place.
 
 The destination panel also exposes an explicit, zero-cost US place lookup through the separate
 `POST /v1/destinations/search` endpoint. It never performs type-ahead requests. Users must select
-a returned match before its coordinate is drawn, and the UI labels that coordinate as discovery
-only. Discovered places without backend-confirmed parking coverage cannot be submitted to the
-parking optimizer. The “Use SMU demo destination” action restores the only bundled canonical
-destination and its local GIS fixture boundary.
+a returned match before its coordinate is drawn. Selection automatically calls the separate
+`POST /v1/parking/on-demand` endpoint, which revalidates the match and fetches a bounded OSM road
+snapshot. Returned road-derived curb leads are rendered as provisional and keep legal/free state
+`UNKNOWN`; they are not passed to the strict Phase 6 optimizer. When the backend supplies the
+destination-timezone Phase 4 baseline, the UI shows its explicitly conditional, uncalibrated
+vacancy prior while preserving proximity order. The “Use SMU demo destination” action restores the
+bundled canonical destination and its local GIS fixture boundary.
 
 An identical failed request keeps its in-memory idempotency key for a safe retry. Changed form
 content receives a different key. Once a request succeeds, its key is discarded so another `now`
@@ -103,17 +106,17 @@ does not invent publisher names or source links that are absent from the API con
 - Only the named CSS, JavaScript, and favicon files are exposed below `/assets`; the HTML entrypoint
   is served exclusively at `/` with its security headers and is not reachable as a static asset.
 - Starting a new request clears prior results; an error cannot leave an old plan presented as new.
-- Editing any completed search invalidates and clears the old plan; a discovered but unsupported
-  destination shows only its place marker and never reuses an SMU route or fallback.
+- Editing any completed search invalidates and clears the old plan; an on-demand destination never
+  reuses an SMU route or fallback, including when its live provider is unavailable.
 
 ## Verification
 
 ```bash
-.venv/bin/ruff check .
-.venv/bin/ruff format --check .
-.venv/bin/mypy src
-.venv/bin/pytest -q -m 'not integration'
-TEST_DATABASE_URL='<dedicated-postgis-url>' .venv/bin/pytest -q
+.venv/bin/python -m ruff check .
+.venv/bin/python -m ruff format --check .
+.venv/bin/python -m mypy src
+.venv/bin/python -m pytest -q -m 'not integration'
+TEST_DATABASE_URL='<dedicated-postgis-url>' .venv/bin/python -m pytest -q
 ```
 
 Browser acceptance covers desktop and 320-pixel layouts, mixed legal/free/illegal/unknown states,
@@ -123,6 +126,7 @@ types, package visibility, security headers, and that existing health/search end
 
 ## Phase 7 scope boundary
 
-This document describes the Phase 7 UI slice. Later Phase 8/V1A evidence workflow features do not
-run in the parking-search request path. Live routing/maps, publisher/source-detail APIs, outcome
-collection, accounts, analytics, and learned availability models remain outside this UI phase.
+This document describes the Phase 7 UI plus its post-Phase-8 on-demand road-coverage extension.
+Phase 8/V1A evidence review does not run automatically in the parking-search request path. Live
+turn-by-turn routing, general web search, automatic AI evidence approval, outcome collection,
+accounts, analytics, and learned availability models remain outside this UI slice.

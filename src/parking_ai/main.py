@@ -12,6 +12,14 @@ from parking_ai.api.destinations import (
 from parking_ai.api.destinations import (
     router as destination_router,
 )
+from parking_ai.api.on_demand import (
+    ON_DEMAND_CLOCK_STATE_KEY,
+    ON_DEMAND_HANDLER_STATE_KEY,
+    OnDemandParkingHandler,
+)
+from parking_ai.api.on_demand import (
+    router as on_demand_router,
+)
 from parking_ai.api.routes import (
     SEARCH_CLOCK_STATE_KEY,
     SEARCH_HANDLER_STATE_KEY,
@@ -19,6 +27,8 @@ from parking_ai.api.routes import (
     router,
 )
 from parking_ai.config import Settings, get_settings
+from parking_ai.coverage import OfflineDestinationTimezoneResolver, OnDemandParkingService
+from parking_ai.coverage.overpass import OverpassRoadCoverageProvider
 from parking_ai.geocoding import NominatimGeocoder
 from parking_ai.logging import configure_logging
 from parking_ai.orchestrator.runtime import build_database_search_handler
@@ -37,6 +47,7 @@ def create_app(
     *,
     search_handler: SearchHandler | None = None,
     destination_search_handler: DestinationSearchHandler | None = None,
+    on_demand_parking_handler: OnDemandParkingHandler | None = None,
     clock: Callable[[], datetime] | None = None,
 ) -> FastAPI:
     resolved_settings = settings or get_settings()
@@ -50,23 +61,50 @@ def create_app(
     application = FastAPI(title=resolved_settings.app_name, version="0.1.0")
     setattr(application.state, SEARCH_HANDLER_STATE_KEY, resolved_handler)
     resolved_destination_handler = destination_search_handler
-    if resolved_destination_handler is None and resolved_settings.nominatim_user_agent is not None:
+    geocoder: NominatimGeocoder | None = None
+    if resolved_settings.nominatim_user_agent is not None:
         geocoder = NominatimGeocoder(
             user_agent=resolved_settings.nominatim_user_agent,
             search_url=resolved_settings.nominatim_search_url,
             timeout_seconds=resolved_settings.nominatim_timeout_seconds,
             cache_ttl_seconds=resolved_settings.nominatim_cache_ttl_seconds,
         )
+    if resolved_destination_handler is None and geocoder is not None:
         resolved_destination_handler = geocoder.geocode
     setattr(
         application.state,
         DESTINATION_SEARCH_HANDLER_STATE_KEY,
         resolved_destination_handler,
     )
+    resolved_on_demand_handler = on_demand_parking_handler
+    if (
+        resolved_on_demand_handler is None
+        and geocoder is not None
+        and resolved_settings.overpass_user_agent is not None
+    ):
+        road_provider = OverpassRoadCoverageProvider(
+            user_agent=resolved_settings.overpass_user_agent,
+            endpoint=resolved_settings.overpass_url,
+            timeout_seconds=resolved_settings.overpass_timeout_seconds,
+            cache_ttl_seconds=resolved_settings.overpass_cache_ttl_seconds,
+        )
+        resolved_on_demand_handler = OnDemandParkingService(
+            geocoder,
+            road_provider,
+            timezone_resolver=OfflineDestinationTimezoneResolver(),
+            prediction_clock=resolved_clock,
+        ).search
+    setattr(
+        application.state,
+        ON_DEMAND_HANDLER_STATE_KEY,
+        resolved_on_demand_handler,
+    )
     if clock is not None:
         setattr(application.state, SEARCH_CLOCK_STATE_KEY, clock)
+        setattr(application.state, ON_DEMAND_CLOCK_STATE_KEY, clock)
     application.include_router(router)
     application.include_router(destination_router)
+    application.include_router(on_demand_router)
 
     @application.get(
         "/assets/{asset_name}",

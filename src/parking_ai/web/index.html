@@ -31,11 +31,11 @@
     <main>
       <section class="hero" aria-labelledby="hero-title">
         <div>
-          <p class="eyebrow">US place discovery · local curb planning</p>
-          <h2 id="hero-title">Find a smarter sequence of streets to check.</h2>
+          <p class="eyebrow">US destination research · local curb intelligence</p>
+          <h2 id="hero-title">Explore nearby curb leads before you arrive.</h2>
           <p class="hero-copy">
-            Find a US destination, then compare regulation evidence, estimated availability,
-            walking time, and fallback options where verified local parking data exists.
+            Select a US destination to fetch nearby road data now. ParkFree ranks provisional curb
+            leads by conditional vacancy chance while keeping unverified legality and price visible.
           </p>
         </div>
         <div class="safety-card">
@@ -76,7 +76,8 @@
               </label>
               <p class="field-help" id="destination-help">
                 Search is explicit—there is no live autocomplete. Finding a place does not mean
-                its streets, parking rules, or availability are covered yet.
+                its streets, parking rules, or availability are already known; selecting a match
+                starts a bounded live lookup.
               </p>
               <div class="destination-actions">
                 <button class="secondary-button" id="destination-search-button" type="button">
@@ -88,7 +89,7 @@
               </div>
               <div id="destination-discovery" class="destination-discovery" aria-live="polite" aria-atomic="true">
                 <p id="destination-search-status" class="destination-search-status">
-                  The parking-plan demo currently has local GIS fixture coverage around SMU.
+                  Search any US place for on-demand road research, or use the verified SMU fixture.
                 </p>
                 <section id="destination-results" hidden aria-labelledby="destination-results-title">
                   <h3 id="destination-results-title">Choose the intended place</h3>
@@ -96,10 +97,10 @@
                   <p id="destination-attribution" class="destination-attribution"></p>
                 </section>
                 <div id="selected-destination" class="selected-destination" hidden>
-                  <p><strong>Place selected</strong> · discovery only</p>
+                  <p><strong>Place selected</strong> · ready for on-demand research</p>
                   <p id="selected-destination-name"></p>
                   <p id="selected-destination-coordinates"></p>
-                  <p class="coverage-note">Parking coverage is not confirmed by this selection. Building a plan checks the separate local parking database.</p>
+                  <p class="coverage-note">Selecting a place starts a bounded live OpenStreetMap road lookup and an offline, destination-timezone availability estimate. The estimate is conditional on the curb being legal and usable; legal and free status stay unknown until trustworthy rule evidence is available.</p>
                 </div>
               </div>
               <label class="check-row">
@@ -107,7 +108,7 @@
                 <span>Arrive now</span>
               </label>
               <label id="arrival-time-field" hidden>
-                Arrival time
+                Arrival time <span class="optional">in this device's timezone</span>
                 <input id="arrival-time" name="arrival-time" type="datetime-local">
               </label>
               <div class="field-grid">
@@ -117,7 +118,7 @@
                 </label>
                 <label>
                   Max walk (minutes)
-                  <input id="max-walk" name="max-walk" type="number" value="8" min="0.1" max="30" step="0.1" required>
+                  <input id="max-walk" name="max-walk" type="number" value="8" min="0.1" max="15" step="0.1" required>
                 </label>
               </div>
             </fieldset>
@@ -140,7 +141,7 @@
                 </label>
                 <label class="check-row">
                   <input id="free-only" name="free-only" type="checkbox" checked>
-                  <span>Show only free recommendations</span>
+                  <span>Require verified free status for final routes</span>
                 </label>
               </div>
             </details>
@@ -163,6 +164,11 @@
             <span id="result-time" class="result-time">No plan yet</span>
           </div>
 
+          <div id="coverage-status-banner" class="coverage-status-banner" role="status" hidden>
+            <strong>Provisional road leads — not a parking route.</strong>
+            <span>Verified legal/free curbs: 0. Curb usability, legality, and price are unknown.</span>
+          </div>
+
           <div class="map-shell">
             <svg id="parking-map" viewBox="0 0 900 580" role="group" aria-labelledby="map-title map-description">
               <title id="map-title">Parking candidate map</title>
@@ -183,12 +189,15 @@
             </div>
           </div>
 
-          <ul class="legend" aria-label="Map legend">
+          <ul id="evaluated-legend" class="legend" aria-label="Evaluated parking map legend">
             <li><span class="legend-line legal" aria-hidden="true"></span>Legal + free</li>
             <li><span class="legend-line paid" aria-hidden="true"></span>Legal + paid</li>
             <li><span class="legend-line illegal" aria-hidden="true"></span>Illegal</li>
             <li><span class="legend-line unknown" aria-hidden="true"></span>Unknown · verify signs</li>
             <li><span class="legend-dot route" aria-hidden="true"></span>Route order</li>
+          </ul>
+          <ul id="provisional-legend" class="legend" aria-label="Provisional road lead legend" hidden>
+            <li><span class="legend-line unknown" aria-hidden="true"></span>Provisional road lead · verify curb, signs, and price</li>
           </ul>
 
           <div id="summary-cards" class="summary-cards" hidden></div>
@@ -208,7 +217,7 @@
           <section id="candidate-section" class="result-section" hidden aria-labelledby="candidate-title">
             <div class="section-heading inline">
               <div>
-                <p class="step-label">All evaluated curbs</p>
+                <p class="step-label">Curb candidates and provisional leads</p>
                 <h3 id="candidate-title">Candidate details</h3>
               </div>
               <span id="candidate-count" class="count-pill"></span>

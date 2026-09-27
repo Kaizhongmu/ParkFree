@@ -264,3 +264,28 @@
 85. The deterministic `/v1/parking/search` path never invokes geocoding or another live provider.
     Provider results require a later explicit selection and coverage-preparation boundary before
     they may become canonical destination IDs.
+86. `POST /v1/parking/on-demand` is that explicit coverage-preparation boundary. It re-runs the
+    original query, requires the exact provider-derived `match_id`, and never trusts coordinates
+    supplied by the browser.
+87. On-demand road coverage uses a bounded public Overpass query in low-volume development only.
+    It stores no raw response, retains normalized OSM provenance, uses an in-memory TTL cache and
+    per-process rate gate, and makes no live network calls in automated tests.
+88. On-demand output is a provisional lead set, not a Phase 6 parking plan. Every candidate keeps
+    `legal_state=UNKNOWN`, `free_state=UNKNOWN`, and confidence zero; no route or SMU fallback is
+    fabricated when trusted regulation evidence is absent.
+89. Public Nominatim and Overpass require no paid account, but their shared public instances are
+    not a production nationwide SLA. A production rollout needs shared caching/rate control and
+    self-hosted or bulk OSM data.
+90. No local language-model runtime or general web-search backend is installed by default. AI
+    extraction remains behind the reviewed Phase 8 boundary and cannot silently turn unreviewed
+    web text into an authoritative legal/free conclusion.
+91. On-demand availability uses the existing versioned Phase 4 prior with a destination timezone
+    resolved from bundled offline polygons. It is explicitly conditional on the curb being legal
+    and usable, uses no destination-specific observations, and must never be presented as a
+    legality or free-parking probability.
+92. On-demand boundary fragments shorter than 6 m are not credible curb opportunities and are
+    removed before the response limit is applied. Remaining leads retain deterministic proximity
+    order; the V0 output is machine-labeled `UNCALIBRATED_HEURISTIC`, and one response uses one
+    captured prediction timestamp.
+93. Until destination-local wall-time input has an explicit DST gap/fold contract, scheduled UI
+    arrivals are interpreted in the user's device timezone and must be labeled as such.

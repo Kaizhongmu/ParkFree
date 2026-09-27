@@ -9,8 +9,12 @@ optimizer, a replayable end-to-end parking-search API, a dependency-free local m
 AI evidence-service contracts with explicit human review before persistence.
 The post-Phase 8 V1A hardening slice adds a durable least-privilege review queue and append-only
 audit trail for trusted backend operators; it intentionally exposes no public review endpoint.
-The first nationwide-readiness slice adds zero-cost, US-only destination discovery while keeping
-the deterministic parking-search path isolated from live providers.
+The nationwide-readiness work now includes zero-cost, US-only destination discovery plus a
+separate bounded on-demand road-coverage path. A selected place can fetch nearby OpenStreetMap
+roads at request time and generate provisional curb leads without pre-seeding that destination.
+It also resolves the destination timezone offline and attaches the existing versioned baseline's
+conditional vacancy estimate. The strict deterministic parking-search path remains isolated from
+live providers.
 
 ## Requirements
 
@@ -67,6 +71,7 @@ application/contact string, but no API key or billing account:
 
 ```text
 NOMINATIM_USER_AGENT=ParkFree/0.1 (contact: operator@example.com)
+OVERPASS_USER_AGENT=ParkFree/0.1 (contact: operator@example.com)
 ```
 
 After configuration, explicitly submit a lookup (the public service must not be used for
@@ -78,14 +83,34 @@ curl -X POST http://localhost:8000/v1/destinations/search \
   -d '{"query":"Seattle Center"}'
 ```
 
-This endpoint discovers places only. It does not claim parking coverage or pass unprepared
-destinations to the optimizer. See
+Destination search resolves places only. After a user selects an exact match, the separate
+`POST /v1/parking/on-demand` endpoint revalidates that match, fetches a bounded live OSM road
+snapshot, and generates provisional curb leads. See
 [`docs/ZERO_COST_DESTINATION_DISCOVERY.md`](docs/ZERO_COST_DESTINATION_DISCOVERY.md).
 
 The web demo exposes this lookup through an explicit “Find this US place” action. Selected places
-are plotted as discovery-only markers. Parking-plan submission remains disabled unless the bundled
-canonical SMU demo destination is active, preventing an uncovered place from inheriting SMU
-candidates or a global fallback.
+automatically start the on-demand road lookup. The returned leads remain explicitly `UNKNOWN` for
+legality and payment unless trustworthy regulation evidence exists; they are not silently sent to
+the strict optimizer and never inherit SMU candidates or its fallback. Conditional availability
+is shown as an uncalibrated heuristic prior, not a free-parking probability or verified ranking.
+
+The same flow can be exercised directly after copying the selected `query` and `match_id` from the
+destination-search response:
+
+```bash
+curl -X POST http://localhost:8000/v1/parking/on-demand \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "origin": {"lat": 32.842, "lon": -96.784},
+    "destination": {"query": "Seattle Center", "match_id": "geo_replace_me"},
+    "arrival_time": "now",
+    "parking_duration_minutes": 60,
+    "free_only": true,
+    "max_walk_minutes": 8.0,
+    "vehicle_profile": {"type": "passenger", "permit_types": []},
+    "max_candidates": 20
+  }'
+```
 
 Open the Phase 7 interface at [`http://localhost:8000/`](http://localhost:8000/). The page is
 served by FastAPI and needs no separate frontend build or package manager. Do not open
@@ -205,6 +230,8 @@ state transitions, transaction ownership, audit integrity, retention, and verifi
 See [`docs/ZERO_COST_DESTINATION_DISCOVERY.md`](docs/ZERO_COST_DESTINATION_DISCOVERY.md) for the
 free Nominatim adapter, privacy/rate limits, and the boundary between place discovery and parking
 coverage.
+See [`docs/ON_DEMAND_PARKING.md`](docs/ON_DEMAND_PARKING.md) for live Overpass acquisition,
+provisional candidate semantics, zero-cost constraints, and exact verification commands.
 
 ## Project structure
 
@@ -219,6 +246,7 @@ src/parking_ai/regulations/ deterministic rule evaluation
 src/parking_ai/availability/ deterministic baseline prediction and evaluation
 src/parking_ai/routing/  synthetic matrix, expected-cost evaluation, greedy and beam planning
 src/parking_ai/orchestrator/ end-to-end Phase 6 composition and replay persistence
+src/parking_ai/coverage/ bounded live road acquisition and provisional candidate orchestration
 src/parking_ai/web/      dependency-free Phase 7 map UI assets
 src/parking_ai/agents/   bounded Phase 8 evidence extraction and review services
 src/parking_ai/evidence/ approved evidence/rule persistence boundary
@@ -246,7 +274,10 @@ matrix remains a documented straight-line approximation. A real, deployment-veri
 authoritative regulation ingestion remain operator responsibilities. Phase 8 validates
 provider-independent regulation, community, and vision extraction output, quarantines invalid
 responses, and requires explicit human approval before normalized evidence or rules can be
-persisted. It configures no live/paid model provider and never invokes AI during a parking search.
+persisted. It configures no paid model provider. The new on-demand endpoint performs live place
+and road-data acquisition, but it does not yet run a general web-search crawler or local language
+model. Its output is deliberately provisional until the reviewed-evidence boundary has trustworthy
+regulation facts.
 V1A durably stores normalized review proposals and an append-only audit chain, enforces
 least-privilege reviewer roles and claim leases, and atomically publishes approved evidence/rules.
 It adds no authenticated review API; deployments must supply and verify trusted operator identity

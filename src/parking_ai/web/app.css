@@ -164,7 +164,7 @@ input:focus-visible, button:focus-visible, summary:focus-visible, .candidate-car
 .secondary-button:hover { background: var(--mint); }
 .secondary-button:disabled { cursor: wait; opacity: 0.65; }
 .destination-discovery { display: grid; gap: 0.65rem; }
-.destination-search-status { margin: 0; color: var(--muted); font-size: 0.72rem; }
+.destination-search-status { margin: 0; color: var(--muted); font-size: 0.8rem; }
 .destination-search-status.error { color: #7e2220; }
 .destination-discovery section { padding: 0.75rem; background: #f2f5f0; border: 1px solid var(--line); border-radius: 0.65rem; }
 .destination-discovery h3 { margin: 0 0 0.55rem; font-size: 0.78rem; }
@@ -174,9 +174,9 @@ input:focus-visible, button:focus-visible, summary:focus-visible, .candidate-car
 .destination-match-button strong { font-size: 0.77rem; }
 .destination-match-button span { color: var(--muted); font-size: 0.67rem; overflow-wrap: anywhere; }
 .destination-coordinate { font-variant-numeric: tabular-nums; }
-.destination-attribution { margin: 0.55rem 0 0; color: var(--muted); font-size: 0.64rem; }
+.destination-attribution { margin: 0.55rem 0 0; color: var(--muted); font-size: 0.75rem; }
 .selected-destination { padding: 0.7rem 0.8rem; background: var(--amber-soft); border-left: 4px solid var(--amber); border-radius: 0 0.55rem 0.55rem 0; }
-.selected-destination p { margin: 0.15rem 0; color: #665126; font-size: 0.7rem; overflow-wrap: anywhere; }
+.selected-destination p { margin: 0.15rem 0; color: #665126; font-size: 0.8rem; overflow-wrap: anywhere; }
 .selected-destination .coverage-note { margin-top: 0.4rem; color: #70211e; font-weight: 700; }
 
 details { border-bottom: 1px solid var(--line); padding-bottom: 1.15rem; }
@@ -206,6 +206,19 @@ summary { color: var(--brand-dark); font-size: 0.82rem; font-weight: 800; }
 .results-header { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1.2rem; }
 .results-header h2 { margin: 0.2rem 0 0; font: 700 1.7rem/1.1 Georgia, serif; }
 .result-time, .model-note { color: var(--muted); font-size: 0.72rem; text-align: right; }
+
+.coverage-status-banner {
+  display: grid;
+  gap: 0.2rem;
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  color: #5e4615;
+  background: var(--amber-soft);
+  border: 1px solid #e1bf7c;
+  border-left: 5px solid var(--amber);
+  border-radius: 0.65rem;
+  font-size: 0.82rem;
+}
 
 .map-shell { overflow: hidden; border: 1px solid #cfd5cf; border-radius: 0.85rem; background: #eef0eb; }
 #parking-map { display: block; width: 100%; height: auto; aspect-ratio: 900 / 580; }
@@ -300,8 +313,8 @@ footer { padding: 2.5rem 1rem; color: var(--muted); text-align: center; font-siz
   .field-grid, .summary-cards, .candidate-list { grid-template-columns: 1fr; }
   .results-header, .section-heading.inline, .map-caption { align-items: start; flex-direction: column; }
   .result-time, .model-note { text-align: left; }
-  .map-shell { overflow-x: auto; overflow-y: hidden; }
-  #parking-map { min-width: 48rem; }
+  .map-shell { overflow: hidden; }
+  #parking-map { min-width: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
