@@ -37,6 +37,27 @@ class CoverageProviderMetadata(BaseModel):
     retrieved_at: AwareDateTime
 
 
+class CoverageAttemptOutcome(StrEnum):
+    SUCCEEDED = "SUCCEEDED"
+    EMPTY = "EMPTY"
+    FAILED = "FAILED"
+
+
+class CoverageAttemptRole(StrEnum):
+    PRIMARY = "PRIMARY"
+    FALLBACK = "FALLBACK"
+
+
+class CoverageProviderAttempt(BaseModel):
+    """Sanitized provider outcome; error details never cross the API boundary."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    provider_name: str = Field(min_length=1, max_length=128)
+    role: CoverageAttemptRole
+    outcome: CoverageAttemptOutcome
+
+
 class RoadAcquisition(BaseModel):
     """Normalized roads plus provider tags retained outside the GIS core."""
 
@@ -45,6 +66,7 @@ class RoadAcquisition(BaseModel):
     roads: tuple[RoadFeature, ...]
     tags_by_feature_id: dict[str, dict[str, str]] = Field(default_factory=dict)
     metadata: CoverageProviderMetadata
+    provider_attempts: tuple[CoverageProviderAttempt, ...] = ()
     cache_hit: bool = False
 
     @model_validator(mode="after")
@@ -68,6 +90,14 @@ class RoadCoverageProviderError(RoadCoverageError):
 
 class RoadCoverageResponseError(RoadCoverageError):
     """The upstream response could not be safely normalized."""
+
+
+class RoadCoverageExhaustedError(RoadCoverageError):
+    """All configured providers failed; only sanitized attempt metadata is retained."""
+
+    def __init__(self, attempts: tuple[CoverageProviderAttempt, ...]) -> None:
+        super().__init__("all configured road coverage providers failed")
+        self.attempts = attempts
 
 
 class RoadCoverageProvider(Protocol):
@@ -133,6 +163,7 @@ class CoverageSummary(BaseModel):
     metadata: CoverageProviderMetadata
     road_count: int = Field(ge=0)
     tagged_road_count: int = Field(ge=0)
+    provider_attempts: tuple[CoverageProviderAttempt, ...] = ()
     cache_hit: bool
 
 
@@ -150,11 +181,19 @@ class OnDemandParkingResponse(BaseModel):
     calibration_status: Literal["UNCALIBRATED_HEURISTIC"] | None = None
     destination_timezone: str | None = Field(default=None, min_length=1, max_length=128)
     coverage: CoverageSummary | None
+    provider_attempts: tuple[CoverageProviderAttempt, ...] = ()
     warnings: tuple[str, ...]
     attribution: tuple[str, ...]
 
     @model_validator(mode="after")
     def validate_status(self) -> OnDemandParkingResponse:
+        if not self.provider_attempts:
+            raise ValueError("on-demand responses must include provider attempts")
+        if self.provider_attempts[0].role is not CoverageAttemptRole.PRIMARY or any(
+            attempt.role is not CoverageAttemptRole.FALLBACK
+            for attempt in self.provider_attempts[1:]
+        ):
+            raise ValueError("provider attempts must start with primary then contain fallbacks")
         if self.status is OnDemandParkingStatus.PROVIDER_UNAVAILABLE:
             if (
                 self.coverage is not None
@@ -162,11 +201,27 @@ class OnDemandParkingResponse(BaseModel):
                 or self.availability_predictions
             ):
                 raise ValueError("provider-unavailable responses cannot contain acquired coverage")
+            if any(
+                attempt.outcome is not CoverageAttemptOutcome.FAILED
+                for attempt in self.provider_attempts
+            ):
+                raise ValueError("provider-unavailable responses require failed attempts")
         elif self.coverage is None:
             raise ValueError("completed acquisitions must include coverage metadata")
+        elif self.provider_attempts != self.coverage.provider_attempts:
+            raise ValueError("top-level provider attempts must match coverage metadata")
+        elif all(
+            attempt.outcome is CoverageAttemptOutcome.FAILED for attempt in self.provider_attempts
+        ):
+            raise ValueError("completed acquisitions require a non-failed provider attempt")
         if self.status is OnDemandParkingStatus.PROVISIONAL_LEADS:
             if not self.candidate_segments:
                 raise ValueError("provisional-lead responses require candidate segments")
+            if not any(
+                attempt.outcome is CoverageAttemptOutcome.SUCCEEDED
+                for attempt in self.provider_attempts
+            ):
+                raise ValueError("provisional leads require a successful provider attempt")
             for segment in self.candidate_segments:
                 if (
                     segment.legal_state is not LegalState.UNKNOWN

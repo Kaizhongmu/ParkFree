@@ -40,6 +40,8 @@ def test_home_serves_dependency_free_accessible_map_ui() -> None:
     assert "Provisional road leads — not a parking route." in response.text
     assert "Verified legal/free curbs: 0" in response.text
     assert 'id="provisional-legend"' in response.text
+    assert 'id="research-activity"' in response.text
+    assert "Request-time API research" in response.text
     assert "in this device's timezone" in response.text
     assert 'aria-live="polite"' in response.text
     assert 'id="location-help" role="status" aria-live="polite" aria-atomic="true"' in response.text
@@ -101,6 +103,13 @@ def test_ui_assets_are_local_and_have_expected_types() -> None:
     assert "proximity order" in script.text
     assert "ranked them by conditional availability" not in script.text
     assert "setProvisionalPresentation" in script.text
+    assert "renderResearchActivity" in script.text
+    assert "Primary road source" in script.text
+    assert "Fallback road source" in script.text
+    assert "Road sources failed" in script.text
+    assert "No roads returned" in script.text
+    assert '"NOT_CONFIGURED"' in script.text
+    assert "every configured road API failed" in script.text
     assert "form.checkValidity()" in script.text
     assert "form.reportValidity()) void runOnDemandParking" not in script.text
     assert 'element("li", "", String(warning))' in script.text

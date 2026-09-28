@@ -38,8 +38,18 @@ class Settings(BaseSettings):
         min_length=1,
         max_length=2_048,
     )
-    overpass_timeout_seconds: float = Field(default=20.0, gt=0, le=30)
+    overpass_timeout_seconds: float = Field(default=5.0, gt=0, le=30)
     overpass_cache_ttl_seconds: float = Field(default=3_600.0, gt=0, le=86_400)
+    tigerweb_url: str = Field(
+        default=(
+            "https://tigerweb.geo.census.gov/arcgis/rest/services/"
+            "TIGERweb/Transportation_LargeScale/MapServer"
+        ),
+        min_length=1,
+        max_length=2_048,
+    )
+    tigerweb_timeout_seconds: float = Field(default=8.0, gt=0, le=30)
+    tigerweb_cache_ttl_seconds: float = Field(default=3_600.0, gt=0, le=86_400)
 
     @field_validator("nominatim_user_agent", "overpass_user_agent")
     @classmethod

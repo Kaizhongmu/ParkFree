@@ -230,7 +230,8 @@ state transitions, transaction ownership, audit integrity, retention, and verifi
 See [`docs/ZERO_COST_DESTINATION_DISCOVERY.md`](docs/ZERO_COST_DESTINATION_DISCOVERY.md) for the
 free Nominatim adapter, privacy/rate limits, and the boundary between place discovery and parking
 coverage.
-See [`docs/ON_DEMAND_PARKING.md`](docs/ON_DEMAND_PARKING.md) for live Overpass acquisition,
+See [`docs/ON_DEMAND_PARKING.md`](docs/ON_DEMAND_PARKING.md) for request-time Overpass acquisition,
+official Census TIGERweb failover,
 provisional candidate semantics, zero-cost constraints, and exact verification commands.
 
 ## Project structure

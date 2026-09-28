@@ -4,6 +4,7 @@ import hashlib
 import json
 import math
 import re
+import ssl
 import threading
 import time
 import urllib.error
@@ -14,6 +15,7 @@ from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from typing import Protocol
 
+import certifi
 from pydantic import ValidationError
 
 from parking_ai.coverage.models import (
@@ -79,6 +81,7 @@ class UrllibOverpassTransport:
         if max_response_bytes < 1 or max_response_bytes > MAX_RESPONSE_BYTES:
             raise ValueError(f"max_response_bytes must be between 1 and {MAX_RESPONSE_BYTES}")
         self._max_response_bytes = max_response_bytes
+        self._ssl_context = ssl.create_default_context(cafile=certifi.where())
 
     def post_json(
         self,
@@ -93,7 +96,11 @@ class UrllibOverpassTransport:
         request_headers["Content-Type"] = "application/x-www-form-urlencoded; charset=utf-8"
         request = urllib.request.Request(url, data=body, headers=request_headers, method="POST")
         try:
-            with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+            with urllib.request.urlopen(
+                request,
+                timeout=timeout_seconds,
+                context=self._ssl_context,
+            ) as response:
                 raw_body = response.read(self._max_response_bytes + 1)
         except urllib.error.HTTPError as error:
             raise RoadCoverageProviderError(
@@ -146,6 +153,8 @@ class _TTLAcquisitionCache:
 
 class OverpassRoadCoverageProvider:
     """Acquire a bounded OSM road snapshot without leaking provider formats downstream."""
+
+    provider_name = "Overpass API / OpenStreetMap"
 
     def __init__(
         self,

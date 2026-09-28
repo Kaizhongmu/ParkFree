@@ -7,13 +7,15 @@ local result. After a user explicitly searches for and selects a US place, the a
 
 1. re-runs the original Nominatim query and requires the exact selected `match_id`;
 2. derives stable destination and access-point IDs from that canonical match;
-3. submits one bounded Overpass query for eligible nearby road ways;
-4. clips ways to the requested walking-radius boundary, then deterministically splits them at
+3. tries one bounded Overpass query for eligible nearby road ways when it is configured;
+4. automatically queries the official U.S. Census TIGERweb Transportation REST API when
+   Overpass is unavailable, invalid, or not configured;
+5. clips ways to the requested walking-radius boundary, then deterministically splits them at
    represented shared intersections;
-5. reuses the Phase 2 generator to produce side-specific, content-derived curb-segment IDs;
-6. resolves the destination's IANA timezone from bundled offline polygons;
-7. runs the versioned Phase 4 baseline for each lead at the requested arrival time; and
-8. expands a bounded candidate pool, removes curb fragments shorter than 6 m, preserves proximity
+6. reuses the Phase 2 generator to produce side-specific, content-derived curb-segment IDs;
+7. resolves the destination's IANA timezone from bundled offline polygons;
+8. runs the versioned Phase 4 baseline for each lead at the requested arrival time; and
+9. expands a bounded candidate pool, removes curb fragments shorter than 6 m, preserves proximity
    order, and returns at most 20 provisional leads with conditional availability priors, model
    provenance, and provider attribution.
 
@@ -53,19 +55,30 @@ boundary before external text can become authoritative parking rules.
 
 ## Provider, provenance, and storage
 
-The initial provider is the public OpenStreetMap Overpass API. Configure identifying
-application/contact values:
+The request-time road provider chain first tries bounded Overpass/OpenStreetMap when configured,
+then uses the official U.S. Census Bureau TIGERweb Transportation service as a zero-key fallback
+when Overpass fails or returns an empty road snapshot.
+Configure identifying application/contact values:
 
 ```text
 NOMINATIM_USER_AGENT=ParkFree/0.1 (contact: operator@example.com)
 OVERPASS_USER_AGENT=ParkFree/0.1 (contact: operator@example.com)
 ```
 
-Both providers are disabled until their user agents are set. No API key or billing account is
-required. Overpass requests are POSTed, serialized per process, rate-gated, bounded by timeout,
+Nominatim place search requires its User-Agent. Overpass is optional; a Nominatim-only setup still
+uses TIGERweb for road geometry. No paid API, API key, or billing account is required. Overpass
+requests are POSTed, serialized per process, rate-gated, bounded by timeout,
 response size, element/road/node/tag counts, and cached in memory by rounded coordinate, radius,
 and policy version. Raw JSON is ephemeral. Normalized roads retain OSM element ID, version,
 timestamp, tags, ODbL license, source URI, retrieval time, and contributor attribution.
+
+TIGERweb requests query primary, secondary, and local road layers through bounded GeoJSON
+envelopes, clip results to the requested radius, and retain Census layer/OID/MTFCC provenance.
+Census geometry contains no curb regulation proof, so fallback success never changes UNKNOWN
+legality or price. Sanitized `provider_attempts` let the UI show primary failure and fallback
+success without exposing exception text or raw query URLs.
+All HTTPS transports use the packaged `certifi` trust store, so the local demo does not depend on
+a machine-specific Python CA-file installation.
 
 Destination timezones are resolved locally with `timezonefinder` (MIT-licensed code) and its
 bundled Timezone Boundary Builder-derived data (ODbL). This avoids another request-time network or
@@ -118,7 +131,7 @@ succeeds, `availability_predictions`, `availability_assumption`, `calibration_st
 ## Verification
 
 Automated tests use injected transports and local provider-shaped fixtures. They never call live
-Nominatim or Overpass.
+Nominatim, Overpass, or TIGERweb.
 
 ```bash
 .venv/bin/python -m ruff check .

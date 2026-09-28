@@ -5,12 +5,16 @@ from datetime import UTC, datetime
 import pytest
 
 from parking_ai.coverage import (
+    CoverageAttemptOutcome,
+    CoverageAttemptRole,
+    CoverageProviderAttempt,
     CoverageProviderMetadata,
     OnDemandParkingCommand,
     OnDemandParkingResponse,
     OnDemandParkingService,
     OnDemandParkingStatus,
     RoadAcquisition,
+    RoadCoverageExhaustedError,
     RoadCoverageProviderError,
     SelectedDestinationNotFoundError,
 )
@@ -295,6 +299,84 @@ def test_on_demand_service_returns_explicit_provider_unavailable_without_candida
     assert response.coverage is None
     assert response.candidate_segments == ()
     assert "private" not in " ".join(response.warnings)
+
+
+def test_on_demand_service_exposes_sanitized_attempts_when_provider_chain_is_exhausted() -> None:
+    attempts = (
+        CoverageProviderAttempt(
+            provider_name="Overpass API / OpenStreetMap",
+            role=CoverageAttemptRole.PRIMARY,
+            outcome=CoverageAttemptOutcome.FAILED,
+        ),
+        CoverageProviderAttempt(
+            provider_name="U.S. Census Bureau TIGERweb",
+            role=CoverageAttemptRole.FALLBACK,
+            outcome=CoverageAttemptOutcome.FAILED,
+        ),
+    )
+
+    class ExhaustedProvider:
+        def acquire(
+            self,
+            destination: Destination,
+            max_walk_minutes: float,
+        ) -> RoadAcquisition:
+            raise RoadCoverageExhaustedError(attempts)
+
+    response = OnDemandParkingService(
+        _Geocoder(_geocoding_result(MATCH)),
+        ExhaustedProvider(),
+    ).search(_command())
+
+    assert response.status is OnDemandParkingStatus.PROVIDER_UNAVAILABLE
+    assert response.provider_attempts == attempts
+    assert "private" not in response.model_dump_json()
+
+
+def test_on_demand_response_rejects_success_for_provider_unavailable() -> None:
+    class FailingProvider:
+        def acquire(
+            self,
+            destination: Destination,
+            max_walk_minutes: float,
+        ) -> RoadAcquisition:
+            raise RoadCoverageProviderError("private provider details")
+
+    response = OnDemandParkingService(
+        _Geocoder(_geocoding_result(MATCH)),
+        FailingProvider(),
+    ).search(_command())
+    payload = response.model_dump(mode="python")
+    payload["provider_attempts"][0]["outcome"] = CoverageAttemptOutcome.SUCCEEDED
+
+    with pytest.raises(ValueError, match="require failed attempts"):
+        OnDemandParkingResponse.model_validate(payload)
+
+
+def test_on_demand_response_rejects_fallback_before_primary() -> None:
+    response = OnDemandParkingService(
+        _Geocoder(_geocoding_result(MATCH)),
+        _RoadProvider(_acquisition(_road())),
+    ).search(_command())
+    payload = response.model_dump(mode="python")
+    payload["provider_attempts"][0]["role"] = CoverageAttemptRole.FALLBACK
+    payload["coverage"]["provider_attempts"][0]["role"] = CoverageAttemptRole.FALLBACK
+
+    with pytest.raises(ValueError, match="start with primary"):
+        OnDemandParkingResponse.model_validate(payload)
+
+
+def test_on_demand_response_rejects_provisional_leads_without_success() -> None:
+    response = OnDemandParkingService(
+        _Geocoder(_geocoding_result(MATCH)),
+        _RoadProvider(_acquisition(_road())),
+    ).search(_command())
+    payload = response.model_dump(mode="python")
+    payload["provider_attempts"][0]["outcome"] = CoverageAttemptOutcome.EMPTY
+    payload["coverage"]["provider_attempts"][0]["outcome"] = CoverageAttemptOutcome.EMPTY
+
+    with pytest.raises(ValueError, match="successful provider"):
+        OnDemandParkingResponse.model_validate(payload)
 
 
 def test_on_demand_service_distinguishes_empty_snapshot_from_no_provider() -> None:

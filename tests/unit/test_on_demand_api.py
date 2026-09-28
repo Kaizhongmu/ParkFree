@@ -8,6 +8,9 @@ from fastapi.testclient import TestClient
 from parking_ai.api.on_demand import ON_DEMAND_HANDLER_STATE_KEY
 from parking_ai.config import Settings
 from parking_ai.coverage import (
+    CoverageAttemptOutcome,
+    CoverageAttemptRole,
+    CoverageProviderAttempt,
     OnDemandParkingCommand,
     OnDemandParkingResponse,
     OnDemandParkingStatus,
@@ -51,6 +54,13 @@ def _unavailable_response(command: OnDemandParkingCommand) -> OnDemandParkingRes
         resolved_arrival_time=command.arrival_time,
         candidate_segments=(),
         coverage=None,
+        provider_attempts=(
+            CoverageProviderAttempt(
+                provider_name="Fixture road API",
+                role=CoverageAttemptRole.PRIMARY,
+                outcome=CoverageAttemptOutcome.FAILED,
+            ),
+        ),
         warnings=("Road coverage could not be acquired.",),
         attribution=("Fixture geocoder attribution",),
     )
@@ -84,7 +94,7 @@ def test_on_demand_api_builds_strict_command_and_resolves_now() -> None:
     assert command.vehicle_profile.requested_parking_duration_min == 60
 
 
-def test_on_demand_api_is_disabled_without_both_provider_configuration_values() -> None:
+def test_on_demand_api_is_disabled_without_geocoder_configuration() -> None:
     client = TestClient(create_app(_settings()))
 
     response = client.post("/v1/parking/on-demand", json=_payload())
@@ -93,7 +103,7 @@ def test_on_demand_api_is_disabled_without_both_provider_configuration_values() 
     assert response.json() == {"detail": "On-demand parking discovery is temporarily unavailable"}
 
 
-def test_default_on_demand_runtime_requires_both_provider_user_agents() -> None:
+def test_default_on_demand_runtime_uses_tigerweb_when_only_geocoder_is_configured() -> None:
     only_geocoder = create_app(
         Settings(
             environment="test",
@@ -101,7 +111,7 @@ def test_default_on_demand_runtime_requires_both_provider_user_agents() -> None:
             nominatim_user_agent="ParkFree/0.1 (tests@example.com)",
         )
     )
-    assert getattr(only_geocoder.state, ON_DEMAND_HANDLER_STATE_KEY) is None
+    assert callable(getattr(only_geocoder.state, ON_DEMAND_HANDLER_STATE_KEY))
 
     configured = create_app(
         Settings(

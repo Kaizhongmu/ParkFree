@@ -27,6 +27,9 @@ const selectedDestinationPanel = document.querySelector("#selected-destination")
 const coverageStatusBanner = document.querySelector("#coverage-status-banner");
 const evaluatedLegend = document.querySelector("#evaluated-legend");
 const provisionalLegend = document.querySelector("#provisional-legend");
+const researchActivity = document.querySelector("#research-activity");
+const researchSourceList = document.querySelector("#research-source-list");
+const researchState = document.querySelector("#research-state");
 
 let activeSegmentId = null;
 let lastRequestBody = null;
@@ -224,6 +227,7 @@ function showDestinationCoverageGate() {
   setMapEmptyVisibility(true);
   document.querySelector("#result-time").textContent = "No current plan";
   setProvisionalPresentation(false);
+  clearResearchActivity();
   ["#summary-cards", "#route-section", "#candidate-section", "#warning-section"]
     .forEach((selector) => {
       document.querySelector(selector).hidden = true;
@@ -254,6 +258,7 @@ function resetMapForLocalDemo() {
     "© OpenStreetMap contributors · ODbL fixture geometry";
   document.querySelector("#result-time").textContent = "No plan yet";
   setProvisionalPresentation(false);
+  clearResearchActivity();
 }
 
 function normalizeDestinationDiscovery(body) {
@@ -433,10 +438,11 @@ function renderOnDemandCoverage(result) {
 
   if (status !== "PROVISIONAL_LEADS") {
     markSearchFailed();
+    renderResearchActivity(result);
     renderWarnings(result.warnings || []);
     setStatus(
       status === "PROVIDER_UNAVAILABLE"
-        ? "The live road provider is unavailable. No SMU data or fallback was substituted."
+        ? "Research attempted, but every configured road API failed. This does not mean parking is unavailable."
         : "No eligible road candidates were found in the bounded live snapshot.",
       status === "PROVIDER_UNAVAILABLE",
     );
@@ -477,15 +483,19 @@ function renderOnDemandCoverage(result) {
   renderMap(view);
   renderCandidates(view);
   renderOnDemandSummary(result, segments.length);
+  renderResearchActivity(result);
   setProvisionalPresentation(true);
   document.querySelector("#route-section").hidden = true;
   renderWarnings(result.warnings || []);
   document.querySelector("#map-source-caption").textContent =
     `${(result.attribution || []).join(" · ")} · live provisional coverage`;
+  const usedFallback = (result.provider_attempts || []).some(
+    (attempt) => attempt.role === "PRIMARY" && attempt.outcome === "FAILED",
+  );
   setStatus(
     predictions.length
-      ? `Found ${segments.length} nearby curb leads in proximity order. The vacancy numbers are uncalibrated conditional priors; legality and free status remain UNKNOWN.`
-      : `Found ${segments.length} nearby curb leads from live road data. Rules and free status remain UNKNOWN until trustworthy evidence is available.`,
+      ? `${usedFallback ? "The primary road API failed; Census fallback found" : "Found"} ${segments.length} nearby curb leads in proximity order. The vacancy numbers are uncalibrated conditional priors; legality and free status remain UNKNOWN.`
+      : `${usedFallback ? "Census fallback found" : "Found"} ${segments.length} nearby curb leads from request-time road APIs. Rules and free status remain UNKNOWN until trustworthy evidence is available.`,
     false,
   );
 }
@@ -501,6 +511,7 @@ function renderOnDemandSummary(result, candidateCount) {
     ["Curb leads", String(candidateCount)],
     ["Roads fetched", String(coverage.road_count ?? 0)],
     ["Parking-tagged roads", String(coverage.tagged_road_count ?? 0)],
+    ["Road source", coverage.metadata?.provider_name || "Not reported"],
     ["Highest V0 prior", probabilities.length ? formatPercent(Math.max(...probabilities)) : "Not estimated"],
     ["Model basis", result.calibration_status === "UNCALIBRATED_HEURISTIC" ? "Uncalibrated" : "Not reported"],
     ["Destination timezone", result.destination_timezone || "Not resolved"],
@@ -629,6 +640,7 @@ function clearResults() {
   mapEmptyNote.textContent = "Previous results have been cleared";
   document.querySelector("#result-time").textContent = "Searching…";
   setProvisionalPresentation(false);
+  clearResearchActivity();
   ["#summary-cards", "#route-section", "#candidate-section", "#warning-section"]
     .forEach((selector) => {
       document.querySelector(selector).hidden = true;
@@ -644,6 +656,7 @@ function markSearchFailed() {
     });
   document.querySelector("#result-time").textContent = "No current plan";
   setProvisionalPresentation(false);
+  clearResearchActivity();
   mapEmpty.textContent = "Search did not complete";
   mapEmptyNote.textContent = "Review the message beside the search form, then try again";
   setMapEmptyVisibility(true);
@@ -659,6 +672,7 @@ function markSearchChanged() {
     });
   document.querySelector("#result-time").textContent = "No current plan";
   setProvisionalPresentation(false);
+  clearResearchActivity();
   mapEmpty.textContent = "Search settings changed";
   mapEmptyNote.textContent = "Submit again to build a plan for the current inputs";
   setMapEmptyVisibility(true);
@@ -669,6 +683,7 @@ function renderSearch(result) {
   activeSegmentId = null;
   document.querySelector("#result-time").textContent = formatDate(result.resolved_arrival_time);
   setProvisionalPresentation(false);
+  clearResearchActivity();
   renderSummary(result);
   renderMap(result);
   renderRoute(result);
@@ -1004,6 +1019,85 @@ function renderWarnings(warnings) {
   list.replaceChildren();
   warnings.forEach((warning) => list.append(element("li", "", String(warning))));
   section.hidden = warnings.length === 0;
+}
+
+function renderResearchActivity(result) {
+  const attempts = Array.isArray(result.provider_attempts) ? result.provider_attempts : [];
+  const failed = attempts.filter((attempt) => attempt.outcome === "FAILED");
+  const succeeded = attempts.filter((attempt) => attempt.outcome === "SUCCEEDED");
+  const empty = attempts.filter((attempt) => attempt.outcome === "EMPTY");
+  const fallbackSucceeded = attempts.some(
+    (attempt) => attempt.role === "FALLBACK" && attempt.outcome === "SUCCEEDED",
+  );
+  const state = succeeded.length > 0
+    ? fallbackSucceeded ? "Fallback used" : "Road data ready"
+    : empty.length > 0 ? "No roads returned" : "Road sources failed";
+  researchState.textContent = state;
+  researchState.classList.toggle("error", succeeded.length === 0);
+  researchState.classList.toggle("partial", fallbackSucceeded || empty.length > 0);
+  researchSourceList.replaceChildren();
+  researchSourceList.append(
+    researchSourceItem(
+      "Destination identity",
+      "SUCCEEDED",
+      "Selected place was revalidated through the destination API.",
+    ),
+  );
+  attempts.forEach((attempt) => {
+    const role = attempt.role === "FALLBACK" ? "Fallback road source" : "Primary road source";
+    const detail = attempt.outcome === "SUCCEEDED"
+      ? `${role} supplied the road snapshot used for this result.`
+      : attempt.outcome === "EMPTY"
+        ? `${role} returned no roads; the system continued to the next configured source.`
+        : `${role} failed; the system continued to the next configured source.`;
+    researchSourceList.append(
+      researchSourceItem(attempt.provider_name || "Road coverage API", attempt.outcome, detail),
+    );
+  });
+  researchSourceList.append(
+    researchSourceItem(
+      "Destination timezone",
+      result.destination_timezone
+        ? "SUCCEEDED"
+        : result.status === "PROVIDER_UNAVAILABLE" ? "PENDING" : "FAILED",
+      result.destination_timezone
+        ? `${result.destination_timezone} was resolved offline for arrival-time features.`
+        : result.status === "PROVIDER_UNAVAILABLE"
+          ? "Not run because no road snapshot was available."
+          : "Timezone resolution did not contribute to this result.",
+    ),
+    researchSourceItem(
+      "Parking regulation evidence",
+      "NOT_CONFIGURED",
+      "No nationwide regulation API is configured; legality and price remain UNKNOWN.",
+    ),
+  );
+  researchActivity.hidden = false;
+}
+
+function researchSourceItem(name, outcome, detail) {
+  const className = outcome === "SUCCEEDED"
+    ? "succeeded" : outcome === "FAILED" ? "failed" : "pending";
+  const icon = outcome === "SUCCEEDED" ? "✓" : outcome === "FAILED" ? "!" : "—";
+  const item = element("li", `research-source-item ${className}`);
+  const copy = element("div");
+  copy.append(
+    element("p", "research-source-name", name),
+    element("p", "research-source-detail", detail),
+  );
+  item.append(
+    element("span", "research-source-icon", icon),
+    copy,
+    element("span", "research-source-outcome", humanize(outcome)),
+  );
+  return item;
+}
+
+function clearResearchActivity() {
+  researchSourceList.replaceChildren();
+  researchState.textContent = "";
+  researchState.classList.remove("error", "partial");
+  researchActivity.hidden = true;
 }
 
 function setProvisionalPresentation(isProvisional) {

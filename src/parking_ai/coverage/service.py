@@ -10,6 +10,9 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from parking_ai.availability import DeterministicAvailabilityBaseline
 from parking_ai.coverage.models import (
+    CoverageAttemptOutcome,
+    CoverageAttemptRole,
+    CoverageProviderAttempt,
     CoverageSummary,
     DestinationTimezoneResolver,
     OnDemandParkingCommand,
@@ -17,6 +20,7 @@ from parking_ai.coverage.models import (
     OnDemandParkingStatus,
     RoadAcquisition,
     RoadCoverageError,
+    RoadCoverageExhaustedError,
     RoadCoverageProvider,
     SelectedDestinationNotFoundError,
 )
@@ -91,13 +95,36 @@ class OnDemandParkingService:
                 destination,
                 command.max_walk_minutes,
             )
-        except RoadCoverageError:
+        except RoadCoverageExhaustedError as error:
             return OnDemandParkingResponse(
                 status=OnDemandParkingStatus.PROVIDER_UNAVAILABLE,
                 destination=destination,
                 resolved_arrival_time=command.arrival_time,
                 candidate_segments=(),
                 coverage=None,
+                provider_attempts=error.attempts,
+                warnings=(_PROVIDER_WARNING,),
+                attribution=(geocoding.metadata.attribution,),
+            )
+        except RoadCoverageError:
+            provider_name = getattr(
+                self._road_provider,
+                "provider_name",
+                "Road coverage API",
+            )
+            return OnDemandParkingResponse(
+                status=OnDemandParkingStatus.PROVIDER_UNAVAILABLE,
+                destination=destination,
+                resolved_arrival_time=command.arrival_time,
+                candidate_segments=(),
+                coverage=None,
+                provider_attempts=(
+                    CoverageProviderAttempt(
+                        provider_name=provider_name,
+                        role=CoverageAttemptRole.PRIMARY,
+                        outcome=CoverageAttemptOutcome.FAILED,
+                    ),
+                ),
                 warnings=(_PROVIDER_WARNING,),
                 attribution=(geocoding.metadata.attribution,),
             )
@@ -129,6 +156,14 @@ class OnDemandParkingService:
             tagged_road_count=sum(
                 any(key.casefold().startswith("parking:") for key in tags)
                 for tags in acquisition.tags_by_feature_id.values()
+            ),
+            provider_attempts=acquisition.provider_attempts
+            or (
+                CoverageProviderAttempt(
+                    provider_name=acquisition.metadata.provider_name,
+                    role=CoverageAttemptRole.PRIMARY,
+                    outcome=CoverageAttemptOutcome.SUCCEEDED,
+                ),
             ),
             cache_hit=acquisition.cache_hit,
         )
@@ -173,6 +208,7 @@ class OnDemandParkingService:
             calibration_status=calibration_status,
             destination_timezone=destination_timezone,
             coverage=coverage,
+            provider_attempts=coverage.provider_attempts,
             warnings=tuple(warnings),
             attribution=tuple(
                 dict.fromkeys((geocoding.metadata.attribution, acquisition.metadata.attribution))

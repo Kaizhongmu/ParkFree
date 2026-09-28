@@ -220,6 +220,41 @@ summary { color: var(--brand-dark); font-size: 0.82rem; font-weight: 800; }
   font-size: 0.82rem;
 }
 
+.research-activity {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f3f5f0;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+}
+
+.research-source-list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.research-source-item {
+  display: grid;
+  grid-template-columns: 1.15rem minmax(0, 1fr) auto;
+  gap: 0.55rem;
+  align-items: start;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.78rem;
+}
+
+.research-source-item:first-child { padding-top: 0; border-top: 0; }
+.research-source-icon { font-weight: 900; text-align: center; }
+.research-source-item.succeeded .research-source-icon { color: var(--brand); }
+.research-source-item.failed .research-source-icon { color: var(--red); }
+.research-source-item.pending .research-source-icon { color: var(--muted); }
+.research-source-name { margin: 0; font-weight: 800; }
+.research-source-detail { margin: 0.08rem 0 0; color: var(--muted); font-size: 0.7rem; }
+.research-source-outcome { color: var(--muted); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+
 .map-shell { overflow: hidden; border: 1px solid #cfd5cf; border-radius: 0.85rem; background: #eef0eb; }
 #parking-map { display: block; width: 100%; height: auto; aspect-ratio: 900 / 580; }
 #map-empty { fill: #5c6862; font: 700 18px system-ui, sans-serif; }
@@ -275,6 +310,8 @@ summary { color: var(--brand-dark); font-size: 0.82rem; font-weight: 800; }
 
 .count-pill, .state-pill { display: inline-flex; align-items: center; border-radius: 999px; font-weight: 800; }
 .count-pill { padding: 0.25rem 0.6rem; color: var(--brand); background: var(--mint); font-size: 0.67rem; }
+.count-pill.partial { color: #76500f; background: var(--amber-soft); }
+.count-pill.error { color: #872623; background: #fbe0dc; }
 .candidate-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; }
 .candidate-card { min-width: 0; padding: 0.9rem; background: #fafaf7; border: 1px solid var(--line); border-left-width: 5px; border-radius: 0.6rem; cursor: pointer; }
 .candidate-card.legal { border-left-color: var(--brand); }

@@ -27,7 +27,13 @@ from parking_ai.api.routes import (
     router,
 )
 from parking_ai.config import Settings, get_settings
-from parking_ai.coverage import OfflineDestinationTimezoneResolver, OnDemandParkingService
+from parking_ai.coverage import (
+    FailoverRoadCoverageProvider,
+    OfflineDestinationTimezoneResolver,
+    OnDemandParkingService,
+    RoadCoverageProvider,
+    TIGERwebRoadCoverageProvider,
+)
 from parking_ai.coverage.overpass import OverpassRoadCoverageProvider
 from parking_ai.geocoding import NominatimGeocoder
 from parking_ai.logging import configure_logging
@@ -77,17 +83,26 @@ def create_app(
         resolved_destination_handler,
     )
     resolved_on_demand_handler = on_demand_parking_handler
-    if (
-        resolved_on_demand_handler is None
-        and geocoder is not None
-        and resolved_settings.overpass_user_agent is not None
-    ):
-        road_provider = OverpassRoadCoverageProvider(
-            user_agent=resolved_settings.overpass_user_agent,
-            endpoint=resolved_settings.overpass_url,
-            timeout_seconds=resolved_settings.overpass_timeout_seconds,
-            cache_ttl_seconds=resolved_settings.overpass_cache_ttl_seconds,
+    if resolved_on_demand_handler is None and geocoder is not None:
+        tigerweb_provider = TIGERwebRoadCoverageProvider(
+            endpoint=resolved_settings.tigerweb_url,
+            timeout_seconds=resolved_settings.tigerweb_timeout_seconds,
+            cache_ttl_seconds=resolved_settings.tigerweb_cache_ttl_seconds,
         )
+        road_provider: RoadCoverageProvider = tigerweb_provider
+        if resolved_settings.overpass_user_agent is not None:
+            overpass_provider = OverpassRoadCoverageProvider(
+                user_agent=resolved_settings.overpass_user_agent,
+                endpoint=resolved_settings.overpass_url,
+                timeout_seconds=resolved_settings.overpass_timeout_seconds,
+                cache_ttl_seconds=resolved_settings.overpass_cache_ttl_seconds,
+            )
+            road_provider = FailoverRoadCoverageProvider(
+                overpass_provider,
+                tigerweb_provider,
+                primary_name="Overpass API / OpenStreetMap",
+                fallback_name="U.S. Census Bureau TIGERweb",
+            )
         resolved_on_demand_handler = OnDemandParkingService(
             geocoder,
             road_provider,

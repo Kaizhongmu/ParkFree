@@ -289,3 +289,12 @@
     captured prediction timestamp.
 93. Until destination-local wall-time input has an explicit DST gap/fold contract, scheduled UI
     arrivals are interpreted in the user's device timezone and must be labeled as such.
+94. Request-time road research uses Overpass when configured and the official U.S. Census Bureau
+    TIGERweb Transportation REST service as a zero-key fallback. TIGER road centerlines do not
+    contain curb regulations, so fallback success can create provisional geometry but cannot
+    increase legal/free confidence above UNKNOWN.
+95. Provider attempts exposed to clients contain only provider name, PRIMARY/FALLBACK role, and
+    SUCCEEDED/EMPTY/FAILED outcome. An empty primary result triggers the next source; raw exception
+    text, query URLs, and provider payloads stay private.
+96. Nominatim, Overpass, and TIGERweb HTTPS transports use the packaged `certifi` trust store so
+    request-time research does not depend on a machine-specific Python CA installation.

@@ -25,6 +25,13 @@ POST requests, an identifying user agent, an in-memory TTL cache, per-process ra
 normalization, and OSM attribution/provenance. Automated tests inject transports and never call the
 live service.
 
+The official U.S. Census TIGERweb Transportation REST service is the zero-key road-geometry
+fallback. It is called after an Overpass failure or empty snapshot, or directly when Overpass is
+not configured. It supplies nationwide road centerlines but no curb rules, so all derived
+legal/free states remain UNKNOWN. Responses expose only sanitized provider attempt names, roles,
+and outcomes. HTTPS transports use the packaged `certifi` trust store rather than assuming a
+machine-specific Framework Python CA file exists.
+
 ## Consequences
 
 - Any selected US destination can produce local road-derived curb geometry without a prebuilt row.

@@ -51,6 +51,13 @@ destination-timezone Phase 4 baseline, the UI shows its explicitly conditional, 
 vacancy prior while preserving proximity order. The “Use SMU demo destination” action restores the
 bundled canonical destination and its local GIS fixture boundary.
 
+The result also renders a request-time API source trace. It distinguishes primary Overpass
+success, empty results, primary failure followed by official Census TIGERweb fallback, and
+all-source exhaustion. Its headline describes road acquisition only (`Road data ready`,
+`Fallback used`, `No roads returned`, or `Road sources failed`); an unconfigured regulation source
+is explicitly `NOT_CONFIGURED`, not pending. An exhausted source chain is described as research
+failure—not as proof that parking is absent.
+
 An identical failed request keeps its in-memory idempotency key for a safe retry. Changed form
 content receives a different key. Once a request succeeds, its key is discarded so another `now`
 search is a fresh execution. Inputs, coordinates, keys, and results are not stored in URLs,

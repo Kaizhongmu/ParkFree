@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import ssl
 import threading
 import time
 import urllib.error
@@ -11,6 +12,7 @@ from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from typing import Protocol
 
+import certifi
 from pydantic import BaseModel, ConfigDict, Field
 
 from parking_ai.domain import EvidenceStoragePolicy, GeoPoint
@@ -67,6 +69,7 @@ class UrllibJsonTransport:
         if max_response_bytes < 1 or max_response_bytes > MAX_RESPONSE_BYTES:
             raise ValueError(f"max_response_bytes must be between 1 and {MAX_RESPONSE_BYTES}")
         self._max_response_bytes = max_response_bytes
+        self._ssl_context = ssl.create_default_context(cafile=certifi.where())
 
     def get_json(
         self,
@@ -79,7 +82,11 @@ class UrllibJsonTransport:
         query = urllib.parse.urlencode(sorted(params.items()))
         request = urllib.request.Request(f"{url}?{query}", headers=dict(headers), method="GET")
         try:
-            with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+            with urllib.request.urlopen(
+                request,
+                timeout=timeout_seconds,
+                context=self._ssl_context,
+            ) as response:
                 body = response.read(self._max_response_bytes + 1)
         except urllib.error.HTTPError as error:
             raise GeocodingProviderError(f"Nominatim returned HTTP status {error.code}") from error
