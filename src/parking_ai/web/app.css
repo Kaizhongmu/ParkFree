@@ -41,6 +41,8 @@ button, summary { cursor: pointer; }
   font-weight: 700;
 }
 
+.runtime-notice a { color: inherit; }
+
 .skip-link {
   position: fixed;
   z-index: 20;

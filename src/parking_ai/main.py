@@ -132,8 +132,15 @@ def create_app(
         asset_path = _WEB_ASSETS.get(asset_name)
         if asset_path is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-        return FileResponse(asset_path, headers={"X-Content-Type-Options": "nosniff"})
+        return FileResponse(
+            asset_path,
+            headers={
+                "Cache-Control": "no-store",
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
 
+    @application.get("/index.html", include_in_schema=False, response_class=FileResponse)
     @application.get("/", include_in_schema=False, response_class=FileResponse)
     def parking_map() -> FileResponse:
         """Serve the dependency-free Phase 7 map client."""
@@ -141,6 +148,7 @@ def create_app(
         return FileResponse(
             _INDEX_PATH,
             headers={
+                "Cache-Control": "no-store",
                 "Content-Security-Policy": (
                     "default-src 'none'; base-uri 'none'; connect-src 'self'; "
                     "font-src 'self'; form-action 'self'; frame-ancestors 'none'; "

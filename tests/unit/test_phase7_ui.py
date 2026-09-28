@@ -22,13 +22,17 @@ def test_home_serves_dependency_free_accessible_map_ui() -> None:
         "camera=(), geolocation=(self), microphone=()"
     )
     assert response.headers["x-frame-options"] == "DENY"
+    assert response.headers["cache-control"] == "no-store"
     assert 'id="search-form" method="post" action="/v1/parking/search"' in response.text
     assert 'id="parking-map" viewBox="0 0 900 580" role="group"' in response.text
     assert 'id="runtime-notice" class="runtime-notice"' in response.text
     assert "do not open this HTML file directly" in response.text
+    assert 'href="http://127.0.0.1:8000/"' in response.text
+    assert 'href="/assets/app.css?v=20260928-1"' in response.text
+    assert 'src="/assets/app.js?v=20260928-1"' in response.text
     assert (
-        'id="destination" name="destination" type="text" value="Fondren Library Center"'
-        in response.text
+        'id="destination" name="destination" type="text" value="" '
+        'placeholder="Enter any US destination"' in response.text
     )
     assert 'id="destination-search-button" type="button"' in response.text
     assert 'id="use-demo-destination-button" type="button"' in response.text
@@ -54,7 +58,7 @@ def test_home_serves_dependency_free_accessible_map_ui() -> None:
     assert "Unknown · verify signs" in response.text
     assert "Guaranteed fallback" not in response.text
     assert "https://" not in response.text
-    assert "http://" not in response.text
+    assert response.text.count("http://") == 1
     assert "<style" not in response.text
     assert " style=" not in response.text
     assert " onclick=" not in response.text
@@ -68,6 +72,7 @@ def test_ui_assets_are_local_and_have_expected_types() -> None:
     favicon = client.get("/assets/favicon.svg")
 
     assert stylesheet.status_code == 200
+    assert stylesheet.headers["cache-control"] == "no-store"
     assert stylesheet.headers["content-type"].startswith("text/css")
     assert "@media (max-width: 600px)" in stylesheet.text
     assert "prefers-reduced-motion" in stylesheet.text
@@ -84,6 +89,7 @@ def test_ui_assets_are_local_and_have_expected_types() -> None:
         in stylesheet.text
     )
     assert script.status_code == 200
+    assert script.headers["cache-control"] == "no-store"
     assert "javascript" in script.headers["content-type"]
     assert 'fetch("/v1/parking/search"' in script.text
     assert 'fetch("/v1/destinations/search"' in script.text
@@ -123,6 +129,10 @@ def test_ui_assets_are_local_and_have_expected_types() -> None:
     assert 'class: "map-segment-hit"' in script.text
     assert "offsetProjectedPoints" in script.text
     assert "centerMapViewport" in script.text
+    assert (
+        "centerMapViewport();\nshowDestinationCoverageGate();\nruntimeNotice.hidden = true;"
+        in script.text
+    )
     assert "evidence_refs" in script.text
     assert "unknown_segment_ids" in script.text
     assert "result.fallback" in script.text
@@ -152,7 +162,22 @@ def test_ui_assets_are_local_and_have_expected_types() -> None:
     assert "insertAdjacentHTML" not in script.text
     assert "eval(" not in script.text
     assert favicon.status_code == 200
+    assert favicon.headers["cache-control"] == "no-store"
     assert favicon.headers["content-type"].startswith("image/svg+xml")
+
+
+def test_all_http_page_entries_serve_the_same_current_ui() -> None:
+    client = _client()
+
+    root = client.get("/")
+    cache_busted = client.get("/?demo=8")
+    named_entry = client.get("/index.html")
+
+    assert root.status_code == cache_busted.status_code == named_entry.status_code == 200
+    assert root.content == cache_busted.content == named_entry.content
+    assert root.headers["cache-control"] == "no-store"
+    assert cache_busted.headers["cache-control"] == "no-store"
+    assert named_entry.headers["cache-control"] == "no-store"
 
 
 def test_static_mount_rejects_missing_and_parent_paths() -> None:

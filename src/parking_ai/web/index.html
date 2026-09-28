@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#14281f">
     <title>ParkFree · parking intelligence demo</title>
-    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="/assets/app.css">
-    <script src="/assets/app.js" defer></script>
+    <link rel="icon" href="/assets/favicon.svg?v=20260928-1" type="image/svg+xml">
+    <link rel="stylesheet" href="/assets/app.css?v=20260928-1">
+    <script src="/assets/app.js?v=20260928-1" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#search-form">Skip to parking search</a>
@@ -15,6 +15,7 @@
     <div id="runtime-notice" class="runtime-notice">
       Interactive map code did not start. Run ParkFree through its FastAPI server and open the
       server root (normally 127.0.0.1 on port 8000); do not open this HTML file directly.
+      <a href="http://127.0.0.1:8000/">Open the live ParkFree website.</a>
     </div>
 
     <header class="site-header">
@@ -72,7 +73,7 @@
               <legend>Destination and stay</legend>
               <label>
                 Destination
-                <input id="destination" name="destination" type="text" value="Fondren Library Center" minlength="2" maxlength="255" autocomplete="off" aria-describedby="destination-help" required>
+                <input id="destination" name="destination" type="text" value="" placeholder="Enter any US destination" minlength="2" maxlength="255" autocomplete="off" aria-describedby="destination-help" required>
               </label>
               <p class="field-help" id="destination-help">
                 Search is explicit—there is no live autocomplete. Finding a place does not mean

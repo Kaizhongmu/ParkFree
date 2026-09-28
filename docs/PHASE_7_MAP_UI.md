@@ -18,8 +18,11 @@ service is required.
 
 Do not open `src/parking_ai/web/index.html` with a `file://` URL. Assets and search requests are
 same-origin by design. If JavaScript does not initialize, a default-visible diagnostic explains
-the supported HTTP entrypoint; successful initialization hides it. The non-JavaScript form uses
-POST so a failed script load does not copy coordinates and preferences into the URL.
+and links to the supported HTTP entrypoint; successful initialization hides it. The HTTP `/` and
+`/index.html` entries return the same secured document. The document and its versioned local
+assets use `Cache-Control: no-store` so a plain `/` visit cannot retain an older UI than a query-
+parameter URL. The non-JavaScript form uses POST so a failed script load does not copy coordinates
+and preferences into the URL.
 
 On a fresh migrated database, load the deterministic map geometry before searching:
 
@@ -36,10 +39,11 @@ authoritative regulation evidence exists.
 The form collects origin coordinates, destination name, arrival time, parking duration, walking
 limit, optional permits, candidate limit, and free-only preference. Browser geolocation is
 requested only when the user presses the location button. A search posts the existing strict
-Phase 6 JSON contract. Its default destination is the exact canonical fixture name, `Fondren
-Library Center`; the browser submits the fixed canonical ID `smu-fondren-library`, never a
-geocoder match ID or free-text place name, so the supported demo cannot bind to an out-of-area
-same-name place.
+Phase 6 JSON contract. The normal website starts without a selected destination so it cannot
+silently submit the fixture-only database path. The explicit SMU demo action sets the exact
+canonical fixture name, `Fondren Library Center`; the browser then submits the fixed canonical ID
+`smu-fondren-library`, never a geocoder match ID or free-text place name, so the supported demo
+cannot bind to an out-of-area same-name place.
 
 The destination panel also exposes an explicit, zero-cost US place lookup through the separate
 `POST /v1/destinations/search` endpoint. It never performs type-ahead requests. Users must select
@@ -111,7 +115,8 @@ does not invent publisher names or source links that are absent from the API con
 - Coordinates are revalidated before SVG rendering; CSS state classes come from fixed enums.
 - The document sets CSP, `nosniff`, `no-referrer`, frame denial, and a restricted permissions policy.
 - Only the named CSS, JavaScript, and favicon files are exposed below `/assets`; the HTML entrypoint
-  is served exclusively at `/` with its security headers and is not reachable as a static asset.
+  is served at `/` and `/index.html` with identical security/cache headers and is not reachable as
+  a static asset.
 - Starting a new request clears prior results; an error cannot leave an old plan presented as new.
 - Editing any completed search invalidates and clears the old plan; an on-demand destination never
   reuses an SMU route or fallback, including when its live provider is unavailable.

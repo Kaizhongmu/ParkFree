@@ -48,7 +48,6 @@ destinationInput.addEventListener("input", () => {
   invalidatePendingSearch();
   clearDestinationDiscovery();
   showDestinationCoverageGate();
-  showDestinationCoverageGate();
 });
 
 arrivalNow.addEventListener("change", () => {
@@ -1198,4 +1197,5 @@ function svgElement(tag, attributes, text = null) {
 }
 
 centerMapViewport();
+showDestinationCoverageGate();
 runtimeNotice.hidden = true;

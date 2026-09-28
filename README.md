@@ -115,7 +115,9 @@ curl -X POST http://localhost:8000/v1/parking/on-demand \
 Open the Phase 7 interface at [`http://localhost:8000/`](http://localhost:8000/). The page is
 served by FastAPI and needs no separate frontend build or package manager. Do not open
 `src/parking_ai/web/index.html` directly: the UI intentionally requires the same HTTP origin as
-the API. The page now shows a persistent diagnostic if its JavaScript never starts.
+the API. The page now shows a persistent diagnostic with a link to the supported HTTP entrypoint
+if its JavaScript never starts. The HTML and three local assets use `no-store` plus versioned asset
+URLs in this local demo, so `/` cannot silently retain an older UI than a cache-busted URL.
 
 Phase 6 search also requires an explicitly configured fallback location. The sample fallback
 values are commented out in `.env.example` because a deployment must verify that the location

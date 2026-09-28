@@ -229,8 +229,9 @@
 74. Replayable normalized route-step rows are integrity mirrors, including legality evaluation ID,
     availability prediction ID, and availability target window. A mismatch in any mirror fails
     replay even when the JSON snapshots remain internally valid.
-75. The Phase 7 HTML entrypoint is served only by `/` with its security headers. `/assets` is an
-    allowlist of the package CSS, JavaScript, and favicon and must not expose `index.html`.
+75. The Phase 7 HTML entrypoint is served by `/` and `/index.html` with identical security and
+    `no-store` cache headers. `/assets` is an allowlist of the package CSS, JavaScript, and favicon
+    and must not expose `index.html`.
 76. An exact retry of an already-approved evidence publication is a locked read-validation no-op.
     It must validate the complete stored evidence, segment bindings, and rules before returning;
     partial or conflicting state fails closed, and no insert is attempted against terminal
@@ -298,3 +299,6 @@
     text, query URLs, and provider payloads stay private.
 96. Nominatim, Overpass, and TIGERweb HTTPS transports use the packaged `certifi` trust store so
     request-time research does not depend on a machine-specific Python CA installation.
+97. The normal web entrypoint begins without a selected destination. The SMU fixture path is used
+    only after the explicit demo action; ordinary destinations must be selected through request-
+    time place discovery before on-demand road research begins.
