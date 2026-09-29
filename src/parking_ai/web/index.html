@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#14281f">
     <title>ParkFree · parking intelligence demo</title>
-    <link rel="icon" href="/assets/favicon.svg?v=20260928-1" type="image/svg+xml">
-    <link rel="stylesheet" href="/assets/app.css?v=20260928-1">
-    <script src="/assets/app.js?v=20260928-1" defer></script>
+    <link rel="icon" href="/assets/favicon.svg?v=20260929-1" type="image/svg+xml">
+    <link rel="stylesheet" href="/assets/app.css?v=20260929-1">
+    <script src="/assets/app.js?v=20260929-1" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#search-form">Skip to parking search</a>
@@ -15,7 +15,7 @@
     <div id="runtime-notice" class="runtime-notice">
       Interactive map code did not start. Run ParkFree through its FastAPI server and open the
       server root (normally 127.0.0.1 on port 8000); do not open this HTML file directly.
-      <a href="http://127.0.0.1:8000/">Open the live ParkFree website.</a>
+      <a href="/">Reload the live ParkFree website.</a>
     </div>
 
     <header class="site-header">
@@ -52,7 +52,7 @@
             <h2 id="search-title">Plan your parking approach</h2>
           </div>
 
-          <form id="search-form" method="post" action="/v1/parking/search">
+          <form id="search-form" method="post" action="/v1/parking/on-demand">
             <fieldset>
               <legend>Starting point</legend>
               <div class="field-grid">
@@ -78,19 +78,17 @@
               <p class="field-help" id="destination-help">
                 Search is explicit—there is no live autocomplete. Finding a place does not mean
                 its streets, parking rules, or availability are already known; selecting a match
-                starts a bounded live lookup.
+                enables the two estimate modes below. Destination text and coordinates are sent
+                to the configured geocoding and road-data providers; avoid sensitive addresses.
               </p>
               <div class="destination-actions">
                 <button class="secondary-button" id="destination-search-button" type="button">
                   Find this US place
                 </button>
-                <button class="text-button" id="use-demo-destination-button" type="button">
-                  Use SMU demo destination
-                </button>
               </div>
-              <div id="destination-discovery" class="destination-discovery" aria-live="polite" aria-atomic="true">
-                <p id="destination-search-status" class="destination-search-status">
-                  Search any US place for on-demand road research, or use the verified SMU fixture.
+              <div id="destination-discovery" class="destination-discovery">
+                <p id="destination-search-status" class="destination-search-status" role="status" aria-live="polite" aria-atomic="true">
+                  Search any US place, select the intended match, then choose an estimate mode.
                 </p>
                 <section id="destination-results" hidden aria-labelledby="destination-results-title">
                   <h3 id="destination-results-title">Choose the intended place</h3>
@@ -98,10 +96,10 @@
                   <p id="destination-attribution" class="destination-attribution"></p>
                 </section>
                 <div id="selected-destination" class="selected-destination" hidden>
-                  <p><strong>Place selected</strong> · ready for on-demand research</p>
+                  <p><strong>Place selected</strong> · choose speed or richer API context</p>
                   <p id="selected-destination-name"></p>
                   <p id="selected-destination-coordinates"></p>
-                  <p class="coverage-note">Selecting a place starts a bounded live OpenStreetMap road lookup and an offline, destination-timezone availability estimate. The estimate is conditional on the curb being legal and usable; legal and free status stay unknown until trustworthy rule evidence is available.</p>
+                  <p class="coverage-note">Fast mode uses official road geometry. API research mode also tries live OpenStreetMap road and parking tags before falling back. Both use the same uncalibrated V0 estimate; legal and free status stay unknown until trustworthy rule evidence is available.</p>
                 </div>
               </div>
               <label class="check-row">
@@ -147,10 +145,16 @@
               </div>
             </details>
 
-            <button class="primary-button" id="submit-button" type="submit">
-              <span>Build parking plan</span>
-              <span aria-hidden="true">→</span>
-            </button>
+            <div class="search-mode-actions" aria-label="Choose estimate mode">
+              <button class="secondary-button mode-button" id="instant-submit-button" type="submit" data-research-mode="INSTANT" aria-describedby="instant-mode-help">
+                <span>Estimate now</span>
+                <small id="instant-mode-help">Faster official road snapshot</small>
+              </button>
+              <button class="primary-button mode-button" id="submit-button" type="submit" data-research-mode="RESEARCH" aria-describedby="research-mode-help">
+                <span>Research APIs, then estimate</span>
+                <small id="research-mode-help">More road and parking-tag context; not a guarantee of higher accuracy</small>
+              </button>
+            </div>
           </form>
 
           <div id="request-status" class="request-status" role="status" aria-live="polite" aria-atomic="true"></div>

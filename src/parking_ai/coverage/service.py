@@ -18,6 +18,8 @@ from parking_ai.coverage.models import (
     OnDemandParkingCommand,
     OnDemandParkingResponse,
     OnDemandParkingStatus,
+    OnDemandResearchMode,
+    ResearchEnrichmentStatus,
     RoadAcquisition,
     RoadCoverageError,
     RoadCoverageExhaustedError,
@@ -51,6 +53,15 @@ _PREDICTION_WARNING = (
 _PREDICTION_UNAVAILABLE_WARNING = (
     "The destination timezone could not be resolved, so conditional availability was not estimated."
 )
+_INSTANT_MODE_WARNING = (
+    "Fast mode used official road geometry without the enhanced parking-tag source."
+)
+_RESEARCH_DEGRADED_WARNING = (
+    "Enhanced road research was requested but fell back to the fast road source."
+)
+_RESEARCH_NOT_CONFIGURED_WARNING = (
+    "Enhanced road research is not configured; the fast road source was used."
+)
 _MIN_USABLE_CURB_LENGTH_M = 6.0
 _CANDIDATE_POOL_MULTIPLIER = 5
 _MAX_CANDIDATE_POOL = 100
@@ -64,11 +75,16 @@ class OnDemandParkingService:
         geocoder: Geocoder,
         road_provider: RoadCoverageProvider,
         *,
+        research_road_provider: RoadCoverageProvider | None = None,
         timezone_resolver: DestinationTimezoneResolver | None = None,
         prediction_clock: Callable[[], datetime] | None = None,
     ) -> None:
         self._geocoder = geocoder
-        self._road_provider = road_provider
+        self._instant_road_provider = road_provider
+        self._research_road_provider = research_road_provider or road_provider
+        self._research_provider_is_distinct = (
+            research_road_provider is not None and research_road_provider is not road_provider
+        )
         self._timezone_resolver = timezone_resolver
         self._prediction_clock = prediction_clock or (lambda: datetime.now(UTC))
 
@@ -89,15 +105,27 @@ class OnDemandParkingService:
                 "selected destination was not present in the canonical re-query"
             )
         destination = _destination_from_match(selected_match)
+        road_provider = (
+            self._instant_road_provider
+            if command.research_mode is OnDemandResearchMode.INSTANT
+            else self._research_road_provider
+        )
 
         try:
-            acquisition = self._road_provider.acquire(
+            acquisition = road_provider.acquire(
                 destination,
                 command.max_walk_minutes,
             )
         except RoadCoverageExhaustedError as error:
             return OnDemandParkingResponse(
                 status=OnDemandParkingStatus.PROVIDER_UNAVAILABLE,
+                research_mode=command.research_mode,
+                enrichment_status=_enrichment_status(
+                    command.research_mode,
+                    provider_is_distinct=self._research_provider_is_distinct,
+                    attempts=error.attempts,
+                    provider_unavailable=True,
+                ),
                 destination=destination,
                 resolved_arrival_time=command.arrival_time,
                 candidate_segments=(),
@@ -108,23 +136,31 @@ class OnDemandParkingService:
             )
         except RoadCoverageError:
             provider_name = getattr(
-                self._road_provider,
+                road_provider,
                 "provider_name",
                 "Road coverage API",
             )
+            attempts = (
+                CoverageProviderAttempt(
+                    provider_name=provider_name,
+                    role=CoverageAttemptRole.PRIMARY,
+                    outcome=CoverageAttemptOutcome.FAILED,
+                ),
+            )
             return OnDemandParkingResponse(
                 status=OnDemandParkingStatus.PROVIDER_UNAVAILABLE,
+                research_mode=command.research_mode,
+                enrichment_status=_enrichment_status(
+                    command.research_mode,
+                    provider_is_distinct=self._research_provider_is_distinct,
+                    attempts=attempts,
+                    provider_unavailable=True,
+                ),
                 destination=destination,
                 resolved_arrival_time=command.arrival_time,
                 candidate_segments=(),
                 coverage=None,
-                provider_attempts=(
-                    CoverageProviderAttempt(
-                        provider_name=provider_name,
-                        role=CoverageAttemptRole.PRIMARY,
-                        outcome=CoverageAttemptOutcome.FAILED,
-                    ),
-                ),
+                provider_attempts=attempts,
                 warnings=(_PROVIDER_WARNING,),
                 attribution=(geocoding.metadata.attribution,),
             )
@@ -178,6 +214,17 @@ class OnDemandParkingService:
         calibration_status = None
         destination_timezone = None
         warnings = [warning]
+        enrichment_status = _enrichment_status(
+            command.research_mode,
+            provider_is_distinct=self._research_provider_is_distinct,
+            attempts=coverage.provider_attempts,
+        )
+        if enrichment_status is ResearchEnrichmentStatus.NOT_REQUESTED:
+            warnings.append(_INSTANT_MODE_WARNING)
+        elif enrichment_status is ResearchEnrichmentStatus.DEGRADED:
+            warnings.append(_RESEARCH_DEGRADED_WARNING)
+        elif enrichment_status is ResearchEnrichmentStatus.NOT_CONFIGURED:
+            warnings.append(_RESEARCH_NOT_CONFIGURED_WARNING)
         if segments and self._timezone_resolver is not None:
             try:
                 destination_timezone = self._timezone_resolver.resolve(destination.location)
@@ -200,6 +247,8 @@ class OnDemandParkingService:
                 warnings.append(_PREDICTION_WARNING)
         return OnDemandParkingResponse(
             status=status,
+            research_mode=command.research_mode,
+            enrichment_status=enrichment_status,
             destination=destination,
             resolved_arrival_time=command.arrival_time,
             candidate_segments=tuple(segments),
@@ -214,6 +263,34 @@ class OnDemandParkingService:
                 dict.fromkeys((geocoding.metadata.attribution, acquisition.metadata.attribution))
             ),
         )
+
+
+def _enrichment_status(
+    mode: OnDemandResearchMode,
+    *,
+    provider_is_distinct: bool,
+    attempts: tuple[CoverageProviderAttempt, ...],
+    provider_unavailable: bool = False,
+) -> ResearchEnrichmentStatus:
+    if mode is OnDemandResearchMode.INSTANT:
+        return ResearchEnrichmentStatus.NOT_REQUESTED
+    if not provider_is_distinct:
+        return ResearchEnrichmentStatus.NOT_CONFIGURED
+    if provider_unavailable:
+        return ResearchEnrichmentStatus.FAILED
+    primary = attempts[0]
+    if (
+        primary.role is CoverageAttemptRole.PRIMARY
+        and primary.outcome is CoverageAttemptOutcome.SUCCEEDED
+    ):
+        return ResearchEnrichmentStatus.APPLIED
+    if any(
+        attempt.role is CoverageAttemptRole.FALLBACK
+        and attempt.outcome is CoverageAttemptOutcome.SUCCEEDED
+        for attempt in attempts[1:]
+    ):
+        return ResearchEnrichmentStatus.DEGRADED
+    return ResearchEnrichmentStatus.FAILED
 
 
 def _destination_from_match(match: GeocodingMatch) -> Destination:

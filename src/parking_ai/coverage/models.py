@@ -118,6 +118,23 @@ class OnDemandParkingStatus(StrEnum):
     PROVIDER_UNAVAILABLE = "PROVIDER_UNAVAILABLE"
 
 
+class OnDemandResearchMode(StrEnum):
+    """How much request-time road context to collect before inference."""
+
+    INSTANT = "INSTANT"
+    RESEARCH = "RESEARCH"
+
+
+class ResearchEnrichmentStatus(StrEnum):
+    """Whether the enhanced road/parking-tag source actually contributed."""
+
+    NOT_REQUESTED = "NOT_REQUESTED"
+    APPLIED = "APPLIED"
+    DEGRADED = "DEGRADED"
+    NOT_CONFIGURED = "NOT_CONFIGURED"
+    FAILED = "FAILED"
+
+
 class OnDemandParkingCommand(BaseModel):
     """Strict provider-independent input to the on-demand discovery service."""
 
@@ -126,6 +143,7 @@ class OnDemandParkingCommand(BaseModel):
     origin: GeoPoint
     destination_query: str = Field(min_length=2, max_length=255)
     destination_match_id: str = Field(min_length=1, max_length=64)
+    research_mode: OnDemandResearchMode = OnDemandResearchMode.RESEARCH
     arrival_time: AwareDateTime
     arrival_time_was_now: bool
     parking_duration_minutes: int = Field(gt=0, le=1_440)
@@ -173,6 +191,8 @@ class OnDemandParkingResponse(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     status: OnDemandParkingStatus
+    research_mode: OnDemandResearchMode = OnDemandResearchMode.RESEARCH
+    enrichment_status: ResearchEnrichmentStatus = ResearchEnrichmentStatus.NOT_CONFIGURED
     destination: Destination
     resolved_arrival_time: AwareDateTime
     candidate_segments: tuple[ParkingSegment, ...]
@@ -187,6 +207,16 @@ class OnDemandParkingResponse(BaseModel):
 
     @model_validator(mode="after")
     def validate_status(self) -> OnDemandParkingResponse:
+        if (
+            self.research_mode is OnDemandResearchMode.INSTANT
+            and self.enrichment_status is not ResearchEnrichmentStatus.NOT_REQUESTED
+        ):
+            raise ValueError("instant responses cannot claim research enrichment")
+        if (
+            self.research_mode is OnDemandResearchMode.RESEARCH
+            and self.enrichment_status is ResearchEnrichmentStatus.NOT_REQUESTED
+        ):
+            raise ValueError("research responses must report enrichment status")
         if not self.provider_attempts:
             raise ValueError("on-demand responses must include provider attempts")
         if self.provider_attempts[0].role is not CoverageAttemptRole.PRIMARY or any(
@@ -194,6 +224,24 @@ class OnDemandParkingResponse(BaseModel):
             for attempt in self.provider_attempts[1:]
         ):
             raise ValueError("provider attempts must start with primary then contain fallbacks")
+        primary_outcome = self.provider_attempts[0].outcome
+        fallback_succeeded = any(
+            attempt.role is CoverageAttemptRole.FALLBACK
+            and attempt.outcome is CoverageAttemptOutcome.SUCCEEDED
+            for attempt in self.provider_attempts[1:]
+        )
+        if (
+            self.enrichment_status is ResearchEnrichmentStatus.APPLIED
+            and primary_outcome is not CoverageAttemptOutcome.SUCCEEDED
+        ):
+            raise ValueError("applied research enrichment requires a successful primary source")
+        if self.enrichment_status is ResearchEnrichmentStatus.DEGRADED and not fallback_succeeded:
+            raise ValueError("degraded research enrichment requires a successful fallback source")
+        if self.enrichment_status is ResearchEnrichmentStatus.FAILED and any(
+            attempt.outcome is CoverageAttemptOutcome.SUCCEEDED
+            for attempt in self.provider_attempts
+        ):
+            raise ValueError("failed research enrichment cannot include a successful source")
         if self.status is OnDemandParkingStatus.PROVIDER_UNAVAILABLE:
             if (
                 self.coverage is not None

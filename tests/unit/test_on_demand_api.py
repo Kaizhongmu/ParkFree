@@ -14,6 +14,8 @@ from parking_ai.coverage import (
     OnDemandParkingCommand,
     OnDemandParkingResponse,
     OnDemandParkingStatus,
+    OnDemandResearchMode,
+    ResearchEnrichmentStatus,
     SelectedDestinationNotFoundError,
 )
 from parking_ai.domain import Destination, GeoPoint
@@ -46,6 +48,12 @@ def _payload() -> dict[str, Any]:
 def _unavailable_response(command: OnDemandParkingCommand) -> OnDemandParkingResponse:
     return OnDemandParkingResponse(
         status=OnDemandParkingStatus.PROVIDER_UNAVAILABLE,
+        research_mode=command.research_mode,
+        enrichment_status=(
+            ResearchEnrichmentStatus.NOT_REQUESTED
+            if command.research_mode is OnDemandResearchMode.INSTANT
+            else ResearchEnrichmentStatus.NOT_CONFIGURED
+        ),
         destination=Destination(
             destination_id="ond_fixture",
             name="The Village Chase",
@@ -88,10 +96,50 @@ def test_on_demand_api_builds_strict_command_and_resolves_now() -> None:
     command = received[0]
     assert command.destination_query == "The Village Chase"
     assert command.destination_match_id == "geo_selected"
+    assert command.research_mode is OnDemandResearchMode.RESEARCH
     assert command.arrival_time == NOW
     assert command.arrival_time_was_now is True
     assert command.origin == GeoPoint(latitude=32.84, longitude=-96.78)
     assert command.vehicle_profile.requested_parking_duration_min == 60
+
+
+def test_on_demand_api_accepts_explicit_instant_mode() -> None:
+    received: list[OnDemandParkingCommand] = []
+
+    def handler(command: OnDemandParkingCommand) -> OnDemandParkingResponse:
+        received.append(command)
+        return _unavailable_response(command)
+
+    payload = _payload()
+    payload["research_mode"] = "INSTANT"
+    response = TestClient(
+        create_app(_settings(), on_demand_parking_handler=handler, clock=lambda: NOW)
+    ).post("/v1/parking/on-demand", json=payload)
+
+    assert response.status_code == 200
+    assert response.json()["research_mode"] == "INSTANT"
+    assert response.json()["enrichment_status"] == "NOT_REQUESTED"
+    assert received[0].research_mode is OnDemandResearchMode.INSTANT
+
+
+def test_on_demand_api_rejects_a_handler_response_for_the_wrong_mode() -> None:
+    def handler(command: OnDemandParkingCommand) -> OnDemandParkingResponse:
+        response = _unavailable_response(command)
+        return response.model_copy(
+            update={
+                "research_mode": OnDemandResearchMode.RESEARCH,
+                "enrichment_status": ResearchEnrichmentStatus.NOT_CONFIGURED,
+            }
+        )
+
+    payload = _payload()
+    payload["research_mode"] = "INSTANT"
+    response = TestClient(
+        create_app(_settings(), on_demand_parking_handler=handler, clock=lambda: NOW)
+    ).post("/v1/parking/on-demand", json=payload)
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "On-demand parking discovery is temporarily unavailable"}
 
 
 def test_on_demand_api_is_disabled_without_geocoder_configuration() -> None:
@@ -139,6 +187,7 @@ def test_on_demand_api_rejects_invalid_input_before_calling_handler() -> None:
         ("max_candidates", 21),
         ("arrival_time", "2026-09-26T12:00:00"),
         ("free_only", "true"),
+        ("research_mode", "MAGIC"),
     ):
         payload = _payload()
         payload[field] = value

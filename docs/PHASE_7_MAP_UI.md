@@ -1,125 +1,160 @@
 # Phase 7 — Minimal map UI
 
-Phase 7 is a same-origin, dependency-free interface for the completed Phase 6 search API. It shows
-candidate curb geometry, separate legal/payment states, availability estimates, route order,
-fallback, warnings, evidence references, and decision versions. It does not make legal decisions
-or recompute route order in the browser.
+Phase 7 began as a same-origin, dependency-free interface for the Phase 6 search API. The current
+public demo uses that interface for the separate post-Phase-8 on-demand endpoint. It shows a
+selected destination, provisional curb geometry, conditional availability estimates, provider
+attempts, warnings, and model/provider versions. It does not make legal decisions, claim that a
+curb is free, or create a verified parking route.
+
+The strict replayable `POST /v1/parking/search` API still exists, but the current browser form does
+not submit it or expose the former SMU demo action.
 
 ## Run
 
-Configure and migrate the Phase 6 application as described in `PHASE_6_SEARCH_API.md`, then run:
+Create `.env`, configure at least an identifying `NOMINATIM_USER_AGENT`, then run the exact project
+environment command:
 
 ```bash
-.venv/bin/python -m uvicorn parking_ai.main:app --reload
+set -a
+source .env
+set +a
+.venv/bin/python -m uvicorn parking_ai.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Open `http://127.0.0.1:8000/`. No `npm install`, frontend build, remote tile, CDN, API key, or paid
-service is required.
+Open `http://127.0.0.1:8000/`. No PostGIS seed, `npm install`, frontend build, remote tile, CDN, API
+key, or paid service is required for the two-mode on-demand demo. `OVERPASS_USER_AGENT` is optional;
+without it, enhanced research is reported as not configured and uses TIGERweb directly.
 
-Do not open `src/parking_ai/web/index.html` with a `file://` URL. Assets and search requests are
-same-origin by design. If JavaScript does not initialize, a default-visible diagnostic explains
-and links to the supported HTTP entrypoint; successful initialization hides it. The HTTP `/` and
-`/index.html` entries return the same secured document. The document and its versioned local
-assets use `Cache-Control: no-store` so a plain `/` visit cannot retain an older UI than a query-
-parameter URL. The non-JavaScript form uses POST so a failed script load does not copy coordinates
-and preferences into the URL.
+Do not open `src/parking_ai/web/index.html` with a `file://` URL. Assets and API requests are
+same-origin by design. If JavaScript does not initialize, a default-visible diagnostic links back
+to the server root. The HTTP `/` and `/index.html` entries return the same secured document. The
+document and its versioned local assets use `Cache-Control: no-store`. The non-JavaScript form uses
+POST so a failed script load does not copy coordinates and preferences into the URL.
 
-On a fresh migrated database, load the deterministic map geometry before searching:
+## Two-mode workflow
 
-```bash
-parking-ai-seed-smu
-```
-
-This creates the destination and candidate geometry only. Search still fails closed until the
-operator configures a verified guaranteed fallback, and all curbs remain `UNKNOWN` until separate
-authoritative regulation evidence exists.
-
-## Search workflow
-
-The form collects origin coordinates, destination name, arrival time, parking duration, walking
+The form collects origin coordinates, destination text, arrival time, parking duration, walking
 limit, optional permits, candidate limit, and free-only preference. Browser geolocation is
-requested only when the user presses the location button. A search posts the existing strict
-Phase 6 JSON contract. The normal website starts without a selected destination so it cannot
-silently submit the fixture-only database path. The explicit SMU demo action sets the exact
-canonical fixture name, `Fondren Library Center`; the browser then submits the fixed canonical ID
-`smu-fondren-library`, never a geocoder match ID or free-text place name, so the supported demo
-cannot bind to an out-of-area same-name place.
+requested only after the user presses “Use my location.”
 
-The destination panel also exposes an explicit, zero-cost US place lookup through the separate
-`POST /v1/destinations/search` endpoint. It never performs type-ahead requests. Users must select
-a returned match before its coordinate is drawn. Selection automatically calls the separate
-`POST /v1/parking/on-demand` endpoint, which revalidates the match and fetches a bounded OSM road
-snapshot. Returned road-derived curb leads are rendered as provisional and keep legal/free state
-`UNKNOWN`; they are not passed to the strict Phase 6 optimizer. When the backend supplies the
-destination-timezone Phase 4 baseline, the UI shows its explicitly conditional, uncalibrated
-vacancy prior while preserving proximity order. The “Use SMU demo destination” action restores the
-bundled canonical destination and its local GIS fixture boundary.
+Destination discovery is an explicit `POST /v1/destinations/search` action; the UI never performs
+type-ahead requests or silently chooses a match. Selecting a result draws that destination and
+enables two submit buttons. Selection alone does not start road acquisition.
 
-The result also renders a request-time API source trace. It distinguishes primary Overpass
-success, empty results, primary failure followed by official Census TIGERweb fallback, and
-all-source exhaustion. Its headline describes road acquisition only (`Road data ready`,
-`Fallback used`, `No roads returned`, or `Road sources failed`); an unconfigured regulation source
-is explicitly `NOT_CONFIGURED`, not pending. An exhausted source chain is described as research
-failure—not as proof that parking is absent.
+- “Estimate now” sends `research_mode=INSTANT`. The backend revalidates the destination through
+  Nominatim, then calls official Census TIGERweb directly for road geometry.
+- “Research APIs, then estimate” sends `research_mode=RESEARCH`. The backend revalidates through
+  Nominatim, tries Overpass/OpenStreetMap road and parking-tag context when configured, and falls
+  back to TIGERweb after an empty or failed Overpass result.
 
-An identical failed request keeps its in-memory idempotency key for a safe retry. Changed form
-content receives a different key. Once a request succeeds, its key is discarded so another `now`
-search is a fresh execution. Inputs, coordinates, keys, and results are not stored in URLs,
-cookies, localStorage, or analytics.
+Both buttons call `POST /v1/parking/on-demand`. Neither calls the strict optimizer or uses an SMU
+candidate/fallback. Both run the same versioned V0 availability baseline, which is displayed as
+`UNCALIBRATED_HEURISTIC` and conditional on a curb being legal and usable. `RESEARCH` may provide a
+richer road snapshot but does not select a different model or guarantee a more accurate estimate.
 
-Each request owns an abortable in-memory token. Editing the form or accepting a new geolocation
-invalidates the pending request and prompts the user to submit again. A superseded or aborted
-response cannot render results, clear a newer request's loading state, or alter its idempotency
-identity.
+All provisional candidates remain `legal_state=UNKNOWN`, `free_state=UNKNOWN`, and
+`legal_confidence=0`. OSM parking tags and TIGER road centerlines do not establish legal or free
+parking. The UI preserves proximity order and labels the map “Provisional road leads — not a
+parking route.”
+
+The scheduled-arrival field interprets `datetime-local` in the user's device timezone and labels
+that behavior. Destination-local wall-time input and explicit DST gap/fold handling remain outside
+the current contract.
+
+Each request owns an abortable in-memory token. Editing the form, starting a new destination
+search, selecting another match, or accepting a new geolocation invalidates the pending request.
+Only the current request may update results, status, or loading state. Starting a new request clears
+old results, and a failure cannot leave stale leads presented as current.
+
+## Source and enrichment states
+
+The result renders sanitized provider attempts plus the selected mode. `research_mode` is
+`INSTANT` or `RESEARCH`; `enrichment_status` is:
+
+- `NOT_REQUESTED` when `INSTANT` intentionally skips Overpass;
+- `APPLIED` when Overpass supplied the `RESEARCH` snapshot;
+- `DEGRADED` when `RESEARCH` fell back from Overpass to TIGERweb;
+- `NOT_CONFIGURED` when `RESEARCH` had no distinct Overpass provider and used TIGERweb; or
+- `FAILED` when a distinct enhanced provider chain produced no usable snapshot. This includes
+  all-source failures and empty/failed or empty/empty outcomes that return `NO_CANDIDATES`.
+
+The road-acquisition headline separately reports ready, fallback used, no roads returned, or all
+road sources failed. An exhausted source chain is research failure, not proof that parking is
+absent. Enrichment status reports provider execution only; it is not a confidence score for
+legality, payment, or availability.
 
 ## Map and semantics
 
-The SVG map projects validated WGS84 LineStrings into a local viewport. It displays:
+The SVG projects validated WGS84 LineStrings into a local viewport. For on-demand results it
+displays:
 
-- legal/free, legal/paid, illegal, and unknown segments with both labels and distinct line styles;
-- left/right records offset to opposite sides of their shared road-centerline geometry so both
-  side-specific decisions remain visible and independently selectable;
-- availability probability and interval where the backend produced one;
-- numbered route stops and a dashed schematic connection;
-- the destination and a local fallback marker when it lies within the candidate viewport;
-- OSM contributor and ODbL fixture attribution.
+- unknown provisional curb leads with a text label and distinct line style;
+- left/right records offset from their shared centerline so both remain selectable;
+- the conditional V0 probability and heuristic interval where the backend produced one;
+- the selected destination; and
+- provider/contributor attribution supplied by the response.
 
-The map is not a road network, turn-by-turn route, or legal guarantee. A remote fallback does not
-shrink the local map; its description and coordinates remain in the fallback card. A semantic
-ordered route and candidate list exposes the same information without relying on color or pointer
-interaction. UNKNOWN remains visible with a signage-verification warning.
-
-Candidate state is read only from `candidate_decisions[].legality`; availability is read only from
-`candidate_decisions[].availability`. The UI deliberately ignores legacy contextual state on the
-embedded `segment` snapshot.
+The map is not a road basemap, turn-by-turn route, legal guarantee, or verified ranking. A complete
+keyboard-operable candidate list exposes the same information without relying on color or pointer
+interaction. `UNKNOWN` remains visible with a signage-verification warning.
 
 ## Provenance boundary
 
-The replayable Phase 6 response exposes evidence reference IDs, regulation reason codes,
-evaluation time, confidence, and rule/model/optimizer versions. Phase 7 displays those values as
-its minimal provenance view. It does not reinterpret GIS freshness as regulation freshness and
-does not invent publisher names or source links that are absent from the API contract.
+The on-demand response exposes sanitized provider names, primary/fallback roles, attempt outcomes,
+coverage metadata, attribution, availability/model provenance, `research_mode`, and
+`enrichment_status`. The UI does not expose raw provider payloads, exception text, or query URLs,
+and it does not invent regulation evidence, publisher names, or source links.
 
-## Accessibility and security
+## Privacy and security
 
-- Every form field has a visible label; search and geolocation status use atomic
-  polite/assertive live regions.
-- The route is an ordered list and every map candidate has an equivalent keyboard-operable card.
-- The SVG uses group semantics because its candidate paths are interactive; it is not exposed as
-  a flattened image containing inaccessible button descendants.
-- At narrow widths the SVG retains a readable minimum canvas inside a horizontal pan container;
-  non-scaling visible strokes and separate 24-pixel hit strokes preserve pointer/focus access.
+- The browser sends destination, selected match ID, origin, and preferences to the same-origin API
+  in POST bodies; it does not store them in URLs, cookies, localStorage, or analytics.
+- Nominatim receives the destination query during lookup and canonical revalidation.
+- TIGERweb receives the selected destination area in `INSTANT` mode. In `RESEARCH` mode, Overpass
+  receives that area first and TIGERweb may receive it as fallback. Current road-provider calls do
+  not receive the user's origin coordinate.
+- Offline timezone resolution makes no external call. Raw provider responses are ephemeral and
+  normalized caches are bounded in memory, but live third-party calls are not private; avoid
+  sensitive locations.
+- Every form field has a visible label. Search, destination, and geolocation status use appropriate
+  live regions, and the results panel exposes busy state.
+- The SVG candidate paths have group semantics and equivalent keyboard-operable cards.
 - State uses text, line style, and color; probability always has numeric text.
-- Layout collapses to one column, supports 320-pixel viewports, and respects reduced motion.
+- Layout supports 320-pixel viewports and reduced motion.
 - Dynamic strings use DOM text nodes, never `innerHTML`, HTML templates, or evaluated code.
 - Coordinates are revalidated before SVG rendering; CSS state classes come from fixed enums.
 - The document sets CSP, `nosniff`, `no-referrer`, frame denial, and a restricted permissions policy.
-- Only the named CSS, JavaScript, and favicon files are exposed below `/assets`; the HTML entrypoint
-  is served at `/` and `/index.html` with identical security/cache headers and is not reachable as
-  a static asset.
-- Starting a new request clears prior results; an error cannot leave an old plan presented as new.
-- Editing any completed search invalidates and clears the old plan; an on-demand destination never
-  reuses an SMU route or fallback, including when its live provider is unavailable.
+- Only named CSS, JavaScript, and favicon files are exposed below `/assets`.
+- Every `/v1/` response is `Cache-Control: no-store` and also sets `no-referrer` and `nosniff`.
+- `ENVIRONMENT=production` disables `/docs`, `/redoc`, and `/openapi.json`; it does not add user
+  authentication.
+
+## Temporary Quick Tunnel
+
+For a short-lived public demonstration, start the API without development reload in one terminal:
+
+```bash
+set -a
+source .env
+set +a
+ENVIRONMENT=production .venv/bin/python -m uvicorn parking_ai.main:app \
+  --host 127.0.0.1 --port 8000
+```
+
+Then start a second process:
+
+```bash
+cloudflared tunnel --url http://127.0.0.1:8000
+```
+
+Open the generated `https://*.trycloudflare.com` URL. The hostname is temporary, changes after a
+restart, and works only while both local processes remain alive. A Quick Tunnel supplies no
+ParkFree authentication, durable hostname, availability guarantee, or production privacy boundary.
+Anyone with the URL can submit requests that trigger live Nominatim and road-provider calls.
+Provider adapters have bounded in-process caches, serialization/rate gates where documented, and
+request limits, but ParkFree has no per-client ingress rate limiter. Traffic traverses
+Cloudflare-managed infrastructure. Do not use this setup for sensitive locations, sustained
+traffic, multi-worker deployment, or production.
 
 ## Verification
 
@@ -131,14 +166,18 @@ does not invent publisher names or source links that are absent from the API con
 TEST_DATABASE_URL='<dedicated-postgis-url>' .venv/bin/python -m pytest -q
 ```
 
-Browser acceptance covers desktop and 320-pixel layouts, mixed legal/free/illegal/unknown states,
-multi-step routes, fallback-only behavior, malicious HTML-like source text, safe 503 behavior,
-keyboard-visible semantics, and an empty console. Python tests additionally verify asset MIME
-types, package visibility, security headers, and that existing health/search endpoints are unchanged.
+Automated browser-facing unit tests statically verify the two buttons and request-mode wiring,
+destination-selection gate, enrichment labels, conditional V0 copy, unknown legal/free copy,
+security headers, local assets, accessibility markup, and that the strict search API is not wired
+to the public form. They do not execute a real browser and therefore do not prove abort/race
+behavior, visual layout, focus interaction, or console cleanliness; those remain manual browser
+acceptance checks. Provider tests use injected transports and never call live Nominatim, Overpass,
+or TIGERweb.
 
-## Phase 7 scope boundary
+## Scope boundary
 
-This document describes the Phase 7 UI plus its post-Phase-8 on-demand road-coverage extension.
-Phase 8/V1A evidence review does not run automatically in the parking-search request path. Live
-turn-by-turn routing, general web search, automatic AI evidence approval, outcome collection,
-accounts, analytics, and learned availability models remain outside this UI slice.
+This document describes the Phase 7 UI plus its post-Phase-8 two-mode on-demand extension. Phase
+8/V1A evidence review does not run automatically in the request path. Live turn-by-turn routing,
+general web search, automatic AI evidence approval, verified legal/free parking, outcome
+collection, accounts, analytics, and learned/calibrated availability models remain outside this
+demo.

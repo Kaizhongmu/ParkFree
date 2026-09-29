@@ -13,6 +13,8 @@ from parking_ai.coverage import (
     OnDemandParkingResponse,
     OnDemandParkingService,
     OnDemandParkingStatus,
+    OnDemandResearchMode,
+    ResearchEnrichmentStatus,
     RoadAcquisition,
     RoadCoverageExhaustedError,
     RoadCoverageProviderError,
@@ -96,11 +98,16 @@ def _road(feature_id: str = "road-1") -> RoadFeature:
     )
 
 
-def _command(*, match_id: str = MATCH.match_id) -> OnDemandParkingCommand:
+def _command(
+    *,
+    match_id: str = MATCH.match_id,
+    research_mode: OnDemandResearchMode = OnDemandResearchMode.RESEARCH,
+) -> OnDemandParkingCommand:
     return OnDemandParkingCommand(
         origin=GeoPoint(latitude=32.84, longitude=-96.78),
         destination_query="The Village Chase",
         destination_match_id=match_id,
+        research_mode=research_mode,
         arrival_time=NOW,
         arrival_time_was_now=True,
         parking_duration_minutes=60,
@@ -131,6 +138,26 @@ class _RoadProvider:
         return self.acquisition
 
 
+def test_on_demand_service_uses_distinct_provider_for_each_requested_mode() -> None:
+    instant = _RoadProvider(_acquisition(_road("instant-road")))
+    research = _RoadProvider(_acquisition(_road("research-road")))
+    service = OnDemandParkingService(
+        _Geocoder(_geocoding_result(MATCH)),
+        instant,
+        research_road_provider=research,
+    )
+
+    instant_response = service.search(_command(research_mode=OnDemandResearchMode.INSTANT))
+    research_response = service.search(_command(research_mode=OnDemandResearchMode.RESEARCH))
+
+    assert len(instant.calls) == 1
+    assert len(research.calls) == 1
+    assert instant_response.research_mode is OnDemandResearchMode.INSTANT
+    assert instant_response.enrichment_status is ResearchEnrichmentStatus.NOT_REQUESTED
+    assert research_response.research_mode is OnDemandResearchMode.RESEARCH
+    assert research_response.enrichment_status is ResearchEnrichmentStatus.APPLIED
+
+
 class _TimezoneResolver:
     def __init__(self, timezone_name: str = "America/Chicago") -> None:
         self.timezone_name = timezone_name
@@ -154,6 +181,8 @@ def test_on_demand_service_revalidates_match_and_returns_unknown_provisional_lea
         GeocodingRequest(query="The Village Chase", limit=10),
     ]
     assert first.status is OnDemandParkingStatus.PROVISIONAL_LEADS
+    assert first.research_mode is OnDemandResearchMode.RESEARCH
+    assert first.enrichment_status is ResearchEnrichmentStatus.NOT_CONFIGURED
     assert first.destination.destination_id == second.destination.destination_id
     assert first.destination.destination_id.startswith("ond_")
     assert first.destination.access_points[0].destination_id == first.destination.destination_id
@@ -331,6 +360,94 @@ def test_on_demand_service_exposes_sanitized_attempts_when_provider_chain_is_exh
     assert response.status is OnDemandParkingStatus.PROVIDER_UNAVAILABLE
     assert response.provider_attempts == attempts
     assert "private" not in response.model_dump_json()
+
+
+def test_research_mode_reports_degraded_only_after_a_successful_fallback() -> None:
+    acquisition = _acquisition(_road()).model_copy(
+        update={
+            "provider_attempts": (
+                CoverageProviderAttempt(
+                    provider_name="Overpass API / OpenStreetMap",
+                    role=CoverageAttemptRole.PRIMARY,
+                    outcome=CoverageAttemptOutcome.FAILED,
+                ),
+                CoverageProviderAttempt(
+                    provider_name="U.S. Census Bureau TIGERweb",
+                    role=CoverageAttemptRole.FALLBACK,
+                    outcome=CoverageAttemptOutcome.SUCCEEDED,
+                ),
+            )
+        }
+    )
+    response = OnDemandParkingService(
+        _Geocoder(_geocoding_result(MATCH)),
+        _RoadProvider(_acquisition(_road("instant-road"))),
+        research_road_provider=_RoadProvider(acquisition),
+    ).search(_command(research_mode=OnDemandResearchMode.RESEARCH))
+
+    assert response.enrichment_status is ResearchEnrichmentStatus.DEGRADED
+    assert any("fell back to the fast road source" in warning for warning in response.warnings)
+
+
+def test_research_mode_reports_failed_when_distinct_provider_chain_is_exhausted() -> None:
+    attempts = (
+        CoverageProviderAttempt(
+            provider_name="Overpass API / OpenStreetMap",
+            role=CoverageAttemptRole.PRIMARY,
+            outcome=CoverageAttemptOutcome.FAILED,
+        ),
+        CoverageProviderAttempt(
+            provider_name="U.S. Census Bureau TIGERweb",
+            role=CoverageAttemptRole.FALLBACK,
+            outcome=CoverageAttemptOutcome.FAILED,
+        ),
+    )
+
+    class ExhaustedResearchProvider:
+        def acquire(
+            self,
+            destination: Destination,
+            max_walk_minutes: float,
+        ) -> RoadAcquisition:
+            raise RoadCoverageExhaustedError(attempts)
+
+    response = OnDemandParkingService(
+        _Geocoder(_geocoding_result(MATCH)),
+        _RoadProvider(_acquisition(_road("instant-road"))),
+        research_road_provider=ExhaustedResearchProvider(),
+    ).search(_command(research_mode=OnDemandResearchMode.RESEARCH))
+
+    assert response.status is OnDemandParkingStatus.PROVIDER_UNAVAILABLE
+    assert response.enrichment_status is ResearchEnrichmentStatus.FAILED
+
+
+def test_research_mode_preserves_no_candidates_when_no_source_returns_roads() -> None:
+    empty_acquisition = _acquisition().model_copy(
+        update={
+            "provider_attempts": (
+                CoverageProviderAttempt(
+                    provider_name="Overpass API / OpenStreetMap",
+                    role=CoverageAttemptRole.PRIMARY,
+                    outcome=CoverageAttemptOutcome.EMPTY,
+                ),
+                CoverageProviderAttempt(
+                    provider_name="U.S. Census Bureau TIGERweb",
+                    role=CoverageAttemptRole.FALLBACK,
+                    outcome=CoverageAttemptOutcome.FAILED,
+                ),
+            )
+        }
+    )
+    response = OnDemandParkingService(
+        _Geocoder(_geocoding_result(MATCH)),
+        _RoadProvider(_acquisition(_road("instant-road"))),
+        research_road_provider=_RoadProvider(empty_acquisition),
+    ).search(_command(research_mode=OnDemandResearchMode.RESEARCH))
+
+    assert response.status is OnDemandParkingStatus.NO_CANDIDATES
+    assert response.enrichment_status is ResearchEnrichmentStatus.FAILED
+    assert response.coverage is not None
+    assert response.coverage.road_count == 0
 
 
 def test_on_demand_response_rejects_success_for_provider_unavailable() -> None:

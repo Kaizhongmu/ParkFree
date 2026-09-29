@@ -2,8 +2,9 @@ from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, Request, status
+from fastapi.responses import FileResponse, Response
+from starlette.middleware.base import RequestResponseEndpoint
 
 from parking_ai.api.destinations import (
     DESTINATION_SEARCH_HANDLER_STATE_KEY,
@@ -64,7 +65,27 @@ def create_app(
         clock=resolved_clock,
     )
 
-    application = FastAPI(title=resolved_settings.app_name, version="0.1.0")
+    expose_api_docs = resolved_settings.environment != "production"
+    application = FastAPI(
+        title=resolved_settings.app_name,
+        version="0.1.0",
+        docs_url="/docs" if expose_api_docs else None,
+        redoc_url="/redoc" if expose_api_docs else None,
+        openapi_url="/openapi.json" if expose_api_docs else None,
+    )
+
+    @application.middleware("http")
+    async def apply_api_response_headers(
+        request: Request,
+        call_next: RequestResponseEndpoint,
+    ) -> Response:
+        response = await call_next(request)
+        if request.url.path.startswith("/v1/"):
+            response.headers["Cache-Control"] = "no-store"
+            response.headers["Referrer-Policy"] = "no-referrer"
+            response.headers["X-Content-Type-Options"] = "nosniff"
+        return response
+
     setattr(application.state, SEARCH_HANDLER_STATE_KEY, resolved_handler)
     resolved_destination_handler = destination_search_handler
     geocoder: NominatimGeocoder | None = None
@@ -89,7 +110,7 @@ def create_app(
             timeout_seconds=resolved_settings.tigerweb_timeout_seconds,
             cache_ttl_seconds=resolved_settings.tigerweb_cache_ttl_seconds,
         )
-        road_provider: RoadCoverageProvider = tigerweb_provider
+        research_road_provider: RoadCoverageProvider = tigerweb_provider
         if resolved_settings.overpass_user_agent is not None:
             overpass_provider = OverpassRoadCoverageProvider(
                 user_agent=resolved_settings.overpass_user_agent,
@@ -97,7 +118,7 @@ def create_app(
                 timeout_seconds=resolved_settings.overpass_timeout_seconds,
                 cache_ttl_seconds=resolved_settings.overpass_cache_ttl_seconds,
             )
-            road_provider = FailoverRoadCoverageProvider(
+            research_road_provider = FailoverRoadCoverageProvider(
                 overpass_provider,
                 tigerweb_provider,
                 primary_name="Overpass API / OpenStreetMap",
@@ -105,7 +126,8 @@ def create_app(
             )
         resolved_on_demand_handler = OnDemandParkingService(
             geocoder,
-            road_provider,
+            tigerweb_provider,
+            research_road_provider=research_road_provider,
             timezone_resolver=OfflineDestinationTimezoneResolver(),
             prediction_clock=resolved_clock,
         ).search

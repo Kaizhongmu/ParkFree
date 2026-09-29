@@ -268,9 +268,10 @@
 86. `POST /v1/parking/on-demand` is that explicit coverage-preparation boundary. It re-runs the
     original query, requires the exact provider-derived `match_id`, and never trusts coordinates
     supplied by the browser.
-87. On-demand road coverage uses a bounded public Overpass query in low-volume development only.
-    It stores no raw response, retains normalized OSM provenance, uses an in-memory TTL cache and
-    per-process rate gate, and makes no live network calls in automated tests.
+87. Enhanced on-demand road coverage uses a bounded public Overpass query in low-volume
+    development only. `INSTANT` does not call Overpass. The adapter stores no raw response, retains
+    normalized OSM provenance, uses an in-memory TTL cache and per-process rate gate, and makes no
+    live network calls in automated tests.
 88. On-demand output is a provisional lead set, not a Phase 6 parking plan. Every candidate keeps
     `legal_state=UNKNOWN`, `free_state=UNKNOWN`, and confidence zero; no route or SMU fallback is
     fabricated when trusted regulation evidence is absent.
@@ -290,15 +291,45 @@
     captured prediction timestamp.
 93. Until destination-local wall-time input has an explicit DST gap/fold contract, scheduled UI
     arrivals are interpreted in the user's device timezone and must be labeled as such.
-94. Request-time road research uses Overpass when configured and the official U.S. Census Bureau
-    TIGERweb Transportation REST service as a zero-key fallback. TIGER road centerlines do not
-    contain curb regulations, so fallback success can create provisional geometry but cannot
-    increase legal/free confidence above UNKNOWN.
+94. Request-time road acquisition is explicit. `INSTANT` calls the official U.S. Census Bureau
+    TIGERweb Transportation REST service directly. `RESEARCH` tries Overpass when configured and
+    uses TIGERweb after an empty or failed Overpass result; without Overpass configuration it uses
+    TIGERweb directly. TIGER road centerlines and OSM parking tags do not prove curb regulations,
+    so success in either mode cannot increase legal/free confidence above `UNKNOWN`.
 95. Provider attempts exposed to clients contain only provider name, PRIMARY/FALLBACK role, and
     SUCCEEDED/EMPTY/FAILED outcome. An empty primary result triggers the next source; raw exception
     text, query URLs, and provider payloads stay private.
 96. Nominatim, Overpass, and TIGERweb HTTPS transports use the packaged `certifi` trust store so
     request-time research does not depend on a machine-specific Python CA installation.
-97. The normal web entrypoint begins without a selected destination. The SMU fixture path is used
-    only after the explicit demo action; ordinary destinations must be selected through request-
-    time place discovery before on-demand road research begins.
+97. The normal web entrypoint begins without a selected destination and no longer exposes the SMU
+    demo action. A destination must be explicitly searched and selected before either estimate
+    button is enabled. Selection alone does not start road acquisition, and the public form never
+    submits the strict Phase 6 search endpoint.
+98. The on-demand response echoes `research_mode` and reports enhanced-source execution separately
+    as `NOT_REQUESTED`, `APPLIED`, `DEGRADED`, `NOT_CONFIGURED`, or `FAILED`. `FAILED` includes an
+    exhausted provider chain and a completed acquisition with no usable snapshot, including
+    empty/failed or empty/empty attempts that return `NO_CANDIDATES`. These states describe
+    provider execution, not parking confidence, model accuracy, or legal/payment evidence.
+99. `INSTANT` and `RESEARCH` use the same versioned Phase 4 V0 prediction contract and remain
+    `UNCALIBRATED_HEURISTIC`. Enhanced road/parking-tag context does not select a different model
+    or guarantee a more accurate estimate, and all candidates remain `UNKNOWN` for legality and
+    payment with zero legal confidence.
+100. The browser sends destination, selected match ID, origin, and preferences to the same-origin
+    API. Nominatim receives the destination query; TIGERweb receives the selected destination area
+    in `INSTANT`; Overpass and possibly TIGERweb receive that area in `RESEARCH`. Current road-
+    provider calls do not receive the user's origin coordinate, and offline timezone resolution
+    makes no network call.
+101. The supported local run command uses the project interpreter explicitly:
+    `.venv/bin/python -m uvicorn parking_ai.main:app --host 127.0.0.1 --port 8000 --reload`.
+    Verification and maintenance commands likewise use `.venv/bin/python -m` so they cannot
+    silently select a different global environment.
+102. A Cloudflare Quick Tunnel is a temporary demonstration transport only. Its public hostname is
+    ephemeral, requires both local processes to remain alive, traverses Cloudflare-managed
+    infrastructure, and adds no ParkFree authentication, durable availability, or production
+    privacy boundary. Provider adapters use bounded in-process caching, serialization/rate gates
+    where documented, and request limits, but the app has no per-client ingress rate limiter. A
+    Quick Tunnel is unsuitable for sensitive locations, sustained traffic, multi-worker use, or
+    production.
+103. All `/v1/` responses are non-cacheable and carry `no-referrer` and `nosniff` response headers.
+    `ENVIRONMENT=production` disables `/docs`, `/redoc`, and `/openapi.json`, but it does not add
+    authentication or turn a Quick Tunnel into a production deployment.

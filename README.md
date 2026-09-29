@@ -10,11 +10,12 @@ AI evidence-service contracts with explicit human review before persistence.
 The post-Phase 8 V1A hardening slice adds a durable least-privilege review queue and append-only
 audit trail for trusted backend operators; it intentionally exposes no public review endpoint.
 The nationwide-readiness work now includes zero-cost, US-only destination discovery plus a
-separate bounded on-demand road-coverage path. A selected place can fetch nearby OpenStreetMap
-roads at request time and generate provisional curb leads without pre-seeding that destination.
-It also resolves the destination timezone offline and attaches the existing versioned baseline's
-conditional vacancy estimate. The strict deterministic parking-search path remains isolated from
-live providers.
+separate bounded on-demand road-coverage path. The public web demo offers two explicit modes for a
+selected place: `INSTANT` gets official Census TIGERweb road geometry directly, while `RESEARCH`
+tries Overpass/OpenStreetMap road and parking-tag context first and falls back to TIGERweb. Both
+modes generate provisional curb leads without pre-seeding the destination, resolve its timezone
+offline, and run the same versioned V0 conditional-vacancy baseline. The strict deterministic
+parking-search API remains isolated from live providers.
 
 ## Requirements
 
@@ -28,9 +29,8 @@ Create a virtual environment and install the project with development tools:
 
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e '.[dev]'
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install -e '.[dev]'
 ```
 
 Create local environment configuration from the committed placeholders, then replace
@@ -66,8 +66,9 @@ curl http://localhost:8000/health
 
 The response is `{"status":"ok"}`.
 
-Optional zero-cost US destination discovery uses public Nominatim and requires an identifying
-application/contact string, but no API key or billing account:
+Zero-cost US destination discovery uses public Nominatim and requires an identifying
+application/contact string. Overpass is optional and enriches only `RESEARCH` requests. Neither
+requires an API key or billing account:
 
 ```text
 NOMINATIM_USER_AGENT=ParkFree/0.1 (contact: operator@example.com)
@@ -84,15 +85,31 @@ curl -X POST http://localhost:8000/v1/destinations/search \
 ```
 
 Destination search resolves places only. After a user selects an exact match, the separate
-`POST /v1/parking/on-demand` endpoint revalidates that match, fetches a bounded live OSM road
-snapshot, and generates provisional curb leads. See
-[`docs/ZERO_COST_DESTINATION_DISCOVERY.md`](docs/ZERO_COST_DESTINATION_DISCOVERY.md).
+`POST /v1/parking/on-demand` endpoint revalidates that match and generates provisional curb leads.
+Its two request modes are:
 
-The web demo exposes this lookup through an explicit “Find this US place” action. Selected places
-automatically start the on-demand road lookup. The returned leads remain explicitly `UNKNOWN` for
-legality and payment unless trustworthy regulation evidence exists; they are not silently sent to
-the strict optimizer and never inherit SMU candidates or its fallback. Conditional availability
-is shown as an uncalibrated heuristic prior, not a free-parking probability or verified ranking.
+- `INSTANT`: query Census TIGERweb directly; enhanced OSM/parking-tag enrichment is not requested.
+- `RESEARCH`: try Overpass first when configured, then use TIGERweb if Overpass fails or returns no
+  roads. Without `OVERPASS_USER_AGENT`, it uses TIGERweb and reports enrichment as not configured.
+
+See [`docs/ZERO_COST_DESTINATION_DISCOVERY.md`](docs/ZERO_COST_DESTINATION_DISCOVERY.md).
+
+The web demo exposes this lookup through an explicit “Find this US place” action. Selecting the
+intended match enables “Estimate now” (`INSTANT`) and “Research APIs, then estimate” (`RESEARCH`);
+selection alone makes no road-provider call. The response reports both `research_mode` and
+`enrichment_status`: `NOT_REQUESTED` when fast mode skipped enhancement, `APPLIED` when Overpass
+supplied the research snapshot, `DEGRADED` when TIGERweb supplied a research fallback,
+`NOT_CONFIGURED` when research had no distinct Overpass source, or `FAILED` when a distinct
+research chain produced no usable snapshot. `FAILED` can accompany `PROVIDER_UNAVAILABLE` or a
+`NO_CANDIDATES` result from empty/failed sources. These values describe provider execution, not
+parking quality or model accuracy.
+
+Every returned lead remains explicitly `UNKNOWN` for legality and payment because road geometry
+and parking tags are not authoritative proof of a legal, free curb. The leads are not sent to the
+strict optimizer and never inherit SMU candidates or its fallback. Both modes run the same
+`UNCALIBRATED_HEURISTIC` V0 availability model, conditional on the curb being legal and usable;
+`RESEARCH` does not use a more accurate model and neither result is a free-parking probability or
+verified ranking.
 
 The same flow can be exercised directly after copying the selected `query` and `match_id` from the
 destination-search response:
@@ -103,6 +120,7 @@ curl -X POST http://localhost:8000/v1/parking/on-demand \
   -d '{
     "origin": {"lat": 32.842, "lon": -96.784},
     "destination": {"query": "Seattle Center", "match_id": "geo_replace_me"},
+    "research_mode": "RESEARCH",
     "arrival_time": "now",
     "parking_duration_minutes": 60,
     "free_only": true,
@@ -118,6 +136,18 @@ served by FastAPI and needs no separate frontend build or package manager. Do no
 the API. The page now shows a persistent diagnostic with a link to the supported HTTP entrypoint
 if its JavaScript never starts. The HTML and three local assets use `no-store` plus versioned asset
 URLs in this local demo, so `/` cannot silently retain an older UI than a cache-busted URL.
+
+The browser sends the destination query, selected match ID, origin coordinates, and preferences to
+the same-origin API. The API sends the destination query to Nominatim, then sends the selected
+destination area to TIGERweb in `INSTANT` mode or to Overpass followed by TIGERweb fallback in
+`RESEARCH` mode. The current road-provider calls do not receive the user's origin coordinate.
+Raw provider responses are ephemeral and normalized caches are in memory, but this is still a
+live third-party lookup. Avoid sensitive destinations and origins, especially through a public
+tunnel.
+
+Every `/v1/` response is marked `Cache-Control: no-store` and receives `no-referrer` and `nosniff`
+headers. Set `ENVIRONMENT=production` for public exposure; production disables `/docs`, `/redoc`,
+and `/openapi.json`. These controls do not add authentication.
 
 Phase 6 search also requires an explicitly configured fallback location. The sample fallback
 values are commented out in `.env.example` because a deployment must verify that the location
@@ -152,16 +182,23 @@ docker compose down
 
 ## Local application startup
 
-Start only PostGIS, export the local configuration, migrate, and run FastAPI:
+For the two-mode on-demand demo, export the local configuration and run FastAPI from the project
+virtual environment:
 
 ```bash
-docker compose up -d db
 set -a
 source .env
 set +a
-alembic upgrade head
-parking-ai-seed-smu
-uvicorn parking_ai.main:app --reload
+.venv/bin/python -m uvicorn parking_ai.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+The on-demand demo does not require PostGIS migrations or the SMU seed. To exercise the separate
+strict Phase 6 API locally, start PostGIS and initialize it with exact module commands:
+
+```bash
+docker compose up -d db
+.venv/bin/python -m alembic upgrade head
+.venv/bin/python -m parking_ai.gis.seed
 ```
 
 `parking-ai-seed-smu` is an idempotent initialization command. It loads the canonical destination,
@@ -173,26 +210,54 @@ but does not prune unrelated or historical database rows.
 
 ## Migrations
 
-Apply or inspect migrations:
+Apply or inspect migrations through the project environment:
 
 ```bash
-alembic upgrade head
-alembic current
-alembic history
+.venv/bin/python -m alembic upgrade head
+.venv/bin/python -m alembic current
+.venv/bin/python -m alembic history
 ```
 
 Create future schema migrations only after updating SQLAlchemy models:
 
 ```bash
-alembic revision --autogenerate -m "describe schema change"
+.venv/bin/python -m alembic revision --autogenerate -m "describe schema change"
 ```
+
+## Temporary public demo with a Quick Tunnel
+
+For a short-lived demonstration, start the API without development reload in one terminal:
+
+```bash
+set -a
+source .env
+set +a
+ENVIRONMENT=production .venv/bin/python -m uvicorn parking_ai.main:app \
+  --host 127.0.0.1 --port 8000
+```
+
+Then start a separate Cloudflare Quick Tunnel process:
+
+```bash
+cloudflared tunnel --url http://127.0.0.1:8000
+```
+
+Open the generated `https://*.trycloudflare.com` URL. The URL is temporary, changes when the tunnel
+restarts, and works only while both local processes remain running. Quick Tunnels provide no
+ParkFree authentication, durable hostname, availability guarantee, or production privacy boundary;
+anyone with the URL can submit live provider requests through this app. The provider adapters have
+bounded in-process caches, serialization/rate gates where documented, and request limits, but the
+app has no per-client ingress rate limiter. Traffic traverses Cloudflare-managed infrastructure,
+and the public Nominatim/Overpass usage limits still apply. Do not use this setup for sensitive
+locations, sustained traffic, multi-worker deployment, or production. A named authenticated
+tunnel and production provider/cache/ingress-control design are separate deployment work.
 
 ## Tests and checks
 
 Unit tests do not require a database:
 
 ```bash
-pytest -m "not integration"
+.venv/bin/python -m pytest -m "not integration"
 ```
 
 Integration tests require a dedicated PostGIS database. The default Compose database can be
@@ -200,16 +265,16 @@ used on a fresh development checkout:
 
 ```bash
 export TEST_DATABASE_URL="$DATABASE_URL"
-pytest -m integration
+.venv/bin/python -m pytest -m integration
 ```
 
 Run the complete verification suite:
 
 ```bash
-ruff check .
-ruff format --check .
-mypy src
-pytest
+.venv/bin/python -m ruff check .
+.venv/bin/python -m ruff format --check .
+.venv/bin/python -m mypy src
+.venv/bin/python -m pytest
 ```
 
 The PostgreSQL/PostGIS tests are skipped unless `TEST_DATABASE_URL` is set. See
@@ -232,8 +297,8 @@ state transitions, transaction ownership, audit integrity, retention, and verifi
 See [`docs/ZERO_COST_DESTINATION_DISCOVERY.md`](docs/ZERO_COST_DESTINATION_DISCOVERY.md) for the
 free Nominatim adapter, privacy/rate limits, and the boundary between place discovery and parking
 coverage.
-See [`docs/ON_DEMAND_PARKING.md`](docs/ON_DEMAND_PARKING.md) for request-time Overpass acquisition,
-official Census TIGERweb failover,
+See [`docs/ON_DEMAND_PARKING.md`](docs/ON_DEMAND_PARKING.md) for direct TIGERweb `INSTANT`
+acquisition, `RESEARCH`-mode Overpass enrichment with Census TIGERweb failover,
 provisional candidate semantics, zero-cost constraints, and exact verification commands.
 
 ## Project structure

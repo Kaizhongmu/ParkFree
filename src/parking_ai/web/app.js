@@ -1,11 +1,10 @@
 "use strict";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
-const LOCAL_DEMO_DESTINATION = "Fondren Library Center";
-const LOCAL_DEMO_DESTINATION_ID = "smu-fondren-library";
 const form = document.querySelector("#search-form");
 const statusBox = document.querySelector("#request-status");
 const submitButton = document.querySelector("#submit-button");
+const instantSubmitButton = document.querySelector("#instant-submit-button");
 const arrivalNow = document.querySelector("#arrival-now");
 const arrivalField = document.querySelector("#arrival-time-field");
 const arrivalInput = document.querySelector("#arrival-time");
@@ -15,10 +14,10 @@ const mapEmpty = document.querySelector("#map-empty");
 const mapEmptyNote = document.querySelector("#map-empty-note");
 const mapDescription = document.querySelector("#map-description");
 const candidateList = document.querySelector("#candidate-list");
+const resultsPanel = document.querySelector(".results-panel");
 const runtimeNotice = document.querySelector("#runtime-notice");
 const destinationInput = document.querySelector("#destination");
 const destinationSearchButton = document.querySelector("#destination-search-button");
-const useDemoDestinationButton = document.querySelector("#use-demo-destination-button");
 const destinationSearchStatus = document.querySelector("#destination-search-status");
 const destinationResults = document.querySelector("#destination-results");
 const destinationMatchList = document.querySelector("#destination-match-list");
@@ -32,8 +31,6 @@ const researchSourceList = document.querySelector("#research-source-list");
 const researchState = document.querySelector("#research-state");
 
 let activeSegmentId = null;
-let lastRequestBody = null;
-let lastRequestKey = null;
 let activeSearch = null;
 let activeDestinationSearch = null;
 let selectedDestination = null;
@@ -86,6 +83,7 @@ destinationSearchButton.addEventListener("click", async () => {
   }
 
   invalidateDestinationSearch();
+  invalidatePendingSearch("Destination search changed. Choose a new match and estimate mode.");
   clearDestinationDiscovery();
   destinationSearchButton.disabled = true;
   destinationSearchButton.textContent = "Finding places…";
@@ -117,82 +115,16 @@ destinationSearchButton.addEventListener("click", async () => {
   }
 });
 
-useDemoDestinationButton.addEventListener("click", () => {
-  invalidateDestinationSearch();
-  invalidatePendingSearch();
-  destinationInput.value = LOCAL_DEMO_DESTINATION;
-  clearDestinationDiscovery();
-  resetMapForLocalDemo();
-  setLoading(false);
-  destinationSearchStatus.textContent =
-    "SMU demo destination selected. Local GIS fixture coverage can now be checked.";
-  setStatus("SMU demo ready. Build a parking plan when the local database is configured.", false);
-  destinationInput.focus();
-});
-
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!form.reportValidity()) return;
-  if (!isLocalDemoDestination()) {
-    if (!selectedDestination) {
-      setStatus("Find and select the intended US destination first.", true);
-      return;
-    }
-    await runOnDemandParking();
+  if (!selectedDestination) {
+    setStatus("Find and select the intended US destination first.", true);
     return;
   }
-
-  invalidateDestinationSearch();
-  const payload = buildRequest();
-  const requestBody = JSON.stringify(payload);
-  invalidatePendingSearch();
-  if (requestBody !== lastRequestBody) {
-    lastRequestBody = requestBody;
-    lastRequestKey = createRequestKey();
-  }
-  clearResults();
-  setLoading(true);
-  setStatus(
-    selectedDestination
-      ? "Checking local parking coverage, then evaluating curb rules…"
-      : "Evaluating curb rules and building a route…",
-    false,
-  );
-  const search = {
-    controller: new AbortController(),
-    requestKey: lastRequestKey,
-  };
-  activeSearch = search;
-  try {
-    const response = await fetch("/v1/parking/search", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Idempotency-Key": search.requestKey,
-      },
-      body: requestBody,
-      signal: search.controller.signal,
-    });
-    const body = await response.json().catch(() => ({}));
-    if (activeSearch !== search) return;
-    if (!response.ok) throw new Error(readError(body, response.status));
-    renderSearch(body);
-    setStatus(`Plan ready for ${body.destination.name}.`, false);
-    // A completed search is no longer a retry candidate. A later submit, especially one using
-    // the logical `now` value, must create a fresh session rather than replaying stale results.
-    lastRequestBody = null;
-    lastRequestKey = null;
-  } catch (error) {
-    if (activeSearch !== search || error?.name === "AbortError") return;
-    const message = error instanceof Error ? error.message : "The parking search failed.";
-    markSearchFailed();
-    setStatus(message, true);
-  } finally {
-    if (activeSearch === search) {
-      activeSearch = null;
-      setLoading(false);
-    }
-  }
+  const requestedMode = event.submitter?.dataset.researchMode === "RESEARCH"
+    ? "RESEARCH" : "INSTANT";
+  await runOnDemandParking(requestedMode);
 });
 
 function invalidateDestinationSearch() {
@@ -213,11 +145,6 @@ function clearDestinationDiscovery() {
   destinationSearchStatus.classList.remove("error");
 }
 
-function isLocalDemoDestination() {
-  return selectedDestination === null
-    && destinationInput.value.trim() === LOCAL_DEMO_DESTINATION;
-}
-
 function showDestinationCoverageGate() {
   setLoading(false);
   hasCurrentPlan = false;
@@ -231,33 +158,13 @@ function showDestinationCoverageGate() {
     .forEach((selector) => {
       document.querySelector(selector).hidden = true;
     });
-  if (isLocalDemoDestination()) {
-    resetMapForLocalDemo();
-    destinationSearchStatus.textContent =
-      "SMU demo destination selected. Local GIS fixture coverage can now be checked.";
-    return;
-  }
   mapEmpty.textContent = "Find and select the intended US destination";
-  mapEmptyNote.textContent = "Selecting a match starts bounded on-demand road research";
+  mapEmptyNote.textContent = "Select a match, then choose fast or enhanced API research";
   mapDescription.textContent = "No destination has been selected for on-demand research.";
   document.querySelector("#map-source-caption").textContent =
     "Destination not selected · live coverage not requested";
   destinationSearchStatus.textContent =
-    "Search for a US place, select the intended match, and nearby road research starts automatically.";
-}
-
-function resetMapForLocalDemo() {
-  hasCurrentPlan = false;
-  mapContent.replaceChildren();
-  setMapEmptyVisibility(true);
-  mapEmpty.textContent = "Your candidate map will appear here";
-  mapEmptyNote.textContent = "SMU fixture coverage · build a plan to evaluate local curbs";
-  mapDescription.textContent = "Submit the SMU demo search to show parking curb candidates.";
-  document.querySelector("#map-source-caption").textContent =
-    "© OpenStreetMap contributors · ODbL fixture geometry";
-  document.querySelector("#result-time").textContent = "No plan yet";
-  setProvisionalPresentation(false);
-  clearResearchActivity();
+    "Search for a US place, select the intended match, then choose an estimate mode.";
 }
 
 function normalizeDestinationDiscovery(body) {
@@ -350,7 +257,7 @@ function destinationMatchButton(match) {
 function selectDestinationMatch(match) {
   selectedDestination = match;
   destinationInput.value = match.name;
-  invalidatePendingSearch("Destination changed. Submit to check local parking coverage.");
+  invalidatePendingSearch("Destination changed. Choose an estimate mode for the new place.");
   document.querySelectorAll(".destination-match-button").forEach((button) => {
     button.setAttribute("aria-pressed", String(button.dataset.matchId === match.matchId));
   });
@@ -362,8 +269,8 @@ function selectDestinationMatch(match) {
   renderDiscoveredDestination(match);
   if (form.checkValidity()) {
     destinationSearchStatus.textContent =
-      "Place selected. Starting bounded live road and parking-tag research now…";
-    void runOnDemandParking();
+      "Place selected. Choose Estimate now or Research APIs, then estimate.";
+    setStatus("Destination ready. Choose one of the two estimate modes.", false);
   } else {
     destinationSearchStatus.textContent =
       "Place selected. Correct the highlighted search fields, then build the parking plan.";
@@ -371,28 +278,33 @@ function selectDestinationMatch(match) {
   }
 }
 
-async function runOnDemandParking() {
+async function runOnDemandParking(researchMode) {
   if (!selectedDestination) return;
+  if (!["INSTANT", "RESEARCH"].includes(researchMode)) {
+    throw new Error("A valid estimate mode is required.");
+  }
   invalidatePendingSearch();
   clearResults();
   setLoading(true);
   setStatus(
-    "Fetching nearby roads and parking tags, then generating local curb candidates…",
+    researchMode === "RESEARCH"
+      ? "Calling enhanced road and parking-tag APIs before estimating…"
+      : "Fetching a fast official road snapshot before estimating…",
     false,
   );
-  const search = { controller: new AbortController(), mode: "on-demand" };
+  const search = { controller: new AbortController(), mode: researchMode };
   activeSearch = search;
   try {
     const response = await fetch("/v1/parking/on-demand", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(buildOnDemandRequest(selectedDestination)),
+      body: JSON.stringify(buildOnDemandRequest(selectedDestination, researchMode)),
       signal: search.controller.signal,
     });
     const body = await response.json().catch(() => ({}));
     if (activeSearch !== search) return;
     if (!response.ok) throw new Error(readOnDemandError(body, response.status));
-    renderOnDemandCoverage(body);
+    renderOnDemandCoverage(body, researchMode);
   } catch (error) {
     if (activeSearch !== search || error?.name === "AbortError") return;
     const message = error instanceof Error ? error.message : "On-demand research failed.";
@@ -406,11 +318,12 @@ async function runOnDemandParking() {
   }
 }
 
-function buildOnDemandRequest(match) {
+function buildOnDemandRequest(match, researchMode) {
   const request = buildRequest();
   return {
     ...request,
     destination: { query: match.query, match_id: match.matchId },
+    research_mode: researchMode,
   };
 }
 
@@ -421,13 +334,20 @@ function readOnDemandError(body, code) {
   return typeof body.detail === "string" ? body.detail : "On-demand research failed.";
 }
 
-function renderOnDemandCoverage(result) {
+function renderOnDemandCoverage(result, requestedMode) {
   const segments = Array.isArray(result.candidate_segments) ? result.candidate_segments : [];
   const predictions = Array.isArray(result.availability_predictions)
     ? result.availability_predictions
     : [];
   const status = result.status;
-  if (!result.destination || !["PROVISIONAL_LEADS", "NO_CANDIDATES", "PROVIDER_UNAVAILABLE"].includes(status)) {
+  if (
+    !result.destination
+    || !["PROVISIONAL_LEADS", "NO_CANDIDATES", "PROVIDER_UNAVAILABLE"].includes(status)
+    || !["INSTANT", "RESEARCH"].includes(result.research_mode)
+    || result.research_mode !== requestedMode
+    || !["NOT_REQUESTED", "APPLIED", "DEGRADED", "NOT_CONFIGURED", "FAILED"]
+      .includes(result.enrichment_status)
+  ) {
     throw new Error("On-demand research returned an invalid response.");
   }
   hasCurrentPlan = status === "PROVISIONAL_LEADS";
@@ -436,12 +356,18 @@ function renderOnDemandCoverage(result) {
     : "No provisional candidates";
 
   if (status !== "PROVISIONAL_LEADS") {
-    markSearchFailed();
+    if (status === "PROVIDER_UNAVAILABLE") {
+      markSearchFailed();
+    } else {
+      markNoCandidates();
+    }
     renderResearchActivity(result);
     renderWarnings(result.warnings || []);
     setStatus(
       status === "PROVIDER_UNAVAILABLE"
-        ? "Research attempted, but every configured road API failed. This does not mean parking is unavailable."
+        ? result.research_mode === "INSTANT"
+          ? "The fast official-road source failed. This does not mean parking is unavailable."
+          : "Enhanced research was attempted, but every configured road API failed. This does not mean parking is unavailable."
         : "No eligible road candidates were found in the bounded live snapshot.",
       status === "PROVIDER_UNAVAILABLE",
     );
@@ -489,11 +415,11 @@ function renderOnDemandCoverage(result) {
   document.querySelector("#map-source-caption").textContent =
     `${(result.attribution || []).join(" · ")} · live provisional coverage`;
   const usedFallback = (result.provider_attempts || []).some(
-    (attempt) => attempt.role === "PRIMARY" && attempt.outcome === "FAILED",
+    (attempt) => attempt.role === "FALLBACK" && attempt.outcome === "SUCCEEDED",
   );
   setStatus(
     predictions.length
-      ? `${usedFallback ? "The primary road API failed; Census fallback found" : "Found"} ${segments.length} nearby curb leads in proximity order. The vacancy numbers are uncalibrated conditional priors; legality and free status remain UNKNOWN.`
+      ? `${usedFallback ? "The enhanced source did not produce usable coverage; Census fallback found" : "Found"} ${segments.length} nearby curb leads in proximity order. The ${humanize(result.research_mode)} mode vacancy numbers are uncalibrated conditional priors; legality and free status remain UNKNOWN.`
       : `${usedFallback ? "Census fallback found" : "Found"} ${segments.length} nearby curb leads from request-time road APIs. Rules and free status remain UNKNOWN until trustworthy evidence is available.`,
     false,
   );
@@ -507,6 +433,8 @@ function renderOnDemandSummary(result, candidateCount) {
     .map((prediction) => Number(prediction.probability))
     .filter(Number.isFinite);
   const values = [
+    ["Requested mode", humanize(result.research_mode)],
+    ["API enrichment", humanize(result.enrichment_status)],
     ["Curb leads", String(candidateCount)],
     ["Roads fetched", String(coverage.road_count ?? 0)],
     ["Parking-tagged roads", String(coverage.tagged_road_count ?? 0)],
@@ -539,10 +467,10 @@ function renderDiscoveredDestination(match) {
     }, match.name),
   );
   mapDescription.textContent =
-    `${match.name} was selected. Live road research is starting for this location.`;
+    `${match.name} was selected. Choose a fast estimate or enhanced API research.`;
   document.querySelector("#map-source-caption").textContent =
-    `${destinationAttribution.textContent} · awaiting live road coverage`;
-  document.querySelector("#result-time").textContent = "Place selected · research starting";
+    `${destinationAttribution.textContent} · estimate mode not selected`;
+  document.querySelector("#result-time").textContent = "Place selected · choose a mode";
   ["#summary-cards", "#route-section", "#candidate-section", "#warning-section"]
     .forEach((selector) => {
       document.querySelector(selector).hidden = true;
@@ -552,7 +480,7 @@ function renderDiscoveredDestination(match) {
 
 function readDestinationError(body, code) {
   if (code === 503) {
-    return "Place search is not configured or is temporarily unavailable. The SMU destination remains selectable, but its route still requires configured local data.";
+    return "Place search is not configured or is temporarily unavailable.";
   }
   if (code === 422) return "Check the destination name and try again.";
   return typeof body.detail === "string" ? body.detail : "Destination search failed. Try again.";
@@ -582,7 +510,6 @@ function buildRequest() {
       lat: Number(document.querySelector("#origin-lat").value),
       lon: Number(document.querySelector("#origin-lon").value),
     },
-    destination: { destination_id: LOCAL_DEMO_DESTINATION_ID },
     arrival_time: arrivalNow.checked ? "now" : new Date(arrivalInput.value).toISOString(),
     parking_duration_minutes: Number(document.querySelector("#duration").value),
     free_only: document.querySelector("#free-only").checked,
@@ -595,31 +522,12 @@ function buildRequest() {
   };
 }
 
-function createRequestKey() {
-  if (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function") {
-    return globalThis.crypto.randomUUID();
-  }
-  return `ui-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
-
-function readError(body, code) {
-  if (code === 503) {
-    return "Search is not configured yet. Ask the operator to configure the database and guaranteed fallback.";
-  }
-  if (code === 404) return "That destination is not available in the local search area.";
-  if (code === 422) return "Check the search fields and try again.";
-  return typeof body.detail === "string" ? body.detail : "The parking search failed. Try again.";
-}
-
 function setLoading(isLoading) {
-  submitButton.disabled = isLoading || (!isLocalDemoDestination() && !selectedDestination);
+  const disabled = isLoading || selectedDestination === null;
+  instantSubmitButton.disabled = disabled;
+  submitButton.disabled = disabled;
   form.setAttribute("aria-busy", String(isLoading));
-  const idleLabel = isLocalDemoDestination()
-    ? "Build parking plan"
-    : selectedDestination ? "Refresh on-demand research" : "Select a destination";
-  submitButton.querySelector("span").textContent = isLoading
-    ? (selectedDestination ? "Researching local data…" : "Building plan…")
-    : idleLabel;
+  resultsPanel.setAttribute("aria-busy", String(isLoading));
 }
 
 function setStatus(message, isError) {
@@ -658,6 +566,22 @@ function markSearchFailed() {
   clearResearchActivity();
   mapEmpty.textContent = "Search did not complete";
   mapEmptyNote.textContent = "Review the message beside the search form, then try again";
+  setMapEmptyVisibility(true);
+}
+
+function markNoCandidates() {
+  hasCurrentPlan = false;
+  activeSegmentId = null;
+  mapContent.replaceChildren();
+  ["#summary-cards", "#route-section", "#candidate-section", "#warning-section"]
+    .forEach((selector) => {
+      document.querySelector(selector).hidden = true;
+    });
+  document.querySelector("#result-time").textContent = "Search complete · no candidates";
+  setProvisionalPresentation(false);
+  clearResearchActivity();
+  mapEmpty.textContent = "No curb leads found in this road snapshot";
+  mapEmptyNote.textContent = "This does not prove that parking is unavailable";
   setMapEmptyVisibility(true);
 }
 
@@ -1036,6 +960,19 @@ function renderResearchActivity(result) {
   researchState.classList.toggle("partial", fallbackSucceeded || empty.length > 0);
   researchSourceList.replaceChildren();
   researchSourceList.append(
+    researchSourceItem(
+      `Estimate mode: ${humanize(result.research_mode)}`,
+      result.enrichment_status,
+      result.research_mode === "INSTANT"
+        ? "Used the fast official-road path; enhanced parking-tag research was not requested."
+        : result.enrichment_status === "APPLIED"
+          ? "The enhanced road and parking-tag source supplied the candidate snapshot."
+          : result.enrichment_status === "DEGRADED"
+            ? "Enhanced research was attempted, then safely fell back to the fast road source."
+            : result.enrichment_status === "NOT_CONFIGURED"
+              ? "Enhanced research is not configured; the fast road source was used."
+              : "Enhanced research did not produce a usable road snapshot.",
+    ),
     researchSourceItem(
       "Destination identity",
       "SUCCEEDED",

@@ -14,6 +14,7 @@ from parking_ai.api.schemas import OriginRequest, VehicleProfileRequest
 from parking_ai.coverage import (
     OnDemandParkingCommand,
     OnDemandParkingResponse,
+    OnDemandResearchMode,
     SelectedDestinationNotFoundError,
 )
 from parking_ai.domain import GeoPoint, UserProfile
@@ -61,6 +62,7 @@ class SelectedDestinationRequest(ApiModel):
 class OnDemandParkingRequest(ApiModel):
     origin: OriginRequest
     destination: SelectedDestinationRequest
+    research_mode: OnDemandResearchMode = OnDemandResearchMode.RESEARCH
     arrival_time: datetime | Literal["now"] = "now"
     parking_duration_minutes: int = Field(strict=True, gt=0, le=1_440)
     free_only: StrictBool = True
@@ -86,6 +88,7 @@ class OnDemandParkingRequest(ApiModel):
             origin=GeoPoint(latitude=self.origin.lat, longitude=self.origin.lon),
             destination_query=self.destination.query,
             destination_match_id=self.destination.match_id,
+            research_mode=self.research_mode,
             arrival_time=arrival_time,
             arrival_time_was_now=self.arrival_time == "now",
             parking_duration_minutes=self.parking_duration_minutes,
@@ -126,7 +129,10 @@ def search_on_demand_parking(
 
     try:
         command = payload.to_command(resolved_now=clock())
-        return OnDemandParkingResponse.model_validate(handler(command))
+        response = OnDemandParkingResponse.model_validate(handler(command))
+        if response.research_mode is not command.research_mode:
+            raise ValueError("on-demand response mode did not match the request")
+        return response
     except SelectedDestinationNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
