@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Sequence
-from datetime import date, datetime, time
+from datetime import UTC, date, datetime, time
 from enum import StrEnum
 from typing import Annotated, Literal, Protocol
 
@@ -30,7 +30,7 @@ from parking_ai.domain.schemas import Evidence, NormalizedClaim, ParkingRule, Ru
 def _require_timezone(value: datetime) -> datetime:
     if value.tzinfo is None or value.utcoffset() is None:
         raise ValueError("datetime must include timezone information")
-    return value
+    return value.astimezone(UTC)
 
 
 AwareDateTime = Annotated[datetime, AfterValidator(_require_timezone)]

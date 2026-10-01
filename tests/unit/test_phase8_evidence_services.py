@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
 from pydantic import ValidationError
@@ -281,6 +281,27 @@ def test_human_review_is_required_before_regulation_rules_become_persistable() -
     review_claim = approved.evidence.normalized_claims[-1]
     assert review_claim.claim_type == "HUMAN_REVIEW_APPROVAL"
     assert review_claim.attributes["reviewer_id"] == "parking-policy-reviewer"
+
+
+def test_approval_identity_is_stable_across_equivalent_timezones() -> None:
+    result = RegulationEvidenceService(StaticAdapter(regulation_output())).extract(source())
+    central_time = REVIEWED.astimezone(timezone(-timedelta(hours=5)))
+
+    utc_approval = approve_extraction(
+        result,
+        reviewer_id="parking-policy-reviewer",
+        reviewed_at=REVIEWED,
+        scope=ApprovalScope.EVIDENCE_AND_RULES,
+    )
+    central_approval = approve_extraction(
+        result,
+        reviewer_id="parking-policy-reviewer",
+        reviewed_at=central_time,
+        scope=ApprovalScope.EVIDENCE_AND_RULES,
+    )
+
+    assert central_approval == utc_approval
+    assert central_approval.reviewed_at.tzinfo is UTC
 
 
 def test_quarantined_result_cannot_be_approved() -> None:

@@ -1,4 +1,69 @@
-# Parking Intelligence System
+# ParkFree
+
+[![CI](https://github.com/Kaizhongmu/ParkFree/actions/workflows/ci.yml/badge.svg)](https://github.com/Kaizhongmu/ParkFree/actions/workflows/ci.yml)
+[![Interactive demo](https://img.shields.io/badge/demo-open-146b4b)](https://kaizhongmu.github.io/ParkFree/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-315f8c)](LICENSE)
+
+ParkFree is an evidence-aware parking intelligence system. It keeps curb legality, payment
+status, predicted vacancy, and search-route optimization separate, then combines them into a
+traceable parking approach instead of pretending that a single score is ground truth.
+
+**[Open the interactive sample demo](https://kaizhongmu.github.io/ParkFree/)** ·
+**[Run the real API locally](#quick-start)**
+
+The hosted demo uses clearly labeled fixtures so anyone can explore the complete interface without
+sharing a location or depending on a third-party API. The local application provides the real
+FastAPI/PostGIS pipeline and optional zero-key US destination and road discovery.
+
+## What is included
+
+- deterministic `LEGAL / ILLEGAL / UNKNOWN` and `FREE / PAID / UNKNOWN` regulation contracts;
+- PostGIS candidate segments with stable IDs and spatial indexing;
+- versioned availability estimates with uncertainty and reproducible feature snapshots;
+- expected-time contingent route optimization;
+- destination search and on-demand US road coverage through bounded provider adapters;
+- evidence provenance, human review workflow, immutable audit records, and integrity constraints;
+- responsive, accessible map UI with explicit uncertainty and safety messaging;
+- Docker Compose, Alembic migrations, 400+ unit tests, PostGIS integration tests, and CI.
+
+## Quick start
+
+```bash
+git clone https://github.com/Kaizhongmu/ParkFree.git
+cd ParkFree
+docker compose up --build -d
+```
+
+Compose waits for PostGIS, applies every Alembic migration, and then starts the API. Open
+[`http://localhost:8000`](http://localhost:8000) or verify it with:
+
+```bash
+curl http://localhost:8000/health
+```
+
+The checked-in placeholders are sufficient for local evaluation. Before any shared or public
+deployment, copy `.env.example` to `.env`, replace the database password, set `ENV_FILE=.env`, and
+review every provider and privacy setting.
+
+For the strict cached-data search path, load the bundled SMU fixture after startup:
+
+```bash
+docker compose run --rm api parking-ai-seed-smu
+```
+
+## Architecture
+
+```text
+Destination discovery → GIS candidates → evidence-backed regulation engine
+                      → versioned availability prediction → route matrix
+                      → expected-time optimizer → API + map UI
+```
+
+Every external system is isolated behind an adapter. AI services may extract structured evidence,
+but only deterministic code decides legality and only reviewed evidence reaches authoritative
+persistence.
+
+## Full implementation status
 
 Phase 0 through Phase 8 foundation for a provider-independent parking intelligence system.
 The repository includes infrastructure, domain schemas, persistence models, stable service
@@ -44,17 +109,16 @@ Never commit `.env`.
 
 ## Docker Compose startup
 
-Start PostgreSQL/PostGIS and the API:
+Start PostgreSQL/PostGIS, apply migrations, and launch the API:
 
 ```bash
 docker compose up --build -d
 docker compose ps
 ```
 
-Run migrations against the Compose database:
+The `migrate` service runs automatically before the API. Load the optional SMU fixture with:
 
 ```bash
-docker compose run --rm api alembic upgrade head
 docker compose run --rm api parking-ai-seed-smu
 ```
 
@@ -71,8 +135,8 @@ application/contact string. Overpass is optional and enriches only `RESEARCH` re
 requires an API key or billing account:
 
 ```text
-NOMINATIM_USER_AGENT=ParkFree/0.1 (contact: operator@example.com)
-OVERPASS_USER_AGENT=ParkFree/0.1 (contact: operator@example.com)
+NOMINATIM_USER_AGENT=ParkFree/0.1 (+https://github.com/Kaizhongmu/ParkFree)
+OVERPASS_USER_AGENT=ParkFree/0.1 (+https://github.com/Kaizhongmu/ParkFree)
 ```
 
 After configuration, explicitly submit a lookup (the public service must not be used for

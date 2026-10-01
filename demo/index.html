@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#12382c">
+    <meta name="description" content="Interactive ParkFree parking-intelligence product demo.">
+    <title>ParkFree | Interactive product demo</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="styles.css">
+    <script src="demo.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#workspace">Skip to workspace</a>
+
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="ParkFree demo home">
+        <span class="brand-mark" aria-hidden="true">P</span>
+        <span>
+          <strong>ParkFree</strong>
+          <small>Parking intelligence</small>
+        </span>
+      </a>
+      <div class="topbar-actions">
+        <span class="demo-badge"><span aria-hidden="true"></span>Sample data</span>
+        <a class="github-link" href="https://github.com/Kaizhongmu/ParkFree">View source</a>
+      </div>
+    </header>
+
+    <main id="workspace" class="workspace">
+      <aside class="planner" aria-labelledby="planner-title">
+        <div class="planner-heading">
+          <p class="kicker">Search setup</p>
+          <h1 id="planner-title">Find a better parking approach</h1>
+          <p>Compare curb leads, walking time, and uncertainty before you arrive.</p>
+        </div>
+
+        <form id="demo-form">
+          <fieldset>
+            <legend>Destination</legend>
+            <div class="destination-field">
+              <span class="field-icon" aria-hidden="true">⌖</span>
+              <select id="destination-select" aria-label="Sample destination">
+                <option value="fondren">Fondren Library, Dallas</option>
+                <option value="arts">Dallas Arts District</option>
+                <option value="seattle">Seattle Center</option>
+              </select>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Research mode</legend>
+            <div class="segmented-control" role="group" aria-label="Research mode">
+              <button type="button" data-mode="instant" aria-pressed="true">
+                Instant
+                <small>Official roads</small>
+              </button>
+              <button type="button" data-mode="research" aria-pressed="false">
+                Research
+                <small>More context</small>
+              </button>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Preferences</legend>
+            <label class="range-field" for="walk-range">
+              <span>Maximum walk</span>
+              <output id="walk-output" for="walk-range">8 min</output>
+            </label>
+            <input id="walk-range" type="range" min="3" max="15" value="8" step="1">
+
+            <label class="toggle-row">
+              <span>
+                <strong>Free parking only</strong>
+                <small>Keep paid options out of the route</small>
+              </span>
+              <input id="free-only" type="checkbox" checked>
+            </label>
+
+            <label class="toggle-row">
+              <span>
+                <strong>Arrive now</strong>
+                <small id="arrival-help">Use the current local hour</small>
+              </span>
+              <input id="arrive-now" type="checkbox" checked>
+            </label>
+          </fieldset>
+
+          <button class="plan-button" type="submit">
+            <span>Build parking plan</span>
+            <span aria-hidden="true">→</span>
+          </button>
+        </form>
+
+        <div class="safety-note">
+          <span aria-hidden="true">!</span>
+          <p><strong>Decision aid only.</strong> Verify curb signs and current conditions before parking.</p>
+        </div>
+      </aside>
+
+      <section class="results" aria-labelledby="results-title">
+        <div class="results-heading">
+          <div>
+            <p class="kicker">Recommended search</p>
+            <h2 id="results-title">Fondren Library</h2>
+            <p id="result-subtitle">Dallas, Texas · sample snapshot</p>
+          </div>
+          <div class="freshness">
+            <span id="mode-indicator">Instant snapshot</span>
+            <small id="updated-time">Updated just now</small>
+          </div>
+        </div>
+
+        <div id="status-banner" class="status-banner" role="status" aria-live="polite">
+          <span class="status-dot" aria-hidden="true"></span>
+          <div>
+            <strong>3 curb leads match this sample plan</strong>
+            <p>Legal and payment states are shown separately from predicted vacancy.</p>
+          </div>
+        </div>
+
+        <div class="metric-strip" aria-label="Plan summary">
+          <div>
+            <span>Best chance</span>
+            <strong id="best-chance">76%</strong>
+          </div>
+          <div>
+            <span>Expected search</span>
+            <strong id="expected-time">8.4 min</strong>
+          </div>
+          <div>
+            <span>Max walk</span>
+            <strong id="max-walk-metric">8 min</strong>
+          </div>
+          <div>
+            <span>Plan confidence</span>
+            <strong id="plan-confidence">Moderate</strong>
+          </div>
+        </div>
+
+        <div class="map-toolbar">
+          <div class="legend" aria-label="Map legend">
+            <span><i class="legend-line legal"></i>Legal + free</span>
+            <span><i class="legend-line paid"></i>Legal + paid</span>
+            <span><i class="legend-line unknown"></i>Verify signs</span>
+            <span><i class="legend-dot"></i>Search order</span>
+          </div>
+          <span id="map-caption">Schematic sample · not navigation</span>
+        </div>
+
+        <div class="map-frame">
+          <svg id="demo-map" viewBox="0 0 1000 560" role="img" aria-labelledby="map-title map-description">
+            <title id="map-title">Sample curb candidate map</title>
+            <desc id="map-description">Three curb candidates near Fondren Library with a suggested search order.</desc>
+            <defs>
+              <pattern id="minor-grid" width="34" height="34" patternUnits="userSpaceOnUse">
+                <path d="M34 0H0V34" fill="none" stroke="#dce4df" stroke-width="1"></path>
+              </pattern>
+              <filter id="pin-shadow" x="-50%" y="-50%" width="200%" height="200%">
+                <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#102b22" flood-opacity=".22"></feDropShadow>
+              </filter>
+            </defs>
+            <rect width="1000" height="560" fill="#edf2ee"></rect>
+            <rect width="1000" height="560" fill="url(#minor-grid)"></rect>
+            <g class="context-roads" aria-hidden="true">
+              <path d="M-20 122C180 110 320 150 520 125S830 75 1030 102"></path>
+              <path d="M-10 420C220 395 380 440 610 408S860 365 1020 395"></path>
+              <path d="M170 -20C188 115 160 260 185 590"></path>
+              <path d="M710 -20C680 155 735 340 700 590"></path>
+              <path d="M425 -20C445 170 405 350 438 590"></path>
+            </g>
+            <g id="route-layer"></g>
+            <g id="segment-layer"></g>
+            <g id="marker-layer"></g>
+            <g id="destination-layer"></g>
+          </svg>
+          <div class="map-attribution">Interactive fixture geometry · ParkFree demo</div>
+        </div>
+
+        <section class="candidates" aria-labelledby="candidate-title">
+          <div class="section-title">
+            <div>
+              <p class="kicker">Contingent route</p>
+              <h3 id="candidate-title">Try in this order</h3>
+            </div>
+            <span id="candidate-count">3 candidates</span>
+          </div>
+          <ol id="candidate-list"></ol>
+        </section>
+      </section>
+
+      <aside class="detail-panel" aria-labelledby="detail-title">
+        <div class="detail-header">
+          <p class="kicker">Candidate detail</p>
+          <h2 id="detail-title">University Blvd</h2>
+          <p id="detail-side">North curb · Segment PF-101</p>
+        </div>
+
+        <div class="probability-ring" aria-label="76 percent conditional vacancy chance">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="ring-track" cx="60" cy="60" r="50"></circle>
+            <circle id="ring-progress" class="ring-progress" cx="60" cy="60" r="50"></circle>
+          </svg>
+          <div>
+            <strong id="detail-probability">76%</strong>
+            <span>conditional vacancy</span>
+          </div>
+        </div>
+
+        <dl class="detail-stats">
+          <div><dt>Walk</dt><dd id="detail-walk">4.1 min</dd></div>
+          <div><dt>Drive</dt><dd id="detail-drive">3.2 min</dd></div>
+          <div><dt>Capacity</dt><dd id="detail-capacity">6 spaces</dd></div>
+        </dl>
+
+        <section class="evidence-section" aria-labelledby="evidence-title">
+          <div class="section-title compact">
+            <h3 id="evidence-title">Decision evidence</h3>
+            <span id="evidence-tier">Tier A</span>
+          </div>
+          <ul id="evidence-list"></ul>
+        </section>
+
+        <section class="model-section" aria-labelledby="model-title">
+          <p class="kicker">Model trace</p>
+          <h3 id="model-title">Reproducible decision</h3>
+          <dl>
+            <div><dt>Rule engine</dt><dd>rules-v0.4</dd></div>
+            <div><dt>Availability</dt><dd>prior-v0.3</dd></div>
+            <div><dt>Optimizer</dt><dd>beam-v0.2</dd></div>
+          </dl>
+        </section>
+
+        <a class="run-link" href="https://github.com/Kaizhongmu/ParkFree#quick-start">
+          Run the live API locally <span aria-hidden="true">↗</span>
+        </a>
+      </aside>
+    </main>
+
+    <footer>
+      <p>This hosted page uses illustrative fixtures. The repository includes the real FastAPI, PostGIS, evidence, regulation, availability, and routing stack.</p>
+    </footer>
+  </body>
+</html>
