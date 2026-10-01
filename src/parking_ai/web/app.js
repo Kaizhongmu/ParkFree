@@ -283,7 +283,7 @@ function selectDestinationMatch(match) {
   renderDiscoveredDestination(match);
   if (form.checkValidity()) {
     destinationSearchStatus.textContent =
-      "Place selected. Choose Estimate now or Research APIs, then estimate.";
+      "Place selected. Choose Instant or Research to build the parking approach.";
     setStatus("Destination ready. Choose one of the two estimate modes.", false);
   } else {
     destinationSearchStatus.textContent =

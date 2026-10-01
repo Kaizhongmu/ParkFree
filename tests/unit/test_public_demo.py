@@ -30,6 +30,7 @@ def test_public_demo_is_self_contained_and_accessible() -> None:
     assert "Sample data" in html
     assert "illustrative fixtures" in html
     assert "Decision aid only" in html
+    assert "ParkFree#quick-start-with-docker" in html
     assert "http://" not in html
     assert "<style" not in html
     assert " onclick=" not in html
