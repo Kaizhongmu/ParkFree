@@ -62,3 +62,15 @@ def test_github_publication_workflows_exist() -> None:
     assert "python -m pytest -m integration" in ci
     assert "actions/deploy-pages@v4" in pages
     assert "path: demo" in pages
+
+
+def test_public_readme_links_beginner_getting_started_guide() -> None:
+    readme = (PROJECT_ROOT / "README.md").read_text()
+    guide = (PROJECT_ROOT / "docs/GETTING_STARTED.md").read_text()
+
+    assert "docs/GETTING_STARTED.md" in readme
+    assert "## Start using ParkFree" in readme
+    assert "docker compose up --build -d" in guide
+    assert "Build your first parking approach" in guide
+    assert "numbered candidates" in guide
+    assert "Never treat a provisional road lead as permission" in guide

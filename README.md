@@ -9,7 +9,8 @@ status, predicted vacancy, and search-route optimization separate, then combines
 traceable parking approach instead of pretending that a single score is ground truth.
 
 **[Open the interactive sample demo](https://kaizhongmu.github.io/ParkFree/)** ·
-**[Run the real API locally](#quick-start)**
+**[Run the real application locally](#quick-start-with-docker)** ·
+**[Read the beginner guide](docs/GETTING_STARTED.md)**
 
 The hosted demo uses clearly labeled fixtures so anyone can explore the complete interface without
 sharing a location or depending on a third-party API. The local application provides the real
@@ -26,7 +27,26 @@ FastAPI/PostGIS pipeline and optional zero-key US destination and road discovery
 - responsive, accessible map UI with explicit uncertainty and safety messaging;
 - Docker Compose, Alembic migrations, 400+ unit tests, PostGIS integration tests, and CI.
 
-## Quick start
+## Start using ParkFree
+
+The hosted demo is the fastest way to explore the interface. It uses illustrative fixtures and
+does not call the live parking pipeline. To use the real destination search and road-data APIs,
+run ParkFree locally with Docker and open the same three-panel workspace.
+
+Once the application is open:
+
+1. Enter a US destination and choose **Find this US place**.
+2. Select the intended address from the returned matches.
+3. Use your browser location or enter an origin under **Origin, vehicle, and limits**.
+4. Choose **Instant** for the official-road path or **Research** for additional API context.
+5. Follow the numbered candidates on the map and in the candidate sequence.
+6. Select any candidate to inspect its legality state, vacancy estimate, evidence, and model trace.
+7. Verify curb signs, markings, payment rules, and current conditions before parking.
+
+See the [beginner getting-started guide](docs/GETTING_STARTED.md) for prerequisites,
+troubleshooting, and the difference between provisional road leads and evaluated parking routes.
+
+## Quick start with Docker
 
 ```bash
 git clone https://github.com/Kaizhongmu/ParkFree.git
@@ -158,8 +178,8 @@ Its two request modes are:
 
 See [`docs/ZERO_COST_DESTINATION_DISCOVERY.md`](docs/ZERO_COST_DESTINATION_DISCOVERY.md).
 
-The web demo exposes this lookup through an explicit “Find this US place” action. Selecting the
-intended match enables “Estimate now” (`INSTANT`) and “Research APIs, then estimate” (`RESEARCH`);
+The live workspace exposes this lookup through an explicit **Find this US place** action. Selecting
+the intended match enables **Instant** (`INSTANT`) and **Research** (`RESEARCH`);
 selection alone makes no road-provider call. The response reports both `research_mode` and
 `enrichment_status`: `NOT_REQUESTED` when fast mode skipped enhancement, `APPLIED` when Overpass
 supplied the research snapshot, `DEGRADED` when TIGERweb supplied a research fallback,

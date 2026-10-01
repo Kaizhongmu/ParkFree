@@ -1,6 +1,7 @@
 "use strict";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
+const RING_CIRCUMFERENCE = 2 * Math.PI * 50;
 const form = document.querySelector("#search-form");
 const statusBox = document.querySelector("#request-status");
 const submitButton = document.querySelector("#submit-button");
@@ -29,15 +30,22 @@ const provisionalLegend = document.querySelector("#provisional-legend");
 const researchActivity = document.querySelector("#research-activity");
 const researchSourceList = document.querySelector("#research-source-list");
 const researchState = document.querySelector("#research-state");
+const maxWalkInput = document.querySelector("#max-walk");
+const maxWalkOutput = document.querySelector("#max-walk-output");
 
 let activeSegmentId = null;
 let activeSearch = null;
 let activeDestinationSearch = null;
 let selectedDestination = null;
 let hasCurrentPlan = false;
+let currentView = null;
 
 form.addEventListener("input", () => {
   invalidatePendingSearch("Search settings changed. Submit again to build a current plan.");
+});
+
+maxWalkInput.addEventListener("input", () => {
+  maxWalkOutput.value = `${maxWalkInput.value} min`;
 });
 
 destinationInput.addEventListener("input", () => {
@@ -149,9 +157,14 @@ function showDestinationCoverageGate() {
   setLoading(false);
   hasCurrentPlan = false;
   activeSegmentId = null;
+  currentView = null;
   mapContent.replaceChildren();
   setMapEmptyVisibility(true);
   document.querySelector("#result-time").textContent = "No current plan";
+  document.querySelector("#result-mode").textContent = "No estimate yet";
+  document.querySelector("#results-title").textContent = "Choose a destination";
+  document.querySelector("#result-subtitle").textContent =
+    "Your live parking plan will appear here.";
   setProvisionalPresentation(false);
   clearResearchActivity();
   ["#summary-cards", "#route-section", "#candidate-section", "#warning-section"]
@@ -165,6 +178,7 @@ function showDestinationCoverageGate() {
     "Destination not selected · live coverage not requested";
   destinationSearchStatus.textContent =
     "Search for a US place, select the intended match, then choose an estimate mode.";
+  resetCandidateDetail("Run a search to inspect curb evidence.");
 }
 
 function normalizeDestinationDiscovery(body) {
@@ -286,6 +300,11 @@ async function runOnDemandParking(researchMode) {
   invalidatePendingSearch();
   clearResults();
   setLoading(true);
+  instantSubmitButton.setAttribute("aria-pressed", String(researchMode === "INSTANT"));
+  submitButton.setAttribute("aria-pressed", String(researchMode === "RESEARCH"));
+  document.querySelector("#result-mode").textContent = researchMode === "RESEARCH"
+    ? "Research in progress"
+    : "Instant estimate in progress";
   setStatus(
     researchMode === "RESEARCH"
       ? "Calling enhanced road and parking-tag APIs before estimating…"
@@ -351,6 +370,12 @@ function renderOnDemandCoverage(result, requestedMode) {
     throw new Error("On-demand research returned an invalid response.");
   }
   hasCurrentPlan = status === "PROVISIONAL_LEADS";
+  document.querySelector("#results-title").textContent = result.destination.name;
+  document.querySelector("#result-subtitle").textContent =
+    `${result.destination_timezone || "Local timezone unresolved"} · live provisional coverage`;
+  document.querySelector("#result-mode").textContent = result.research_mode === "RESEARCH"
+    ? "Research snapshot"
+    : "Instant snapshot";
   document.querySelector("#result-time").textContent = status === "PROVISIONAL_LEADS"
     ? "Live road coverage · provisional"
     : "No provisional candidates";
@@ -404,7 +429,9 @@ function renderOnDemandCoverage(result, requestedMode) {
     route: { steps: [] },
     fallback: { location: null },
     provisional_mode: true,
+    source_result: result,
   };
+  currentView = view;
   renderMap(view);
   renderCandidates(view);
   renderOnDemandSummary(result, segments.length);
@@ -454,6 +481,7 @@ function renderOnDemandSummary(result, candidateCount) {
 function renderDiscoveredDestination(match) {
   hasCurrentPlan = false;
   activeSegmentId = null;
+  currentView = null;
   mapContent.replaceChildren();
   setMapEmptyVisibility(false);
   const coordinate = [match.longitude, match.latitude];
@@ -471,11 +499,15 @@ function renderDiscoveredDestination(match) {
   document.querySelector("#map-source-caption").textContent =
     `${destinationAttribution.textContent} · estimate mode not selected`;
   document.querySelector("#result-time").textContent = "Place selected · choose a mode";
+  document.querySelector("#result-mode").textContent = "Ready to estimate";
+  document.querySelector("#results-title").textContent = match.name;
+  document.querySelector("#result-subtitle").textContent = match.formattedAddress;
   ["#summary-cards", "#route-section", "#candidate-section", "#warning-section"]
     .forEach((selector) => {
       document.querySelector(selector).hidden = true;
     });
   centerMapViewport();
+  resetCandidateDetail("Choose Instant or Research to inspect curb evidence.");
 }
 
 function readDestinationError(body, code) {
@@ -541,6 +573,7 @@ function setStatus(message, isError) {
 function clearResults() {
   hasCurrentPlan = false;
   activeSegmentId = null;
+  currentView = null;
   mapContent.replaceChildren();
   setMapEmptyVisibility(true);
   mapEmpty.textContent = "Building a fresh candidate map…";
@@ -552,10 +585,12 @@ function clearResults() {
     .forEach((selector) => {
       document.querySelector(selector).hidden = true;
     });
+  resetCandidateDetail("Building a fresh candidate sequence.");
 }
 
 function markSearchFailed() {
   hasCurrentPlan = false;
+  currentView = null;
   mapContent.replaceChildren();
   ["#summary-cards", "#route-section", "#candidate-section", "#warning-section"]
     .forEach((selector) => {
@@ -567,11 +602,13 @@ function markSearchFailed() {
   mapEmpty.textContent = "Search did not complete";
   mapEmptyNote.textContent = "Review the message beside the search form, then try again";
   setMapEmptyVisibility(true);
+  resetCandidateDetail("The search did not complete.");
 }
 
 function markNoCandidates() {
   hasCurrentPlan = false;
   activeSegmentId = null;
+  currentView = null;
   mapContent.replaceChildren();
   ["#summary-cards", "#route-section", "#candidate-section", "#warning-section"]
     .forEach((selector) => {
@@ -583,11 +620,13 @@ function markNoCandidates() {
   mapEmpty.textContent = "No curb leads found in this road snapshot";
   mapEmptyNote.textContent = "This does not prove that parking is unavailable";
   setMapEmptyVisibility(true);
+  resetCandidateDetail("No curb candidates were returned.");
 }
 
 function markSearchChanged() {
   hasCurrentPlan = false;
   activeSegmentId = null;
+  currentView = null;
   mapContent.replaceChildren();
   ["#summary-cards", "#route-section", "#candidate-section", "#warning-section"]
     .forEach((selector) => {
@@ -599,11 +638,16 @@ function markSearchChanged() {
   mapEmpty.textContent = "Search settings changed";
   mapEmptyNote.textContent = "Submit again to build a plan for the current inputs";
   setMapEmptyVisibility(true);
+  resetCandidateDetail("Search settings changed. Submit again.");
 }
 
 function renderSearch(result) {
   hasCurrentPlan = true;
   activeSegmentId = null;
+  currentView = result;
+  document.querySelector("#results-title").textContent = result.destination.name;
+  document.querySelector("#result-subtitle").textContent = "Evidence-backed parking plan";
+  document.querySelector("#result-mode").textContent = "Evaluated plan";
   document.querySelector("#result-time").textContent = formatDate(result.resolved_arrival_time);
   setProvisionalPresentation(false);
   clearResearchActivity();
@@ -635,11 +679,9 @@ function renderMap(result) {
   mapContent.replaceChildren();
   setMapEmptyVisibility(false);
   const decisions = result.candidate_decisions || [];
-  const routeOrder = new Map(
-    (result.route.steps || []).map((step, index) => [step.segment_id, index + 1]),
-  );
+  const routeOrder = candidateOrderMap(result);
   mapDescription.textContent = result.provisional_mode
-    ? `${decisions.length} provisional curb leads. Conditional vacancy ranking does not verify legality or price.`
+    ? `${decisions.length} provisional curb leads numbered in proximity order. Conditional vacancy does not verify legality or price.`
     : `${decisions.length} evaluated parking curbs with ${routeOrder.size} recommended route stops.`;
   const coordinates = decisions.flatMap((decision) => coordinatesForDecision(decision));
   const destinationCoordinate = [
@@ -740,6 +782,22 @@ function renderMap(result) {
     }
   }
   centerMapViewport();
+}
+
+function candidateOrderMap(result) {
+  const routeSteps = result.route?.steps || [];
+  if (routeSteps.length) {
+    return new Map(routeSteps.map((step, index) => [step.segment_id, index + 1]));
+  }
+  if (result.provisional_mode) {
+    return new Map(
+      (result.candidate_decisions || []).map((decision, index) => [
+        decision.segment.segment_id,
+        index + 1,
+      ]),
+    );
+  }
+  return new Map();
 }
 
 function setMapEmptyVisibility(isVisible) {
@@ -855,10 +913,17 @@ function renderRoute(result) {
 
 function renderCandidates(result) {
   candidateList.replaceChildren();
-  const routeOrder = new Map(
-    result.route.steps.map((step, index) => [step.segment_id, index + 1]),
-  );
-  result.candidate_decisions.forEach((decision) => {
+  const routeOrder = candidateOrderMap(result);
+  const orderedDecisions = [...result.candidate_decisions];
+  if (!result.provisional_mode && routeOrder.size) {
+    orderedDecisions.sort((left, right) => {
+      const leftOrder = routeOrder.get(left.segment.segment_id) ?? Number.POSITIVE_INFINITY;
+      const rightOrder = routeOrder.get(right.segment.segment_id) ?? Number.POSITIVE_INFINITY;
+      return leftOrder - rightOrder
+        || left.segment.segment_id.localeCompare(right.segment.segment_id);
+    });
+  }
+  orderedDecisions.forEach((decision) => {
     const id = decision.segment.segment_id;
     const stateClass = decisionClass(decision);
     const card = element("article", `candidate-card ${stateClass}`);
@@ -874,6 +939,9 @@ function renderCandidates(result) {
         selectSegment(id);
       }
     });
+    const order = routeOrder.get(id);
+    const orderBadge = element("span", "candidate-order", order ? String(order) : "—");
+    const copy = element("div", "candidate-copy");
     const top = element("div", "candidate-top");
     top.append(
       element("p", "candidate-name", segmentName(decision.segment, id)),
@@ -896,6 +964,7 @@ function renderCandidates(result) {
         `${result.provisional_mode ? "Arrival" : "Evaluated"} ${formatDate(decision.legality.evaluated_at)}`,
       ),
     );
+    copy.append(top, meta);
     const reasons = (decision.legality.reason_codes || []).map(humanize).join(", ");
     const provenance = element("p", "provenance");
     provenance.append(
@@ -927,13 +996,34 @@ function renderCandidates(result) {
         ),
       );
     }
-    card.append(top, meta, provenance);
+    copy.append(provenance);
+    const probability = decision.availability
+      ? formatPercent(decision.availability.probability)
+      : "Not estimated";
+    card.append(
+      orderBadge,
+      copy,
+      element("span", "candidate-probability", probability),
+    );
     candidateList.append(card);
   });
   document.querySelector("#candidate-count").textContent = result.provisional_mode
     ? `${result.candidate_decisions.length} provisional · proximity order`
     : `${result.candidate_decisions.length} evaluated`;
+  document.querySelector("#candidate-title").textContent = result.provisional_mode
+    ? "Inspect in proximity order"
+    : "Evaluated curb details";
   document.querySelector("#candidate-section").hidden = false;
+  if (orderedDecisions.length) {
+    activeSegmentId = orderedDecisions.some(
+      (decision) => decision.segment.segment_id === activeSegmentId,
+    )
+      ? activeSegmentId
+      : orderedDecisions[0].segment.segment_id;
+    syncCandidateSelection();
+  } else {
+    resetCandidateDetail("No curb candidates were returned.");
+  }
 }
 
 function renderWarnings(warnings) {
@@ -1043,7 +1133,14 @@ function setProvisionalPresentation(isProvisional) {
 }
 
 function selectSegment(segmentId) {
-  activeSegmentId = activeSegmentId === segmentId ? null : segmentId;
+  activeSegmentId = segmentId;
+  syncCandidateSelection();
+  document.querySelector(
+    `.candidate-card[data-segment-id="${CSS.escape(activeSegmentId)}"]`,
+  )?.scrollIntoView({ block: "nearest", behavior: "auto" });
+}
+
+function syncCandidateSelection() {
   document.querySelectorAll("[data-segment-id]").forEach((node) => {
     const isActive = activeSegmentId === node.dataset.segmentId;
     node.classList.toggle("is-active", isActive);
@@ -1052,10 +1149,114 @@ function selectSegment(segmentId) {
       node.classList.toggle("is-muted", activeSegmentId !== null && !isActive);
     }
   });
-  if (activeSegmentId) {
-    document.querySelector(`.candidate-card[data-segment-id="${CSS.escape(activeSegmentId)}"]`)
-      ?.scrollIntoView({ block: "nearest", behavior: "auto" });
+  const decision = currentView?.candidate_decisions?.find(
+    (candidate) => candidate.segment.segment_id === activeSegmentId,
+  );
+  const order = currentView ? candidateOrderMap(currentView).get(activeSegmentId) : null;
+  renderCandidateDetail(decision, order);
+}
+
+function renderCandidateDetail(decision, order) {
+  if (!decision) {
+    resetCandidateDetail("Select a numbered curb candidate to inspect it.");
+    return;
   }
+
+  const segment = decision.segment;
+  const stateClass = decisionClass(decision);
+  const probability = decision.availability?.probability;
+  document.querySelector("#detail-title").textContent = segmentName(segment, segment.segment_id);
+  document.querySelector("#detail-side").textContent =
+    `${humanize(segment.side)} curb · Segment ${segment.segment_id}`;
+  document.querySelector("#detail-order").textContent = order ? `#${order}` : "Not routed";
+  document.querySelector("#detail-length").textContent = `${formatNumber(segment.length_m, 0)} m`;
+  document.querySelector("#detail-capacity").textContent = segment.estimated_capacity === null
+    || segment.estimated_capacity === undefined
+    ? "Unknown"
+    : `${formatNumber(segment.estimated_capacity, 0)} spaces`;
+
+  const statePill = document.querySelector("#detail-state");
+  statePill.className = `state-pill ${stateClass}`;
+  statePill.textContent = stateLabel(decision);
+  updateDetailRing(probability);
+
+  const evidenceItems = [];
+  const evidenceRefs = decision.legality.evidence_refs || [];
+  evidenceItems.push([
+    evidenceRefs.length ? "Supporting evidence" : "Evidence coverage",
+    evidenceLabel(evidenceRefs),
+  ]);
+  evidenceItems.push([
+    "Regulation evaluation",
+    (decision.legality.reason_codes || []).map(humanize).join(", ") || "No reason supplied",
+  ]);
+  evidenceItems.push([
+    "Curb usability",
+    humanize(segment.physical_state || "UNKNOWN"),
+  ]);
+  if (decision.availability) {
+    const interval = decision.availability.interval;
+    const intervalText = interval
+      ? ` Range ${formatPercent(interval[0])} to ${formatPercent(interval[1])}.`
+      : "";
+    evidenceItems.push([
+      "Availability basis",
+      `${(decision.availability.reason_codes || []).map(humanize).join(", ") || "Conditional estimate"}.${intervalText}`,
+    ]);
+  } else {
+    evidenceItems.push(["Availability basis", "No conditional vacancy estimate was returned."]);
+  }
+  document.querySelector("#detail-evidence").replaceChildren(
+    ...evidenceItems.map(([title, detail]) => detailEvidenceItem(title, detail)),
+  );
+
+  const versions = currentView?.versions || {};
+  document.querySelector("#detail-rule-model").textContent =
+    versions.rule_engine || (currentView?.provisional_mode ? "Evidence pending" : "Not reported");
+  document.querySelector("#detail-availability-model").textContent =
+    decision.availability?.model_version || versions.availability_model || "Not estimated";
+  document.querySelector("#detail-optimizer-model").textContent =
+    versions.optimizer || (currentView?.provisional_mode ? "Not run" : "Not reported");
+}
+
+function detailEvidenceItem(title, detail) {
+  const item = element("li");
+  item.append(element("strong", "", title), document.createTextNode(detail));
+  return item;
+}
+
+function updateDetailRing(probability) {
+  const value = Number(probability);
+  const estimated = probability !== null && probability !== undefined
+    && Number.isFinite(value) && value >= 0 && value <= 1;
+  document.querySelector("#detail-probability").textContent = estimated
+    ? formatPercent(value)
+    : "--";
+  document.querySelector("#ring-progress").style.strokeDashoffset = String(
+    estimated ? RING_CIRCUMFERENCE * (1 - value) : RING_CIRCUMFERENCE,
+  );
+  document.querySelector(".probability-ring").setAttribute(
+    "aria-label",
+    estimated ? `${formatPercent(value)} conditional vacancy chance` : "Availability not estimated",
+  );
+}
+
+function resetCandidateDetail(message) {
+  document.querySelector("#detail-title").textContent = "No candidate selected";
+  document.querySelector("#detail-side").textContent = message;
+  document.querySelector("#detail-order").textContent = "--";
+  document.querySelector("#detail-length").textContent = "--";
+  document.querySelector("#detail-capacity").textContent = "--";
+  const statePill = document.querySelector("#detail-state");
+  statePill.className = "state-pill unknown";
+  statePill.textContent = "Not evaluated";
+  document.querySelector("#detail-evidence").replaceChildren(
+    detailEvidenceItem("Waiting for a current search", message),
+  );
+  document.querySelector("#detail-rule-model").textContent = "Pending";
+  document.querySelector("#detail-availability-model").textContent = "Pending";
+  document.querySelector("#detail-optimizer-model").textContent = "Pending";
+  updateDetailRing(null);
 }
 
 function decisionClass(decision) {

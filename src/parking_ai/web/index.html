@@ -3,11 +3,12 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#14281f">
-    <title>ParkFree · parking intelligence demo</title>
-    <link rel="icon" href="/assets/favicon.svg?v=20260929-1" type="image/svg+xml">
-    <link rel="stylesheet" href="/assets/app.css?v=20260929-1">
-    <script src="/assets/app.js?v=20260929-1" defer></script>
+    <meta name="theme-color" content="#12382c">
+    <meta name="description" content="ParkFree parking intelligence workspace.">
+    <title>ParkFree | Parking intelligence workspace</title>
+    <link rel="icon" href="/assets/favicon.svg?v=20261001-2" type="image/svg+xml">
+    <link rel="stylesheet" href="/assets/app.css?v=20261001-2">
+    <script src="/assets/app.js?v=20261001-2" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#search-form">Skip to parking search</a>
@@ -18,239 +19,305 @@
       <a href="/">Reload the live ParkFree website.</a>
     </div>
 
-    <header class="site-header">
-      <div class="brand-lockup" aria-label="ParkFree">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="ParkFree home">
         <span class="brand-mark" aria-hidden="true">P</span>
-        <div>
-          <p class="eyebrow">Zero-cost parking intelligence demo</p>
-          <h1>ParkFree</h1>
-        </div>
+        <span>
+          <strong>ParkFree</strong>
+          <small>Parking intelligence</small>
+        </span>
+      </a>
+      <div class="topbar-actions">
+        <span class="service-badge"><span aria-hidden="true"></span>Live API workspace</span>
+        <p>Decision aid only. Always verify posted signs.</p>
       </div>
-      <p class="header-note">A decision aid, not a legal guarantee. Always verify posted signs.</p>
     </header>
 
-    <main>
-      <section class="hero" aria-labelledby="hero-title">
-        <div>
-          <p class="eyebrow">US destination research · local curb intelligence</p>
-          <h2 id="hero-title">Explore nearby curb leads before you arrive.</h2>
-          <p class="hero-copy">
-            Select a US destination to fetch nearby road data now. ParkFree ranks provisional curb
-            leads by conditional vacancy chance while keeping unverified legality and price visible.
-          </p>
+    <main class="workspace">
+      <aside class="planner search-panel" aria-labelledby="search-title">
+        <div class="planner-heading">
+          <p class="kicker">Search setup</p>
+          <h1 id="search-title">Find a better parking approach</h1>
+          <p>Choose a destination, set your constraints, and compare nearby curb leads.</p>
         </div>
-        <div class="safety-card">
-          <span class="safety-icon" aria-hidden="true">!</span>
-          <p><strong>Check the curb.</strong> Conditions and signs can change after the data was collected.</p>
-        </div>
-      </section>
 
-      <div class="workspace">
-        <aside class="search-panel" aria-labelledby="search-title">
-          <div class="section-heading">
-            <p class="step-label">Search setup</p>
-            <h2 id="search-title">Plan your parking approach</h2>
-          </div>
+        <form id="search-form" method="post" action="/v1/parking/on-demand">
+          <fieldset>
+            <legend>Destination</legend>
+            <label class="sr-only" for="destination">US destination</label>
+            <div class="destination-field">
+              <span class="field-icon" aria-hidden="true">⌖</span>
+              <input id="destination" name="destination" type="text" value="" placeholder="Enter any US destination" minlength="2" maxlength="255" autocomplete="off" aria-describedby="destination-help" required>
+            </div>
+            <p class="field-help" id="destination-help">
+              Search is explicit. Finding a place does not mean its parking rules are already
+              known. Destination data is sent only when requested; avoid sensitive addresses.
+            </p>
+            <button class="secondary-button destination-search" id="destination-search-button" type="button">
+              Find this US place
+            </button>
 
-          <form id="search-form" method="post" action="/v1/parking/on-demand">
-            <fieldset>
-              <legend>Starting point</legend>
+            <div id="destination-discovery" class="destination-discovery">
+              <p id="destination-search-status" class="destination-search-status" role="status" aria-live="polite" aria-atomic="true">
+                Search any US place, select the intended match, then choose an estimate mode.
+              </p>
+              <section id="destination-results" hidden aria-labelledby="destination-results-title">
+                <h2 id="destination-results-title">Choose the intended place</h2>
+                <ul id="destination-match-list" class="destination-match-list"></ul>
+                <p id="destination-attribution" class="destination-attribution"></p>
+              </section>
+              <div id="selected-destination" class="selected-destination" hidden>
+                <p><strong>Place selected</strong></p>
+                <p id="selected-destination-name"></p>
+                <p id="selected-destination-coordinates"></p>
+                <p class="coverage-note">Fast mode uses official road geometry. Research mode also tries live OpenStreetMap road and parking tags before falling back. Legality and price remain unknown until trustworthy rule evidence is available.</p>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Estimate mode</legend>
+            <div class="segmented-control search-mode-actions" aria-label="Choose estimate mode">
+              <button class="mode-button" id="instant-submit-button" type="submit" data-research-mode="INSTANT" aria-describedby="instant-mode-help">
+                <span>Instant</span>
+                <small id="instant-mode-help">Official roads</small>
+              </button>
+              <button class="mode-button" id="submit-button" type="submit" data-research-mode="RESEARCH" aria-describedby="research-mode-help">
+                <span>Research</span>
+                <small id="research-mode-help">More API context</small>
+              </button>
+            </div>
+            <p class="field-help">Research can add road and parking-tag context, but it is not a guarantee of higher accuracy.</p>
+          </fieldset>
+
+          <fieldset>
+            <legend>Preferences</legend>
+            <label class="range-heading" for="max-walk">
+              <span>Maximum walk</span>
+              <output id="max-walk-output" for="max-walk">8 min</output>
+            </label>
+            <input id="max-walk" name="max-walk" type="range" value="8" min="1" max="15" step="1" required>
+
+            <div class="compact-grid">
+              <label>
+                Stay
+                <span class="input-suffix">
+                  <input id="duration" name="duration" type="number" value="60" min="1" max="1440" step="1" required>
+                  <span>min</span>
+                </span>
+              </label>
+              <label class="toggle-row">
+                <span>
+                  <strong>Free only</strong>
+                  <small>Verified status</small>
+                </span>
+                <input id="free-only" name="free-only" type="checkbox" checked>
+              </label>
+            </div>
+
+            <label class="toggle-row">
+              <span>
+                <strong>Arrive now</strong>
+                <small>Use the destination's current local time</small>
+              </span>
+              <input id="arrival-now" name="arrival-now" type="checkbox" checked>
+            </label>
+            <label id="arrival-time-field" hidden>
+              Arrival time <span class="optional">in this device's timezone</span>
+              <input id="arrival-time" name="arrival-time" type="datetime-local">
+            </label>
+          </fieldset>
+
+          <details class="advanced-options">
+            <summary>Origin, vehicle, and limits</summary>
+            <div class="details-body">
               <div class="field-grid">
                 <label>
-                  Latitude
+                  Origin latitude
                   <input id="origin-lat" name="origin-lat" type="number" value="32.842" min="-90" max="90" step="any" required>
                 </label>
                 <label>
-                  Longitude
+                  Origin longitude
                   <input id="origin-lon" name="origin-lon" type="number" value="-96.784" min="-180" max="180" step="any" required>
                 </label>
               </div>
               <button class="text-button" id="locate-button" type="button" aria-describedby="location-help">Use my location</button>
               <p class="field-help" id="location-help" role="status" aria-live="polite" aria-atomic="true">Location stays in this browser and is sent only with this search.</p>
-            </fieldset>
-
-            <fieldset>
-              <legend>Destination and stay</legend>
               <label>
-                Destination
-                <input id="destination" name="destination" type="text" value="" placeholder="Enter any US destination" minlength="2" maxlength="255" autocomplete="off" aria-describedby="destination-help" required>
+                Vehicle type
+                <input id="vehicle-type" name="vehicle-type" type="text" value="passenger" maxlength="64" required>
               </label>
-              <p class="field-help" id="destination-help">
-                Search is explicit—there is no live autocomplete. Finding a place does not mean
-                its streets, parking rules, or availability are already known; selecting a match
-                enables the two estimate modes below. Destination text and coordinates are sent
-                to the configured geocoding and road-data providers; avoid sensitive addresses.
-              </p>
-              <div class="destination-actions">
-                <button class="secondary-button" id="destination-search-button" type="button">
-                  Find this US place
-                </button>
-              </div>
-              <div id="destination-discovery" class="destination-discovery">
-                <p id="destination-search-status" class="destination-search-status" role="status" aria-live="polite" aria-atomic="true">
-                  Search any US place, select the intended match, then choose an estimate mode.
-                </p>
-                <section id="destination-results" hidden aria-labelledby="destination-results-title">
-                  <h3 id="destination-results-title">Choose the intended place</h3>
-                  <ul id="destination-match-list" class="destination-match-list"></ul>
-                  <p id="destination-attribution" class="destination-attribution"></p>
-                </section>
-                <div id="selected-destination" class="selected-destination" hidden>
-                  <p><strong>Place selected</strong> · choose speed or richer API context</p>
-                  <p id="selected-destination-name"></p>
-                  <p id="selected-destination-coordinates"></p>
-                  <p class="coverage-note">Fast mode uses official road geometry. API research mode also tries live OpenStreetMap road and parking tags before falling back. Both use the same uncalibrated V0 estimate; legal and free status stay unknown until trustworthy rule evidence is available.</p>
-                </div>
-              </div>
-              <label class="check-row">
-                <input id="arrival-now" name="arrival-now" type="checkbox" checked>
-                <span>Arrive now</span>
+              <label>
+                Permit types <span class="optional">optional, comma-separated</span>
+                <input id="permits" name="permits" type="text" maxlength="8192" aria-describedby="permit-help" placeholder="SMU-A, visitor">
+                <span class="field-help" id="permit-help">Up to 32 permits; each name may contain up to 128 characters.</span>
               </label>
-              <label id="arrival-time-field" hidden>
-                Arrival time <span class="optional">in this device's timezone</span>
-                <input id="arrival-time" name="arrival-time" type="datetime-local">
+              <label>
+                Candidate limit
+                <input id="max-candidates" name="max-candidates" type="number" value="20" min="1" max="20" step="1" required>
               </label>
-              <div class="field-grid">
-                <label>
-                  Stay (minutes)
-                  <input id="duration" name="duration" type="number" value="60" min="1" max="1440" step="1" required>
-                </label>
-                <label>
-                  Max walk (minutes)
-                  <input id="max-walk" name="max-walk" type="number" value="8" min="0.1" max="15" step="0.1" required>
-                </label>
-              </div>
-            </fieldset>
-
-            <details>
-              <summary>Vehicle and search options</summary>
-              <div class="details-body">
-                <label>
-                  Vehicle type
-                  <input id="vehicle-type" name="vehicle-type" type="text" value="passenger" maxlength="64" required>
-                </label>
-                <label>
-                  Permit types <span class="optional">optional, comma-separated</span>
-                  <input id="permits" name="permits" type="text" maxlength="8192" aria-describedby="permit-help" placeholder="SMU-A, visitor">
-                  <span class="field-help" id="permit-help">Up to 32 permits; each name may contain up to 128 characters.</span>
-                </label>
-                <label>
-                  Candidate limit
-                  <input id="max-candidates" name="max-candidates" type="number" value="20" min="1" max="20" step="1" required>
-                </label>
-                <label class="check-row">
-                  <input id="free-only" name="free-only" type="checkbox" checked>
-                  <span>Require verified free status for final routes</span>
-                </label>
-              </div>
-            </details>
-
-            <div class="search-mode-actions" aria-label="Choose estimate mode">
-              <button class="secondary-button mode-button" id="instant-submit-button" type="submit" data-research-mode="INSTANT" aria-describedby="instant-mode-help">
-                <span>Estimate now</span>
-                <small id="instant-mode-help">Faster official road snapshot</small>
-              </button>
-              <button class="primary-button mode-button" id="submit-button" type="submit" data-research-mode="RESEARCH" aria-describedby="research-mode-help">
-                <span>Research APIs, then estimate</span>
-                <small id="research-mode-help">More road and parking-tag context; not a guarantee of higher accuracy</small>
-              </button>
             </div>
-          </form>
+          </details>
 
           <div id="request-status" class="request-status" role="status" aria-live="polite" aria-atomic="true"></div>
-        </aside>
+        </form>
 
-        <section class="results-panel" aria-labelledby="results-title">
-          <div class="results-header">
-            <div>
-              <p class="step-label">Search result</p>
-              <h2 id="results-title">Local curb overview</h2>
-            </div>
-            <span id="result-time" class="result-time">No plan yet</span>
+        <div class="safety-note">
+          <span aria-hidden="true">!</span>
+          <p><strong>Decision aid only.</strong> Verify curb signs, markings, payment requirements, and current conditions before parking.</p>
+        </div>
+      </aside>
+
+      <section class="results-panel" aria-labelledby="results-title">
+        <div class="results-header">
+          <div>
+            <p class="kicker">Recommended search</p>
+            <h2 id="results-title">Choose a destination</h2>
+            <p id="result-subtitle">Your live parking plan will appear here.</p>
           </div>
+          <div class="freshness">
+            <span id="result-mode">No estimate yet</span>
+            <small id="result-time">No plan yet</small>
+          </div>
+        </div>
 
-          <div id="coverage-status-banner" class="coverage-status-banner" role="status" hidden>
-            <strong>Provisional road leads — not a parking route.</strong>
+        <div id="coverage-status-banner" class="coverage-status-banner" role="status" hidden>
+          <span class="status-dot" aria-hidden="true"></span>
+          <div>
+            <strong>Provisional road leads, not a verified parking route.</strong>
             <span>Verified legal/free curbs: 0. Curb usability, legality, and price are unknown.</span>
           </div>
+        </div>
 
-          <section id="research-activity" class="research-activity" hidden aria-labelledby="research-activity-title">
-            <div class="section-heading inline">
-              <div>
-                <p class="step-label">Live source trace</p>
-                <h3 id="research-activity-title">Request-time API research</h3>
-              </div>
-              <span id="research-state" class="count-pill"></span>
-            </div>
-            <ul id="research-source-list" class="research-source-list"></ul>
-          </section>
+        <div id="summary-cards" class="summary-cards" hidden></div>
 
-          <div class="map-shell">
-            <svg id="parking-map" viewBox="0 0 900 580" role="group" aria-labelledby="map-title map-description">
-              <title id="map-title">Parking candidate map</title>
-              <desc id="map-description">Submit a search to show parking curb candidates and route order.</desc>
-              <defs>
-                <pattern id="map-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#d9ddd5" stroke-width="1" opacity="0.55"></path>
-                </pattern>
-              </defs>
-              <rect width="900" height="580" fill="url(#map-grid)"></rect>
-              <g id="map-content"></g>
-              <text id="map-empty" x="450" y="278" text-anchor="middle">Your candidate map will appear here</text>
-              <text id="map-empty-note" x="450" y="307" text-anchor="middle">No map tiles or live location service required</text>
-            </svg>
-            <div class="map-caption">
-              <span>Dashed route connectors are schematic · not turn-by-turn navigation</span>
-              <span id="map-source-caption">© OpenStreetMap contributors · ODbL fixture geometry</span>
-            </div>
-          </div>
-
+        <div class="map-toolbar">
           <ul id="evaluated-legend" class="legend" aria-label="Evaluated parking map legend">
             <li><span class="legend-line legal" aria-hidden="true"></span>Legal + free</li>
             <li><span class="legend-line paid" aria-hidden="true"></span>Legal + paid</li>
             <li><span class="legend-line illegal" aria-hidden="true"></span>Illegal</li>
             <li><span class="legend-line unknown" aria-hidden="true"></span>Unknown · verify signs</li>
-            <li><span class="legend-dot route" aria-hidden="true"></span>Route order</li>
+            <li><span class="legend-dot route" aria-hidden="true"></span>Search order</li>
           </ul>
           <ul id="provisional-legend" class="legend" aria-label="Provisional road lead legend" hidden>
-            <li><span class="legend-line unknown" aria-hidden="true"></span>Provisional road lead · verify curb, signs, and price</li>
+            <li><span class="legend-line unknown" aria-hidden="true"></span>Provisional road lead</li>
+            <li><span class="legend-dot route" aria-hidden="true"></span>Proximity order</li>
           </ul>
+          <span class="map-mode-note">Schematic map, not navigation</span>
+        </div>
 
-          <div id="summary-cards" class="summary-cards" hidden></div>
+        <div class="map-shell">
+          <svg id="parking-map" viewBox="0 0 900 580" role="group" aria-labelledby="map-title map-description">
+            <title id="map-title">Parking candidate map</title>
+            <desc id="map-description">Submit a search to show parking curb candidates and search order.</desc>
+            <defs>
+              <pattern id="map-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M40 0H0V40" fill="none" stroke="#d9e0db" stroke-width="1"></path>
+              </pattern>
+              <filter id="map-shadow" x="-50%" y="-50%" width="200%" height="200%">
+                <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#102b22" flood-opacity=".2"></feDropShadow>
+              </filter>
+            </defs>
+            <rect width="900" height="580" fill="#edf2ee"></rect>
+            <rect width="900" height="580" fill="url(#map-grid)"></rect>
+            <g id="map-content"></g>
+            <text id="map-empty" x="450" y="278" text-anchor="middle">Find and select a destination</text>
+            <text id="map-empty-note" x="450" y="307" text-anchor="middle">Then choose Instant or Research</text>
+          </svg>
+          <div class="map-caption">
+            <span>Numbered markers show the order to inspect candidates.</span>
+            <span id="map-source-caption">Destination not selected</span>
+          </div>
+        </div>
 
-          <section id="route-section" class="result-section" hidden aria-labelledby="route-title">
-            <div class="section-heading inline">
-              <div>
-                <p class="step-label">Contingent route</p>
-                <h3 id="route-title">Try in this order</h3>
-              </div>
-              <p id="route-model" class="model-note"></p>
+        <section id="route-section" class="result-section" hidden aria-labelledby="route-title">
+          <div class="section-heading inline">
+            <div>
+              <p class="kicker">Contingent route</p>
+              <h3 id="route-title">Try in this order</h3>
             </div>
-            <ol id="route-list" class="route-list"></ol>
-            <div id="fallback-card" class="fallback-card"></div>
-          </section>
-
-          <section id="candidate-section" class="result-section" hidden aria-labelledby="candidate-title">
-            <div class="section-heading inline">
-              <div>
-                <p class="step-label">Curb candidates and provisional leads</p>
-                <h3 id="candidate-title">Candidate details</h3>
-              </div>
-              <span id="candidate-count" class="count-pill"></span>
-            </div>
-            <div id="candidate-list" class="candidate-list"></div>
-          </section>
-
-          <section id="warning-section" class="result-section warnings" hidden aria-labelledby="warning-title">
-            <h3 id="warning-title">Important notes</h3>
-            <ul id="warning-list"></ul>
-          </section>
+            <p id="route-model" class="model-note"></p>
+          </div>
+          <ol id="route-list" class="route-list"></ol>
+          <div id="fallback-card" class="fallback-card"></div>
         </section>
-      </div>
+
+        <section id="candidate-section" class="result-section" hidden aria-labelledby="candidate-title">
+          <div class="section-heading inline">
+            <div>
+              <p class="kicker">Candidate sequence</p>
+              <h3 id="candidate-title">Inspect in this order</h3>
+            </div>
+            <span id="candidate-count" class="count-pill"></span>
+          </div>
+          <div id="candidate-list" class="candidate-list"></div>
+        </section>
+
+        <section id="research-activity" class="research-activity" hidden aria-labelledby="research-activity-title">
+          <div class="section-heading inline">
+            <div>
+              <p class="kicker">Live source trace</p>
+              <h3 id="research-activity-title">Request-time API research</h3>
+            </div>
+            <span id="research-state" class="count-pill"></span>
+          </div>
+          <ul id="research-source-list" class="research-source-list"></ul>
+        </section>
+
+        <section id="warning-section" class="result-section warnings" hidden aria-labelledby="warning-title">
+          <h3 id="warning-title">Important notes</h3>
+          <ul id="warning-list"></ul>
+        </section>
+      </section>
+
+      <aside id="candidate-detail" class="detail-panel" aria-labelledby="detail-title" aria-live="polite">
+        <div class="detail-header">
+          <p class="kicker">Candidate detail</p>
+          <h2 id="detail-title">No candidate selected</h2>
+          <p id="detail-side">Run a search to inspect curb evidence.</p>
+        </div>
+
+        <div class="probability-ring" aria-label="Availability not estimated">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="ring-track" cx="60" cy="60" r="50"></circle>
+            <circle id="ring-progress" class="ring-progress" cx="60" cy="60" r="50"></circle>
+          </svg>
+          <div>
+            <strong id="detail-probability">--</strong>
+            <span>conditional vacancy chance</span>
+          </div>
+        </div>
+
+        <dl class="detail-stats">
+          <div><dt>Order</dt><dd id="detail-order">--</dd></div>
+          <div><dt>Curb</dt><dd id="detail-length">--</dd></div>
+          <div><dt>Capacity</dt><dd id="detail-capacity">--</dd></div>
+        </dl>
+
+        <section class="evidence-section" aria-labelledby="evidence-title">
+          <div class="section-heading compact">
+            <h3 id="evidence-title">Decision evidence</h3>
+            <span id="detail-state" class="state-pill unknown">Not evaluated</span>
+          </div>
+          <ul id="detail-evidence" class="detail-evidence">
+            <li><strong>Waiting for a search</strong>Select a destination and estimate mode.</li>
+          </ul>
+        </section>
+
+        <section class="model-section" aria-labelledby="model-title">
+          <p class="kicker">Model trace</p>
+          <h3 id="model-title">Reproducible decision</h3>
+          <dl>
+            <div><dt>Rule engine</dt><dd id="detail-rule-model">Pending</dd></div>
+            <div><dt>Availability</dt><dd id="detail-availability-model">Pending</dd></div>
+            <div><dt>Optimizer</dt><dd id="detail-optimizer-model">Pending</dd></div>
+          </dl>
+        </section>
+      </aside>
     </main>
 
     <footer>
-      <p>Rules determine legality. Statistics estimates availability. You make the final curbside decision.</p>
+      <p>Rules determine legality. Statistics estimate availability. You make the final curbside decision.</p>
     </footer>
   </body>
 </html>

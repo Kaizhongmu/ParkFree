@@ -28,8 +28,8 @@ def test_home_serves_dependency_free_accessible_map_ui() -> None:
     assert 'id="runtime-notice" class="runtime-notice"' in response.text
     assert "do not open this HTML file directly" in response.text
     assert 'href="/">Reload the live ParkFree website.</a>' in response.text
-    assert 'href="/assets/app.css?v=20260929-1"' in response.text
-    assert 'src="/assets/app.js?v=20260929-1"' in response.text
+    assert 'href="/assets/app.css?v=20261001-2"' in response.text
+    assert 'src="/assets/app.js?v=20261001-2"' in response.text
     assert (
         'id="destination" name="destination" type="text" value="" '
         'placeholder="Enter any US destination"' in response.text
@@ -44,7 +44,7 @@ def test_home_serves_dependency_free_accessible_map_ui() -> None:
     assert 'id="instant-submit-button" type="submit" data-research-mode="INSTANT"' in response.text
     assert 'id="submit-button" type="submit" data-research-mode="RESEARCH"' in response.text
     assert "conditional vacancy chance" in response.text
-    assert "Provisional road leads — not a parking route." in response.text
+    assert "Provisional road leads, not a verified parking route." in response.text
     assert "Verified legal/free curbs: 0" in response.text
     assert 'id="provisional-legend"' in response.text
     assert 'id="research-activity"' in response.text
@@ -64,6 +64,10 @@ def test_home_serves_dependency_free_accessible_map_ui() -> None:
     )
     assert 'id="permits" name="permits" type="text" maxlength="8192"' in response.text
     assert "Unknown · verify signs" in response.text
+    assert 'id="candidate-detail" class="detail-panel"' in response.text
+    assert 'id="ring-progress" class="ring-progress"' in response.text
+    assert 'id="detail-evidence" class="detail-evidence"' in response.text
+    assert "Numbered markers show the order to inspect candidates." in response.text
     assert "Guaranteed fallback" not in response.text
     assert "https://" not in response.text
     assert "http://" not in response.text
@@ -93,9 +97,13 @@ def test_ui_assets_are_local_and_have_expected_types() -> None:
     assert ".route-marker, .route-number" in stylesheet.text
     assert "pointer-events: none" in stylesheet.text
     assert (
-        ".map-segment-group:focus-visible .map-segment-hit { stroke: var(--brand-dark); }"
+        ".map-segment-group:focus-visible .map-segment-hit { stroke: var(--green-dark); }"
         in stylesheet.text
     )
+    assert "grid-template-columns: minmax(275px, 320px)" in stylesheet.text
+    assert ".probability-ring" in stylesheet.text
+    assert "radial-gradient" not in stylesheet.text
+    assert "linear-gradient" not in stylesheet.text
     assert script.status_code == 200
     assert script.headers["cache-control"] == "no-store"
     assert "javascript" in script.headers["content-type"]
@@ -121,6 +129,10 @@ def test_ui_assets_are_local_and_have_expected_types() -> None:
     assert "calibration_status" in script.text
     assert "Uncalibrated heuristic prior" in script.text
     assert "proximity order" in script.text
+    assert "candidateOrderMap" in script.text
+    assert "renderCandidateDetail" in script.text
+    assert "syncCandidateSelection" in script.text
+    assert "RING_CIRCUMFERENCE" in script.text
     assert "ranked them by conditional availability" not in script.text
     assert "setProvisionalPresentation" in script.text
     assert "renderResearchActivity" in script.text

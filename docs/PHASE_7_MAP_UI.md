@@ -1,10 +1,10 @@
-# Phase 7 — Minimal map UI
+# Phase 7 Map Workspace
 
 Phase 7 began as a same-origin, dependency-free interface for the Phase 6 search API. The current
-public demo uses that interface for the separate post-Phase-8 on-demand endpoint. It shows a
-selected destination, provisional curb geometry, conditional availability estimates, provider
-attempts, warnings, and model/provider versions. It does not make legal decisions, claim that a
-curb is free, or create a verified parking route.
+three-panel workspace uses that interface for the separate post-Phase-8 on-demand endpoint. It
+shows search settings on the left, a numbered map and candidate sequence in the center, and the
+selected curb's evidence and model trace on the right. It does not make legal decisions, claim
+that a curb is free, or create a verified parking route from provisional coverage.
 
 The strict replayable `POST /v1/parking/search` API still exists, but the current browser form does
 not submit it or expose the former SMU demo action.
@@ -41,9 +41,9 @@ Destination discovery is an explicit `POST /v1/destinations/search` action; the 
 type-ahead requests or silently chooses a match. Selecting a result draws that destination and
 enables two submit buttons. Selection alone does not start road acquisition.
 
-- “Estimate now” sends `research_mode=INSTANT`. The backend revalidates the destination through
+- **Instant** sends `research_mode=INSTANT`. The backend revalidates the destination through
   Nominatim, then calls official Census TIGERweb directly for road geometry.
-- “Research APIs, then estimate” sends `research_mode=RESEARCH`. The backend revalidates through
+- **Research** sends `research_mode=RESEARCH`. The backend revalidates through
   Nominatim, tries Overpass/OpenStreetMap road and parking-tag context when configured, and falls
   back to TIGERweb after an empty or failed Overpass result.
 
@@ -54,8 +54,8 @@ richer road snapshot but does not select a different model or guarantee a more a
 
 All provisional candidates remain `legal_state=UNKNOWN`, `free_state=UNKNOWN`, and
 `legal_confidence=0`. OSM parking tags and TIGER road centerlines do not establish legal or free
-parking. The UI preserves proximity order and labels the map “Provisional road leads — not a
-parking route.”
+parking. The UI preserves and numbers proximity order while labeling it as provisional rather
+than presenting it as a verified parking route.
 
 The scheduled-arrival field interprets `datetime-local` in the user's device timezone and labels
 that behavior. Destination-local wall-time input and explicit DST gap/fold handling remain outside
@@ -93,6 +93,12 @@ displays:
 - the conditional V0 probability and heuristic interval where the backend produced one;
 - the selected destination; and
 - provider/contributor attribution supplied by the response.
+
+Every candidate receives a visible order marker. Evaluated plans use optimizer route order;
+provisional results use the backend's deterministic proximity order. Selecting either a map curb
+or list row updates both selection states and the right-side detail panel. The detail panel shows
+the conditional probability, curb length/capacity, legal/free state, reason codes, evidence
+references, prediction basis, and available model versions.
 
 The map is not a road basemap, turn-by-turn route, legal guarantee, or verified ranking. A complete
 keyboard-operable candidate list exposes the same information without relying on color or pointer
