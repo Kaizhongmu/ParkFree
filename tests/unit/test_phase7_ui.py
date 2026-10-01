@@ -28,8 +28,8 @@ def test_home_serves_dependency_free_accessible_map_ui() -> None:
     assert 'id="runtime-notice" class="runtime-notice"' in response.text
     assert "do not open this HTML file directly" in response.text
     assert 'href="/">Reload the live ParkFree website.</a>' in response.text
-    assert 'href="/assets/app.css?v=20261001-2"' in response.text
-    assert 'src="/assets/app.js?v=20261001-2"' in response.text
+    assert 'href="/assets/app.css?v=20261001-3"' in response.text
+    assert 'src="/assets/app.js?v=20261001-3"' in response.text
     assert (
         'id="destination" name="destination" type="text" value="" '
         'placeholder="Enter any US destination"' in response.text
@@ -68,6 +68,14 @@ def test_home_serves_dependency_free_accessible_map_ui() -> None:
     assert 'id="ring-progress" class="ring-progress"' in response.text
     assert 'id="detail-evidence" class="detail-evidence"' in response.text
     assert "Numbered markers show the order to inspect candidates." in response.text
+    assert 'id="satellite-map-button" type="button" aria-pressed="true"' in response.text
+    assert 'id="map-tile-layer" aria-hidden="true"' in response.text
+    assert "Imagery: USDA / USGS The National Map" in response.text
+    assert 'id="navigate-link" class="candidate-map-link primary"' in response.text
+    assert (
+        "img-src 'self' data: https://basemap.nationalmap.gov"
+        in response.headers["content-security-policy"]
+    )
     assert "Guaranteed fallback" not in response.text
     assert "https://" not in response.text
     assert "http://" not in response.text
@@ -181,12 +189,21 @@ def test_ui_assets_are_local_and_have_expected_types() -> None:
     assert 'setAttribute("aria-atomic", "true")' in script.text
     assert "route-guide" in script.text
     assert "validCoordinate" in script.text
+    assert "makeSatelliteFrame" in script.text
+    assert "webMercatorPixel" in script.text
+    assert "USGSImageryOnly/MapServer/tile/" in script.text
+    assert "candidateNavigationCoordinate" in script.text
+    assert 'new URL("https://www.google.com/maps/dir/")' in script.text
+    assert 'navigationUrl.searchParams.set("dir_action", "navigate")' in script.text
+    assert 'navigationUrl.searchParams.set("destination", destination)' in script.text
     assert "setMapEmptyVisibility(false)" in script.text
     assert 'setAttribute("aria-pressed"' in script.text
     assert "decision.exclusion_reason" in script.text
     assert "decision.legality.confidence" in script.text
     assert "decision.legality.evaluated_at" in script.text
-    assert "https://" not in script.text
+    assert script.text.count("https://") == 3
+    assert "https://basemap.nationalmap.gov" in script.text
+    assert script.text.count("https://www.google.com/maps/") == 2
     assert 'fetch("http' not in script.text
     assert "import(" not in script.text
     assert "innerHTML" not in script.text

@@ -7,6 +7,10 @@ ParkFree has two ways to explore the project:
 - The local application uses the real FastAPI service, destination search, road providers,
   availability model, evidence states, and PostGIS database.
 
+For a real application that anyone can open without installing anything, follow the
+[public deployment guide](PUBLIC_DEPLOYMENT.md). A `localhost` address is available only on the
+computer that started it.
+
 ## Requirements
 
 Install Git and Docker Desktop, or another Docker Engine with Docker Compose v2. No separate
@@ -64,6 +68,10 @@ The expected response is:
    context before its official-road fallback.
 8. Read numbered candidates in order. Selecting a number on the map or in the list opens the same
    candidate in the detail panel.
+9. Switch between **Plan** and **Satellite** above the map. The satellite layer uses USGS aerial
+   imagery and keeps the numbered curb candidates overlaid in place.
+10. Use **Satellite view** for a close Google Maps view, or **Navigate with Google Maps** to open
+    driving directions from the user's current location to the selected candidate coordinates.
 
 The interface intentionally keeps these facts separate:
 

@@ -7,8 +7,8 @@
     <meta name="description" content="ParkFree parking intelligence workspace.">
     <title>ParkFree | Parking intelligence workspace</title>
     <link rel="icon" href="/assets/favicon.svg?v=20261001-2" type="image/svg+xml">
-    <link rel="stylesheet" href="/assets/app.css?v=20261001-2">
-    <script src="/assets/app.js?v=20261001-2" defer></script>
+    <link rel="stylesheet" href="/assets/app.css?v=20261001-3">
+    <script src="/assets/app.js?v=20261001-3" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#search-form">Skip to parking search</a>
@@ -203,7 +203,13 @@
             <li><span class="legend-line unknown" aria-hidden="true"></span>Provisional road lead</li>
             <li><span class="legend-dot route" aria-hidden="true"></span>Proximity order</li>
           </ul>
-          <span class="map-mode-note">Schematic map, not navigation</span>
+          <div class="map-view-actions">
+            <div class="map-style-control" role="group" aria-label="Map style">
+              <button id="plan-map-button" type="button" aria-pressed="false">Plan</button>
+              <button id="satellite-map-button" type="button" aria-pressed="true">Satellite</button>
+            </div>
+            <span id="map-mode-note" class="map-mode-note">USGS aerial imagery</span>
+          </div>
         </div>
 
         <div class="map-shell">
@@ -218,8 +224,11 @@
                 <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#102b22" flood-opacity=".2"></feDropShadow>
               </filter>
             </defs>
-            <rect width="900" height="580" fill="#edf2ee"></rect>
-            <rect width="900" height="580" fill="url(#map-grid)"></rect>
+            <g id="map-schematic-background">
+              <rect width="900" height="580" fill="#edf2ee"></rect>
+              <rect width="900" height="580" fill="url(#map-grid)"></rect>
+            </g>
+            <g id="map-tile-layer" aria-hidden="true"></g>
             <g id="map-content"></g>
             <text id="map-empty" x="450" y="278" text-anchor="middle">Find and select a destination</text>
             <text id="map-empty-note" x="450" y="307" text-anchor="middle">Then choose Instant or Research</text>
@@ -227,6 +236,7 @@
           <div class="map-caption">
             <span>Numbered markers show the order to inspect candidates.</span>
             <span id="map-source-caption">Destination not selected</span>
+            <span id="map-imagery-attribution" hidden>Imagery: USDA / USGS The National Map</span>
           </div>
         </div>
 
@@ -293,6 +303,11 @@
           <div><dt>Curb</dt><dd id="detail-length">--</dd></div>
           <div><dt>Capacity</dt><dd id="detail-capacity">--</dd></div>
         </dl>
+
+        <nav id="candidate-map-actions" class="candidate-map-actions" aria-label="Selected candidate map actions" hidden>
+          <a id="satellite-link" class="candidate-map-link secondary" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Satellite view</a>
+          <a id="navigate-link" class="candidate-map-link primary" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Navigate with Google Maps</a>
+        </nav>
 
         <section class="evidence-section" aria-labelledby="evidence-title">
           <div class="section-heading compact">

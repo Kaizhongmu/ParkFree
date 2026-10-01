@@ -174,7 +174,8 @@ def create_app(
                 "Content-Security-Policy": (
                     "default-src 'none'; base-uri 'none'; connect-src 'self'; "
                     "font-src 'self'; form-action 'self'; frame-ancestors 'none'; "
-                    "img-src 'self' data:; object-src 'none'; script-src 'self'; "
+                    "img-src 'self' data: https://basemap.nationalmap.gov; "
+                    "object-src 'none'; script-src 'self'; "
                     "style-src 'self'"
                 ),
                 "Permissions-Policy": "camera=(), geolocation=(self), microphone=()",

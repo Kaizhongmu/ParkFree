@@ -10,6 +10,7 @@ traceable parking approach instead of pretending that a single score is ground t
 
 **[Open the interactive sample demo](https://kaizhongmu.github.io/ParkFree/)** ·
 **[Run the real application locally](#quick-start-with-docker)** ·
+**[Publish the real application](docs/PUBLIC_DEPLOYMENT.md)** ·
 **[Read the beginner guide](docs/GETTING_STARTED.md)**
 
 The hosted demo uses clearly labeled fixtures so anyone can explore the complete interface without
@@ -24,7 +25,7 @@ FastAPI/PostGIS pipeline and optional zero-key US destination and road discovery
 - expected-time contingent route optimization;
 - destination search and on-demand US road coverage through bounded provider adapters;
 - evidence provenance, human review workflow, immutable audit records, and integrity constraints;
-- responsive, accessible map UI with explicit uncertainty and safety messaging;
+- responsive, accessible satellite/plan map UI, numbered curbs, and Google Maps handoff;
 - Docker Compose, Alembic migrations, 400+ unit tests, PostGIS integration tests, and CI.
 
 ## Start using ParkFree
@@ -45,6 +46,18 @@ Once the application is open:
 
 See the [beginner getting-started guide](docs/GETTING_STARTED.md) for prerequisites,
 troubleshooting, and the difference between provisional road leads and evaluated parking routes.
+
+## Publish for other users
+
+`localhost` is private to the computer running ParkFree. To give everyone a normal HTTPS address,
+deploy the real application and its PostGIS database to Render:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Kaizhongmu/ParkFree)
+
+After deployment, share the `https://parkfree-....onrender.com` URL shown by Render. Other users
+only need a browser; they do not need Git, Docker, or access to the owner's computer. Read the
+[public deployment guide](docs/PUBLIC_DEPLOYMENT.md) for the exact steps, current free-tier caveat,
+custom domains, provider limits, and privacy considerations.
 
 ## Quick start with Docker
 

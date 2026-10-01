@@ -68,6 +68,8 @@ def test_github_publication_workflows_exist() -> None:
 def test_public_readme_links_beginner_getting_started_guide() -> None:
     readme = (PROJECT_ROOT / "README.md").read_text()
     guide = (PROJECT_ROOT / "docs/GETTING_STARTED.md").read_text()
+    deployment_guide = (PROJECT_ROOT / "docs/PUBLIC_DEPLOYMENT.md").read_text()
+    render_blueprint = (PROJECT_ROOT / "render.yaml").read_text()
 
     assert "docs/GETTING_STARTED.md" in readme
     assert "## Start using ParkFree" in readme
@@ -75,3 +77,9 @@ def test_public_readme_links_beginner_getting_started_guide() -> None:
     assert "Build your first parking approach" in guide
     assert "numbered candidates" in guide
     assert "Never treat a provisional road lead as permission" in guide
+    assert "docs/PUBLIC_DEPLOYMENT.md" in readme
+    assert "https://render.com/deploy?repo=https://github.com/Kaizhongmu/ParkFree" in readme
+    assert "Users only need a\nbrowser" in deployment_guide
+    assert "healthCheckPath: /health" in render_blueprint
+    assert "python -m alembic upgrade head" in render_blueprint
+    assert "fromDatabase:" in render_blueprint

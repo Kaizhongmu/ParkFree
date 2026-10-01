@@ -21,9 +21,10 @@ set +a
 .venv/bin/python -m uvicorn parking_ai.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Open `http://127.0.0.1:8000/`. No PostGIS seed, `npm install`, frontend build, remote tile, CDN, API
-key, or paid service is required for the two-mode on-demand demo. `OVERPASS_USER_AGENT` is optional;
-without it, enhanced research is reported as not configured and uses TIGERweb directly.
+Open `http://127.0.0.1:8000/`. No PostGIS seed, `npm install`, frontend build, CDN, API key, or paid
+service is required for the two-mode on-demand demo. Satellite mode loads public USGS tiles; Plan
+mode remains available without that basemap. `OVERPASS_USER_AGENT` is optional; without it,
+enhanced research is reported as not configured and uses TIGERweb directly.
 
 Do not open `src/parking_ai/web/index.html` with a `file://` URL. Assets and API requests are
 same-origin by design. If JavaScript does not initialize, a default-visible diagnostic links back
@@ -85,8 +86,9 @@ legality, payment, or availability.
 
 ## Map and semantics
 
-The SVG projects validated WGS84 LineStrings into a local viewport. For on-demand results it
-displays:
+The SVG projects validated WGS84 LineStrings into a local viewport. Its default satellite mode
+uses public USGS National Map imagery tiles and a matching Web Mercator projection; the plan mode
+keeps the local diagram available without a remote basemap. For on-demand results it displays:
 
 - unknown provisional curb leads with a text label and distinct line style;
 - left/right records offset from their shared centerline so both remain selectable;
@@ -100,9 +102,14 @@ or list row updates both selection states and the right-side detail panel. The d
 the conditional probability, curb length/capacity, legal/free state, reason codes, evidence
 references, prediction basis, and available model versions.
 
-The map is not a road basemap, turn-by-turn route, legal guarantee, or verified ranking. A complete
-keyboard-operable candidate list exposes the same information without relying on color or pointer
-interaction. `UNKNOWN` remains visible with a signage-verification warning.
+The selected candidate exposes a Google Maps satellite link and a driving-navigation link. Both
+use the midpoint of the selected candidate geometry as the destination. Google Maps uses the
+device's current location when available and performs the actual road routing; the displayed
+ParkFree sequence is not turn-by-turn navigation.
+
+The map is not a legal guarantee or verified ranking. A complete keyboard-operable candidate list
+exposes the same information without relying on color or pointer interaction. `UNKNOWN` remains
+visible with a signage-verification warning.
 
 ## Provenance boundary
 
@@ -119,6 +126,9 @@ and it does not invent regulation evidence, publisher names, or source links.
 - TIGERweb receives the selected destination area in `INSTANT` mode. In `RESEARCH` mode, Overpass
   receives that area first and TIGERweb may receive it as fallback. Current road-provider calls do
   not receive the user's origin coordinate.
+- Satellite mode requests public USGS tiles for the displayed destination area. Opening a Google
+  Maps action sends the selected candidate coordinates to Google; navigation may also use the
+  user's device location under Google's settings and permissions.
 - Offline timezone resolution makes no external call. Raw provider responses are ephemeral and
   normalized caches are bounded in memory, but live third-party calls are not private; avoid
   sensitive locations.
@@ -183,7 +193,8 @@ or TIGERweb.
 ## Scope boundary
 
 This document describes the Phase 7 UI plus its post-Phase-8 two-mode on-demand extension. Phase
-8/V1A evidence review does not run automatically in the request path. Live turn-by-turn routing,
-general web search, automatic AI evidence approval, verified legal/free parking, outcome
+8/V1A evidence review does not run automatically in the request path. ParkFree does not calculate
+turn-by-turn routes; it hands the selected destination to Google Maps. General web search,
+automatic AI evidence approval, verified legal/free parking, outcome
 collection, accounts, analytics, and learned/calibrated availability models remain outside this
 demo.

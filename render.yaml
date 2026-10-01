@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: parkfree
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+    dockerCommand: >-
+      sh -c 'python -m alembic upgrade head && exec uvicorn parking_ai.main:app
+      --host 0.0.0.0 --port "${PORT:-10000}"'
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: parkfree-db
+          property: connectionString
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: NOMINATIM_USER_AGENT
+        value: ParkFree/0.1 (+https://github.com/Kaizhongmu/ParkFree)
+      - key: OVERPASS_USER_AGENT
+        value: ParkFree/0.1 (+https://github.com/Kaizhongmu/ParkFree)
+
+databases:
+  - name: parkfree-db
+    plan: free
+    databaseName: parkfree
+    user: parkfree
+    postgresMajorVersion: "16"
+

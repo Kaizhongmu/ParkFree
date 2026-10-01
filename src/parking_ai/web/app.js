@@ -14,6 +14,12 @@ const mapShell = document.querySelector(".map-shell");
 const mapEmpty = document.querySelector("#map-empty");
 const mapEmptyNote = document.querySelector("#map-empty-note");
 const mapDescription = document.querySelector("#map-description");
+const mapTileLayer = document.querySelector("#map-tile-layer");
+const mapSchematicBackground = document.querySelector("#map-schematic-background");
+const mapImageryAttribution = document.querySelector("#map-imagery-attribution");
+const mapModeNote = document.querySelector("#map-mode-note");
+const planMapButton = document.querySelector("#plan-map-button");
+const satelliteMapButton = document.querySelector("#satellite-map-button");
 const candidateList = document.querySelector("#candidate-list");
 const resultsPanel = document.querySelector(".results-panel");
 const runtimeNotice = document.querySelector("#runtime-notice");
@@ -39,6 +45,10 @@ let activeDestinationSearch = null;
 let selectedDestination = null;
 let hasCurrentPlan = false;
 let currentView = null;
+let mapStyle = "satellite";
+
+planMapButton.addEventListener("click", () => setMapStyle("plan"));
+satelliteMapButton.addEventListener("click", () => setMapStyle("satellite"));
 
 form.addEventListener("input", () => {
   invalidatePendingSearch("Search settings changed. Submit again to build a current plan.");
@@ -159,6 +169,7 @@ function showDestinationCoverageGate() {
   activeSegmentId = null;
   currentView = null;
   mapContent.replaceChildren();
+  clearMapTiles();
   setMapEmptyVisibility(true);
   document.querySelector("#result-time").textContent = "No current plan";
   document.querySelector("#result-mode").textContent = "No estimate yet";
@@ -483,9 +494,10 @@ function renderDiscoveredDestination(match) {
   activeSegmentId = null;
   currentView = null;
   mapContent.replaceChildren();
+  clearMapTiles();
   setMapEmptyVisibility(false);
   const coordinate = [match.longitude, match.latitude];
-  const [x, y] = makeProjection([coordinate])(coordinate);
+  const [x, y] = mapProjection([coordinate])(coordinate);
   mapContent.append(
     svgElement("circle", {
       cx: x, cy: y, r: "12", class: "map-discovered-destination",
@@ -575,6 +587,7 @@ function clearResults() {
   activeSegmentId = null;
   currentView = null;
   mapContent.replaceChildren();
+  clearMapTiles();
   setMapEmptyVisibility(true);
   mapEmpty.textContent = "Building a fresh candidate map…";
   mapEmptyNote.textContent = "Previous results have been cleared";
@@ -592,6 +605,7 @@ function markSearchFailed() {
   hasCurrentPlan = false;
   currentView = null;
   mapContent.replaceChildren();
+  clearMapTiles();
   ["#summary-cards", "#route-section", "#candidate-section", "#warning-section"]
     .forEach((selector) => {
       document.querySelector(selector).hidden = true;
@@ -610,6 +624,7 @@ function markNoCandidates() {
   activeSegmentId = null;
   currentView = null;
   mapContent.replaceChildren();
+  clearMapTiles();
   ["#summary-cards", "#route-section", "#candidate-section", "#warning-section"]
     .forEach((selector) => {
       document.querySelector(selector).hidden = true;
@@ -628,6 +643,7 @@ function markSearchChanged() {
   activeSegmentId = null;
   currentView = null;
   mapContent.replaceChildren();
+  clearMapTiles();
   ["#summary-cards", "#route-section", "#candidate-section", "#warning-section"]
     .forEach((selector) => {
       document.querySelector(selector).hidden = true;
@@ -689,7 +705,7 @@ function renderMap(result) {
     result.destination.location.latitude,
   ];
   if (validCoordinate(destinationCoordinate)) coordinates.push(destinationCoordinate);
-  const project = makeProjection(coordinates);
+  const project = mapProjection(coordinates);
 
   const routeCenters = new Map(
     decisions.map((decision) => {
@@ -704,7 +720,7 @@ function renderMap(result) {
     mapContent.append(svgElement("polyline", {
       points: routeGuidePoints.map(([x, y]) => `${x},${y}`).join(" "),
       class: "route-guide",
-      "aria-label": "Schematic connection between recommended route stops",
+      "aria-label": "Connection between recommended route stops",
     }));
   }
 
@@ -834,6 +850,109 @@ function makeProjection(coordinates) {
     offsetX + (longitude - projectionMinX) * scale,
     offsetY + (projectionMinY + height - latitude) * scale,
   ];
+}
+
+function setMapStyle(style) {
+  if (style !== "plan" && style !== "satellite") return;
+  mapStyle = style;
+  planMapButton.setAttribute("aria-pressed", String(style === "plan"));
+  satelliteMapButton.setAttribute("aria-pressed", String(style === "satellite"));
+  if (currentView) {
+    renderMap(currentView);
+    syncCandidateSelection();
+  } else if (selectedDestination) {
+    renderDiscoveredDestination(selectedDestination);
+  } else {
+    clearMapTiles();
+  }
+}
+
+function mapProjection(coordinates) {
+  if (mapStyle !== "satellite") {
+    clearMapTiles();
+    return makeProjection(coordinates);
+  }
+  const frame = makeSatelliteFrame(coordinates);
+  renderSatelliteTiles(frame);
+  return frame.project;
+}
+
+function makeSatelliteFrame(coordinates) {
+  const safeCoordinates = coordinates.filter(validCoordinate);
+  if (safeCoordinates.length === 0) safeCoordinates.push([0, 0]);
+  let zoom = 16;
+  let pixels = safeCoordinates.map((coordinate) => webMercatorPixel(coordinate, zoom));
+  while (zoom > 3 && !pixelsFitMap(pixels)) {
+    zoom -= 1;
+    pixels = safeCoordinates.map((coordinate) => webMercatorPixel(coordinate, zoom));
+  }
+  const xs = pixels.map(([x]) => x);
+  const ys = pixels.map(([, y]) => y);
+  const centerX = (Math.min(...xs) + Math.max(...xs)) / 2;
+  const centerY = (Math.min(...ys) + Math.max(...ys)) / 2;
+  const originX = centerX - 450;
+  const originY = centerY - 290;
+  return {
+    zoom,
+    originX,
+    originY,
+    project: (coordinate) => {
+      const [x, y] = webMercatorPixel(coordinate, zoom);
+      return [x - originX, y - originY];
+    },
+  };
+}
+
+function pixelsFitMap(pixels) {
+  const xs = pixels.map(([x]) => x);
+  const ys = pixels.map(([, y]) => y);
+  return Math.max(...xs) - Math.min(...xs) <= 760
+    && Math.max(...ys) - Math.min(...ys) <= 440;
+}
+
+function webMercatorPixel([longitude, latitude], zoom) {
+  const worldSize = 256 * 2 ** zoom;
+  const clampedLatitude = Math.max(-85.05112878, Math.min(85.05112878, latitude));
+  const sinLatitude = Math.sin(clampedLatitude * Math.PI / 180);
+  return [
+    (longitude + 180) / 360 * worldSize,
+    (0.5 - Math.log((1 + sinLatitude) / (1 - sinLatitude)) / (4 * Math.PI)) * worldSize,
+  ];
+}
+
+function renderSatelliteTiles(frame) {
+  const tileSize = 256;
+  const worldTileCount = 2 ** frame.zoom;
+  const firstX = Math.floor(frame.originX / tileSize);
+  const lastX = Math.floor((frame.originX + 900) / tileSize);
+  const firstY = Math.floor(frame.originY / tileSize);
+  const lastY = Math.floor((frame.originY + 580) / tileSize);
+  const tiles = [];
+  for (let tileY = firstY; tileY <= lastY; tileY += 1) {
+    if (tileY < 0 || tileY >= worldTileCount) continue;
+    for (let tileX = firstX; tileX <= lastX; tileX += 1) {
+      const wrappedX = ((tileX % worldTileCount) + worldTileCount) % worldTileCount;
+      tiles.push(svgElement("image", {
+        x: tileX * tileSize - frame.originX,
+        y: tileY * tileSize - frame.originY,
+        width: tileSize,
+        height: tileSize,
+        href: `https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/${frame.zoom}/${tileY}/${wrappedX}`,
+        preserveAspectRatio: "none",
+      }));
+    }
+  }
+  mapTileLayer.replaceChildren(...tiles);
+  mapSchematicBackground.hidden = true;
+  mapImageryAttribution.hidden = false;
+  mapModeNote.textContent = "USGS aerial imagery";
+}
+
+function clearMapTiles() {
+  mapTileLayer.replaceChildren();
+  mapSchematicBackground.hidden = false;
+  mapImageryAttribution.hidden = true;
+  mapModeNote.textContent = mapStyle === "satellite" ? "Satellite imagery pending" : "Plan map";
 }
 
 function coordinatesForDecision(decision) {
@@ -1174,6 +1293,7 @@ function renderCandidateDetail(decision, order) {
     || segment.estimated_capacity === undefined
     ? "Unknown"
     : `${formatNumber(segment.estimated_capacity, 0)} spaces`;
+  updateCandidateMapActions(decision);
 
   const statePill = document.querySelector("#detail-state");
   statePill.className = `state-pill ${stateClass}`;
@@ -1256,7 +1376,67 @@ function resetCandidateDetail(message) {
   document.querySelector("#detail-rule-model").textContent = "Pending";
   document.querySelector("#detail-availability-model").textContent = "Pending";
   document.querySelector("#detail-optimizer-model").textContent = "Pending";
+  const mapActions = document.querySelector("#candidate-map-actions");
+  mapActions.hidden = true;
+  mapActions.querySelectorAll("a").forEach((link) => link.removeAttribute("href"));
   updateDetailRing(null);
+}
+
+function updateCandidateMapActions(decision) {
+  const coordinate = candidateNavigationCoordinate(decision);
+  const mapActions = document.querySelector("#candidate-map-actions");
+  if (!coordinate) {
+    mapActions.hidden = true;
+    mapActions.querySelectorAll("a").forEach((link) => link.removeAttribute("href"));
+    return;
+  }
+  const [longitude, latitude] = coordinate;
+  const destination = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+  const satelliteUrl = new URL("https://www.google.com/maps/@");
+  satelliteUrl.searchParams.set("api", "1");
+  satelliteUrl.searchParams.set("map_action", "map");
+  satelliteUrl.searchParams.set("center", destination);
+  satelliteUrl.searchParams.set("zoom", "19");
+  satelliteUrl.searchParams.set("basemap", "satellite");
+  const navigationUrl = new URL("https://www.google.com/maps/dir/");
+  navigationUrl.searchParams.set("api", "1");
+  navigationUrl.searchParams.set("destination", destination);
+  navigationUrl.searchParams.set("travelmode", "driving");
+  navigationUrl.searchParams.set("dir_action", "navigate");
+  const satelliteLink = document.querySelector("#satellite-link");
+  const navigateLink = document.querySelector("#navigate-link");
+  const candidateName = segmentName(decision.segment, decision.segment.segment_id);
+  satelliteLink.href = satelliteUrl.toString();
+  navigateLink.href = navigationUrl.toString();
+  satelliteLink.setAttribute("aria-label", `Open satellite view for ${candidateName}`);
+  navigateLink.setAttribute("aria-label", `Navigate to ${candidateName} with Google Maps`);
+  mapActions.hidden = false;
+}
+
+function candidateNavigationCoordinate(decision) {
+  const coordinates = coordinatesForDecision(decision);
+  if (coordinates.length === 0) return null;
+  if (coordinates.length === 1) return coordinates[0];
+  const lengths = coordinates.slice(1).map((point, index) => Math.hypot(
+    point[0] - coordinates[index][0],
+    point[1] - coordinates[index][1],
+  ));
+  const halfway = lengths.reduce((total, length) => total + length, 0) / 2;
+  let traversed = 0;
+  for (let index = 0; index < lengths.length; index += 1) {
+    const length = lengths[index];
+    if (traversed + length >= halfway && length > 0) {
+      const ratio = (halfway - traversed) / length;
+      return [
+        coordinates[index][0]
+          + (coordinates[index + 1][0] - coordinates[index][0]) * ratio,
+        coordinates[index][1]
+          + (coordinates[index + 1][1] - coordinates[index][1]) * ratio,
+      ];
+    }
+    traversed += length;
+  }
+  return coordinates[coordinates.length - 1];
 }
 
 function decisionClass(decision) {

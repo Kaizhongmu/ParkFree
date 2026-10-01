@@ -432,6 +432,10 @@ input[type="range"] { width: 100%; height: 5px; margin: 0; accent-color: var(--g
 .legend-line.unknown { border-color: var(--amber); border-top-style: dashed; }
 .legend-dot { width: 11px; height: 11px; background: #fff; border: 2px solid var(--ink); border-radius: 50%; }
 .map-mode-note { flex: 0 0 auto; color: var(--muted); font-size: 0.57rem; }
+.map-view-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 0.55rem; }
+.map-style-control { display: grid; grid-template-columns: 1fr 1fr; padding: 2px; background: #e4eae6; border-radius: 6px; }
+.map-style-control button { min-width: 64px; min-height: 30px; padding: 0.25rem 0.5rem; color: var(--muted); background: transparent; border: 0; border-radius: 4px; font-size: 0.6rem; font-weight: 800; }
+.map-style-control button[aria-pressed="true"] { color: var(--green-dark); background: var(--surface); box-shadow: 0 1px 4px rgb(23 48 40 / 14%); }
 
 .map-shell { position: relative; overflow: hidden; background: #edf2ee; border: 1px solid #ccd8d1; border-radius: 8px; }
 #parking-map { display: block; width: 100%; min-width: 0; height: auto; aspect-ratio: 900 / 580; }
@@ -455,6 +459,7 @@ input[type="range"] { width: 100%; height: 5px; margin: 0; accent-color: var(--g
 .map-destination, .map-discovered-destination { fill: var(--red); stroke: #fff; stroke-width: 5; filter: url(#map-shadow); }
 .map-fallback { fill: var(--blue); stroke: #fff; stroke-width: 3; }
 .map-label { fill: var(--ink); paint-order: stroke; stroke: #fff; stroke-width: 5; font-size: 13px; font-weight: 850; }
+#map-tile-layer image { opacity: 0.94; }
 
 .result-section, .research-activity { margin-top: 1.2rem; }
 .section-heading.inline { display: flex; align-items: end; justify-content: space-between; gap: 1rem; }
@@ -539,6 +544,13 @@ input[type="range"] { width: 100%; height: 5px; margin: 0; accent-color: var(--g
 .detail-stats dt { color: var(--muted); font-size: 0.52rem; text-transform: uppercase; }
 .detail-stats dd { margin: 0.1rem 0 0; overflow: hidden; font-size: 0.65rem; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
 
+.candidate-map-actions { display: grid; grid-template-columns: 1fr; gap: 0.45rem; margin-top: 0.85rem; }
+.candidate-map-link { display: grid; min-height: 40px; place-items: center; padding: 0.52rem 0.7rem; border: 1px solid var(--green); border-radius: 6px; font-size: 0.66rem; font-weight: 850; text-align: center; text-decoration: none; }
+.candidate-map-link.primary { color: #fff; background: var(--green); }
+.candidate-map-link.primary:hover { background: var(--green-dark); }
+.candidate-map-link.secondary { color: var(--green-dark); background: var(--surface); }
+.candidate-map-link.secondary:hover { background: var(--green-soft); }
+
 .evidence-section, .model-section { margin-top: 1.15rem; }
 .detail-evidence { display: grid; gap: 0.58rem; margin: 0.68rem 0 0; padding: 0; list-style: none; }
 .detail-evidence li { position: relative; padding-left: 0.92rem; color: var(--muted); font-size: 0.62rem; }
@@ -562,13 +574,14 @@ footer p { margin: 0; }
   .probability-ring { margin: 0 auto; }
   .detail-stats { grid-column: 1 / -1; }
   .evidence-section, .model-section { margin-top: 0; }
+  .candidate-map-actions { grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 840px) {
   .workspace { grid-template-columns: 1fr; }
   .planner { border-right: 0; border-bottom: 1px solid var(--line); }
   .detail-panel { grid-template-columns: 1fr 155px; }
-  .evidence-section, .model-section { grid-column: 1 / -1; }
+  .evidence-section, .model-section, .candidate-map-actions { grid-column: 1 / -1; }
 }
 
 @media (max-width: 600px) {
@@ -576,6 +589,7 @@ footer p { margin: 0; }
   .topbar-actions p { display: none; }
   .service-badge { margin-top: 0.45rem; }
   .results-header, .map-toolbar, .section-heading.inline, .map-caption { align-items: flex-start; flex-direction: column; }
+  .map-view-actions { width: 100%; justify-content: space-between; }
   .freshness { text-align: left; }
   .field-grid, .compact-grid { grid-template-columns: 1fr; }
   .summary-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -586,7 +600,7 @@ footer p { margin: 0; }
   .map-shell { overflow: hidden; }
   #parking-map { min-width: 0; }
   .detail-panel { grid-template-columns: 1fr; }
-  .probability-ring, .evidence-section, .model-section { grid-column: 1; }
+  .probability-ring, .evidence-section, .model-section, .candidate-map-actions { grid-column: 1; }
   .route-item, .candidate-card { grid-template-columns: 28px minmax(0, 1fr); }
   .route-probability, .candidate-probability { grid-column: 2; }
 }
